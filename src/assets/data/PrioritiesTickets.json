@@ -1,0 +1,22 @@
+{
+    "Baixa": {
+        "text": "Baixa",
+        "cor": "#9fd8cb", 
+        "textColor": "#000"
+    }, 
+    "Normal": {
+        "text": "Normal",
+        "cor": "#adc698", 
+        "textColor": "#000"
+    }, 
+    "Alta": {
+        "text": "Alta",
+        "cor": "#f7c548", 
+        "textColor": "#000"
+    }, 
+    "Urgente": {
+        "text": "Urgente",
+        "cor": "#ef5555", 
+        "textColor": "#FFF"
+    }
+}

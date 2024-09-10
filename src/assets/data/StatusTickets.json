@@ -1,0 +1,32 @@
+{
+    "Novo": {
+        "text": "Novo",
+        "cor": "#eeebd3", 
+        "textColor": "#000"
+    }, 
+    "Aberto": {
+        "text": "Aberto",
+        "cor": "#9fd8cb", 
+        "textColor": "#000"
+    }, 
+    "Pendente": {
+        "text": "Pendente",
+        "cor": "#f7c548", 
+        "textColor": "#000"
+    }, 
+    "Aguardando": {
+        "text": "Aguardando",
+        "cor": "#adc698", 
+        "textColor": "#000"
+    }, 
+    "Resolvido": {
+        "text": "Resolvido",
+        "cor": "#60992d", 
+        "textColor": "#fff"
+    }, 
+    "Fechado": {
+        "text": "Fechado",
+        "cor": "#93827f", 
+        "textColor": "#fff"
+    }
+}
