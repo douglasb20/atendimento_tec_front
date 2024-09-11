@@ -17,7 +17,9 @@ export const AjeitaUrl = (url, params) => {
   let paramsUrl = url.match(/{{([a-z]+)}}/gi);
   let newUrl = url;
 
-  if (paramsUrl.length === 0) return;
+  if (!paramsUrl ||paramsUrl.length === 0) {
+    return newUrl;
+  }
 
   if (paramsUrl.length !== params.length) {
     throw new Error('Quantidade de parametros não corresponde com parametros do url');
@@ -58,7 +60,7 @@ export default function ApiClient() {
   /**
    * Função para retornar dados das API's
    */
-  const FetchReq = async <T>(
+  const FetchReq = async <T = unknown>(
     props:
       | keyof typeof ListUrl
       | {

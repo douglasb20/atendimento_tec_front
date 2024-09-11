@@ -54,3 +54,11 @@ export interface IActions<T = any> {
 export interface IActionTable<T = any> extends IActions<T> {
   template?: (item: IActions<T>, data: T) => React.ReactNode;
 }
+
+export interface IClientes {
+  id: number;
+  nome: string;
+  cnpj: string;
+  created_at: string;
+  status: number;
+}
