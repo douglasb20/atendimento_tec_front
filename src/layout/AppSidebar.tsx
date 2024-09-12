@@ -27,6 +27,7 @@ const AppSidebar = () => {
               src="/images/logoext.png"
               width={160}
               height={60}
+              priority
             />
           </div>
           <div className="app-logo-small">
@@ -36,6 +37,7 @@ const AppSidebar = () => {
               width={50}
               height={50}
               className="app-logo-small"
+              priority
             />
           </div>
         </Link>
