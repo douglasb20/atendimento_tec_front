@@ -17,7 +17,7 @@ export const AjeitaUrl = (url, params) => {
   let paramsUrl = url.match(/{{([a-z]+)}}/gi);
   let newUrl = url;
 
-  if (!paramsUrl ||paramsUrl.length === 0) {
+  if (!paramsUrl || paramsUrl.length === 0) {
     return newUrl;
   }
 

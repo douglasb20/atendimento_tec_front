@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { ControllerFieldState } from 'react-hook-form';
 import { parse, parseISO, format, add, sub, Duration, toDate } from 'date-fns';
 import { isAxiosError, AxiosError } from 'axios';
-import br from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale';
 import { IResponseError, JWTToken } from '@/Interfaces';
 
 interface IDateToBr {
@@ -169,7 +169,7 @@ export function CatchAlerta(error: any, title: string) {
   if (isAxiosError(error)) {
     const errorAxios: AxiosError<IResponseError> = error;
     if (errorAxios?.response?.data) {
-      message = errorAxios.response.data.userMessage;
+      message = errorAxios.response.data.message;
     } else if (errorAxios?.message) {
       message = errorAxios.message;
     }
@@ -364,7 +364,7 @@ export const DateToBR: IDateToBr = (date, formatDate = 'P', addDate = null, subD
 
   formatDate = formatDate.toLocaleLowerCase() === 'dh' ? 'P HH:mm:ss' : formatDate;
 
-  const newFormated = format(dateFormated, formatDate, { locale: br });
+  const newFormated = format(dateFormated, formatDate, { locale: ptBR });
   return newFormated;
 };
 
@@ -472,7 +472,7 @@ export const ThrowError = (error, title) => {
   if (isAxiosError(error)) {
     const errorAxios: AxiosError<IResponseError> = error;
     if (errorAxios?.response?.data) {
-      message = errorAxios.response.data.userMessage;
+      message = errorAxios.response.data.message;
     } else if (errorAxios?.message) {
       message = errorAxios.message;
     }

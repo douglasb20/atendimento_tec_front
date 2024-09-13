@@ -1,5 +1,4 @@
 import { AnySchema } from 'yup';
-import { TooltipOptions } from 'primereact/tooltip/tooltipoptions';
 
 export enum Masks {
   DATEBR = '99/99/9999',
@@ -31,28 +30,9 @@ export interface JWTToken {
 }
 
 export interface IResponseError {
-  status: number;
-  timestamp: string;
-  type: string;
-  title: string;
-  detail: string;
-  userMessage: string;
-}
-
-export interface IActions<T = any> {
-  label?: string;
-  tooltip?: string;
-  tooltipOptions?: TooltipOptions;
-  className?: string;
-  bgcolor?: string;
-  icon?: string;
-  command?: (data?: T) => void;
-  length?: number | null;
-  totalActions?: number | null;
-}
-
-export interface IActionTable<T = any> extends IActions<T> {
-  template?: (item: IActions<T>, data: T) => React.ReactNode;
+  message: string;
+  error: string;
+  statusCode: number;
 }
 
 export interface IClientes {
@@ -62,3 +42,10 @@ export interface IClientes {
   created_at: string;
   status: number;
 }
+
+export type ContactTable = {
+  id?: string | null;
+  nome_contato: string;
+  telefone_contato?: string;
+  tipo?: 'new' | 'old';
+};
