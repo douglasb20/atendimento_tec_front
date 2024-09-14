@@ -164,11 +164,11 @@ export function Alerta(
  * @param {any} error Define a mensagem que irá aparecer na tela
  * @param {string} title Titulo do alerta
  */
-export function CatchAlerta(error: any, title: string) {
+export function CatchAlerta(error: any, title: string, redirecionamento = null) {
   let message: string = '';
   if (isAxiosError(error)) {
     const errorAxios: AxiosError<IResponseError> = error;
-    if (errorAxios?.response?.data) {
+    if (errorAxios?.response) {
       message = errorAxios.response.data.message;
     } else if (errorAxios?.message) {
       message = errorAxios.message;
@@ -186,6 +186,7 @@ export function CatchAlerta(error: any, title: string) {
     title: <span className="text-10 font-semibold">{title}</span>,
     html: <i>{message}</i>,
     icon: 'error',
+    willClose: () => redirecionamento !== null && window.location.assign(redirecionamento),
     footer: (
       <Button
         autoFocus
@@ -209,10 +210,7 @@ export function AlertaRedireciona(texto, redirecionamento, icon: SweetAlertIcon 
     title: '<span class="text-10 font-semibold">Aviso</span>',
     html: texto,
     icon: icon,
-    willClose: () =>
-      redirecionamento.match(/http/g)
-        ? window.location.assign(redirecionamento)
-        : redirect(redirecionamento),
+    willClose: () => window.location.assign(redirecionamento),
     footer: (
       <Button
         autoFocus
@@ -389,7 +387,7 @@ export const ValidaCPF = (cpf: string): boolean => {
 };
 export function ValidaCNPJ(cnpj) {
   var b = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-  var c = String(cnpj).replace(/[^\d]/g, '');
+  var c = String(cnpj).replace(/\D/g, '');
 
   if (c.length !== 14) return false;
 

@@ -10,14 +10,23 @@ import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
 
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
-import { ContactTable, Masks, Shape } from '@/Interfaces';
-import { getFormErrorMessage, ValidaCNPJ } from '@/service/Util';
+import { ContactTable, IClientResponse, Masks, Shape } from '@/Interfaces';
+import {
+  AlertaRedireciona,
+  CatchAlerta,
+  ConfirmaAcao,
+  getFormErrorMessage,
+  msgRequired,
+  ValidaCNPJ,
+} from '@/service/Util';
 import LabelPlus from '@/components/LabelPlus';
 import { DataTable } from 'primereact/datatable';
 import AcoesDataTable, { IActionTable } from '@/components/AcoesDataTable';
 import ModalFormulario from './ModalFormulario';
 import useApi from '@/service/Api/ApiClient';
 import { PrimeIcons } from 'primereact/api';
+import { Button } from 'primereact/button';
+import { useService } from '@/contexts/ServicesContext';
 
 type FormType = {
   nome: string;
@@ -25,10 +34,10 @@ type FormType = {
 };
 
 const schema = yup.object<yup.AnyObject, Shape<FormType>>({
-  nome: yup.string().required(),
+  nome: yup.string().required(msgRequired),
   cnpj: yup
     .string()
-    .test('cnpj-validator', 'CNPJ inválido', (val) => val !== '' && ValidaCNPJ(val)),
+    .test('cnpj-validator', 'CNPJ inválido', (val) => val === '' || ValidaCNPJ(val)),
 });
 
 const defaultForm: FormType = {
@@ -46,6 +55,7 @@ export default function FormClient() {
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
   });
+  const { setLoading } = useService();
   const params = useParams();
   const { id } = params as { id: string[] } | null;
 
@@ -63,14 +73,14 @@ export default function FormClient() {
       label: 'Editar cliente',
       tooltip: 'Editar cliente',
       icon: 'pi pi-fw pi-user-edit',
-      command: (data) => {},
+      command: (data) => AbrirModalForm(data),
     },
     {
       label: 'Excluir cliente',
       tooltip: 'Excluir cliente',
       icon: 'pi pi-fw pi-times',
       bgcolor: 'danger',
-      command: (data) => {},
+      command: (data) => ConfirmaAcao('Deseja remover este contato?', RemoveBeneficiario, data),
     },
   ];
 
@@ -89,38 +99,109 @@ export default function FormClient() {
           id: uuidv4(),
           nome_contato: fields.nome_contato,
           telefone_contato: fields.telefone_contato,
-          tipo: 'new'
-        }
-      ]
+          tipo: 'new',
+        },
+      ];
     } else {
       editContact = [...contacts];
-      let index = editContact.map(e => e.id).indexOf(selectedContact.id);
+      let index = editContact.map((e) => e.id).indexOf(selectedContact.id);
 
       editContact[index].nome_contato = fields.nome_contato;
       editContact[index].telefone_contato = fields.telefone_contato;
     }
 
-    setContacts(editContact)
+    setContacts(editContact);
     closeModalContact();
   };
 
-  const RemoveBeneficiario = (fields: ContactTable) => {
-    let editContact: ContactTable[] = [];
-    if (fields.tipo === 'new') {
+  const RemoveBeneficiario = async (fields: ContactTable) => {
+    try {
+      let editContact: ContactTable[] = [];
+      if (fields.tipo !== 'new') {
+        await FetchReq('RemoveContact', [id[0], fields.id]);
+      }
+
+      editContact = contacts.filter((e) => e.id !== fields.id);
+      setContacts(editContact);
+    } catch (err) {
+    } finally {
     }
-    
-    editContact = contacts.filter((e) => e.id !== fields.id);
-    setContacts(editContact);
   };
 
   const closeModalContact = () => {
     setFormContactStatus(false);
     setSelectedContact(null);
-  }
+  };
+
+  const onSubmitForm = async (fields) => {
+    try {
+      const newContacts = contacts.map((contact) => {
+        return {
+          ...(contact.tipo !== 'new' && { id: contact.id }),
+          nome_contato: contact.nome_contato,
+          telefone_contato: contact.telefone_contato.replace(/\D/g, ''),
+        };
+      });
+
+      const dataPost = {
+        ...(id !== undefined && { id: id[0] }),
+        ...fields,
+        cnpj: fields.cnpj.replace(/\D/g, ''),
+        ...(newContacts.length > 0 && { contacts: newContacts }),
+      };
+      if (id === undefined) {
+        await FetchReq({
+          endpoint: 'CriarCliente',
+          body: dataPost 
+        })
+      } else {
+        await FetchReq({
+          endpoint: 'AtualizarCliente',
+          body: dataPost,
+          variables: [id[0]]
+        })
+        
+      }
+      AlertaRedireciona('Cliente salvo com sucesso!', '/clientes', 'success');
+    } catch (err) {
+      CatchAlerta(err, "Erro ao salvar cliente");
+    } finally {
+      setLoading(false)
+    }
+  };
+
+  const GetClient = async (id: string) => {
+    try {
+      setLoading(true);
+      const data = await FetchReq<IClientResponse>('BuscarClienteId', [id]);
+      const oldContact = data.contacts;
+      data.cnpj = data.cnpj === null ? '' : data.cnpj;
+      delete data.contacts;
+      reset({ ...defaultForm, ...data });
+      setContacts(
+        oldContact.map((e) => ({
+          id: String(e.id),
+          nome_contato: e.nome_contato,
+          telefone_contato: e.telefone_contato,
+          tipo: 'old',
+        })),
+      );
+      setRendered(true);
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao consultar cliente', '/clientes');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setRendered(true);
-  }, []);
+    if (id === undefined) {
+      setRendered(true);
+      reset(defaultForm);
+    } else {
+      GetClient(id[0]);
+    }
+  }, [id]);
   return (
     rendered && (
       <>
@@ -181,7 +262,7 @@ export default function FormClient() {
                   <DataTable
                     value={contacts}
                     emptyMessage="Nenhum contato cadastrado"
-                    size='small'
+                    size="small"
                     stripedRows
                     showGridlines
                     rowHover
@@ -213,13 +294,21 @@ export default function FormClient() {
                 </div>
               </div>
             </div>
+            <div className="p-card-footer mt-4 flex flex-column ">
+              <Button
+                className="align-self-end"
+                size="small"
+                label="Salvar"
+                onClick={() => handleSubmit(onSubmitForm)()}
+              />
+            </div>
           </div>
         </div>
 
         <ModalFormulario
           visible={formContactStatus}
           onHide={() => setFormContactStatus(false)}
-          data={null}
+          data={selectedContact}
           onConfirm={onConfirmContact}
         />
       </>

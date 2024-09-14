@@ -14,7 +14,7 @@ interface ILoginResp {
  * @param {string[]} params dados que vai ajeitar o url
  */
 export const AjeitaUrl = (url, params) => {
-  let paramsUrl = url.match(/{{([a-z]+)}}/gi);
+  let paramsUrl = url.match(/{{([a-z_]+)}}/gi);
   let newUrl = url;
 
   if (!paramsUrl || paramsUrl.length === 0) {
@@ -54,7 +54,12 @@ export default function ApiClient() {
 
   const ListUrl = {
     ListarClientes: { url: '/clients', method: 'GET' },
+    CriarCliente: { url: '/clients', method: 'POST' },
+    AtualizarCliente: { url: '/clients/{{client_id}}', method: 'PATCH' },
+    RemoverCliente: { url: '/clients/{{client_id}}', method: 'DELETE' },
+    BuscarClienteId: { url: '/clients/{{client_id}}', method: 'GET' },
     ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
+    RemoveContact: { url: '/clients/{{client_id}}/contact/{{contact_id}}', method: 'DELETE' },
   } as const;
 
   /**

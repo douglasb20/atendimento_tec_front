@@ -7,7 +7,7 @@ import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { IClientes } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import DtClientes from './DtClientes';
-import { CatchAlerta } from '@/service/Util';
+import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import { IActionTable } from '@/components/AcoesDataTable';
 
 export default function DadosClientesSection() {
@@ -30,14 +30,14 @@ export default function DadosClientesSection() {
       label: 'Editar cliente',
       tooltip: 'Editar cliente',
       icon: 'pi pi-fw pi-user-edit',
-      command: (data) => {},
+      command: (data) => router.push('/clientes/form/' + data.id),
     },
     {
       label: 'Excluir cliente',
       tooltip: 'Excluir cliente',
       icon: 'pi pi-fw pi-times',
       bgcolor: 'danger',
-      command: (data) => {},
+      command: (data) => ConfirmaAcao("Confirma remover este cliente?", RemoverCliente, data),
     },
   ];
 
@@ -54,6 +54,17 @@ export default function DadosClientesSection() {
       setRendered(true);
     }
   };
+
+  const RemoverCliente = async (data: IClientes) => {
+    try {
+      setLoading(true);
+      await FetchReq('RemoverCliente', [data.id]);
+      await sleep(1);
+      window.location.reload();
+    } catch (err) {
+      CatchAlerta(err, "Erro ao remover cliente.")
+    }
+  }
 
   useEffect(() => {
     GetClients();

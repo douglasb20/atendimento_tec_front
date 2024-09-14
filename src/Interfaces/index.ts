@@ -43,6 +43,19 @@ export interface IClientes {
   status: number;
 }
 
+export interface IClientResponse extends IClientes{
+  contacts?: IContactResponse[]
+}
+
+export interface IContactResponse {
+  id: number;
+  clients_id: number;
+  nome_contato: string;
+  telefone_contato: string;
+  created_at: string;
+  status: number;
+}
+
 export type ContactTable = {
   id?: string | null;
   nome_contato: string;
