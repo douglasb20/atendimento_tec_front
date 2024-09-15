@@ -62,3 +62,34 @@ export type ContactTable = {
   telefone_contato?: string;
   tipo?: 'new' | 'old';
 };
+
+interface RootObject {
+  id: number;
+  clients_id: number;
+  users_id: number;
+  data_referencia: string;
+  hora_inicio: string;
+  hora_fim: string;
+  comentario: null;
+  tipo_entrada: string;
+  atendimento_status_id: number;
+  atendimento_status: Atendimentostatus;
+  users: Users;
+  clients: IClientes;
+}
+
+
+interface Users {
+  id: number;
+  name: string;
+  email: string;
+  status: number;
+  is_requestpassword: number;
+  created_at: string;
+  lastlogin_at: string;
+}
+
+interface Atendimentostatus {
+  id: number;
+  descricao: string;
+}

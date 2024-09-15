@@ -1,6 +1,6 @@
-import DadosClientesSection from './DadosClientesSection';
+import DadosClientesSection from './DadosAtendimentosSection';
 
-export default function ClientesPage() {
+export default function AtendimentosPage() {
   return (
     <div className="grid">
       <div className="col-12 card flex flex-column justify-content-center shadow-1">
