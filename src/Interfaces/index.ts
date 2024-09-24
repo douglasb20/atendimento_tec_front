@@ -63,9 +63,10 @@ export type ContactTable = {
   tipo?: 'new' | 'old';
 };
 
-interface RootObject {
+export interface AtendimentosResponse {
   id: number;
   clients_id: number;
+  contacts_id: number;
   users_id: number;
   data_referencia: string;
   hora_inicio: string;
@@ -73,23 +74,12 @@ interface RootObject {
   comentario: null;
   tipo_entrada: string;
   atendimento_status_id: number;
-  atendimento_status: Atendimentostatus;
-  users: Users;
-  clients: IClientes;
-}
-
-
-interface Users {
-  id: number;
-  name: string;
-  email: string;
-  status: number;
-  is_requestpassword: number;
-  created_at: string;
-  lastlogin_at: string;
-}
-
-interface Atendimentostatus {
-  id: number;
-  descricao: string;
+  duration: string;
+  cli_nome: string;
+  cli_cnpj: string;
+  user_nome: string;
+  user_email: string;
+  contact_nome: string;
+  contact_telefone: string;
+  status_descricao: string;
 }

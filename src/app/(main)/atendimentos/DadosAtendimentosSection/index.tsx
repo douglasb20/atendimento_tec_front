@@ -4,14 +4,14 @@ import { useRouter } from 'next/navigation';
 
 import { useService } from '@/contexts/ServicesContext';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
-import { IClientes } from '@/Interfaces';
+import { AtendimentosResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import DtAtendimento from './DtAtendimentos';
 import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import { IActionTable } from '@/components/AcoesDataTable';
 
 export default function DadosClientesSection() {
-  const [clients, setClients] = useState([]);
+  const [atendimentos, setAtendimentos] = useState([]);
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
@@ -25,7 +25,7 @@ export default function DadosClientesSection() {
     },
   ];
 
-  const acoesTable: IActionTable<IClientes>[] = [
+  const acoesTable: IActionTable<AtendimentosResponse>[] = [
     {
       label: 'Editar cliente',
       tooltip: 'Editar cliente',
@@ -44,18 +44,18 @@ export default function DadosClientesSection() {
   const GetAtendimentos = async () => {
     try {
       setLoading(true);
-      const data = await FetchReq<IClientes[]>('ListarClientes');
-      setClients(data);
+      const data = await FetchReq<AtendimentosResponse[]>('ListarAtendimentos');
+      setAtendimentos(data);
     } catch (err) {
       console.log(err);
-      CatchAlerta(err, 'Erro ao consultar clientes');
+      CatchAlerta(err, 'Erro ao consultar atendimentos');
     } finally {
       setLoading(false);
       setRendered(true);
     }
   };
 
-  const RemoverCliente = async (data: IClientes) => {
+  const RemoverCliente = async (data: AtendimentosResponse) => {
     try {
       setLoading(true);
       await FetchReq('RemoverCliente', [data.id]);
@@ -73,14 +73,14 @@ export default function DadosClientesSection() {
     rendered && (
       <>
         <TitleCards
-          title="Clientes"
+          title="Atendimentos"
           buttons={ButtonsHeader}
         />
 
         <div className="p-card-content">
           <DtAtendimento
             actions={acoesTable}
-            value={clients}
+            value={atendimentos}
           />
         </div>
       </>
