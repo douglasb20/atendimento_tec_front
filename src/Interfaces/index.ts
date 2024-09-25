@@ -35,6 +35,17 @@ export interface IResponseError {
   statusCode: number;
 }
 
+export interface IUsuariosResponse {
+  id?: number;
+  name: string;
+  email: string;
+  status?: number;
+  valor_hora?: number;
+  is_requestpassword?: number;
+  created_at?: string;
+  lastlogin_at?: string;
+}
+
 export interface IClientes {
   id: number;
   nome: string;

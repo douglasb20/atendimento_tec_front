@@ -17,7 +17,10 @@ export async function middleware(request: NextRequest) {
       // verifica se o token expirou
       // se tiver expirado, redireciona para tela de ligout
       const now = Math.floor(new Date().getTime() / 1000.0);
-      if (+expires_at < now) return NextResponse.redirect(new URL('/auth/logout', request.url));
+      console.log("Expires", expires_at)
+      console.log("Now", now)
+      console.log("Left ", Number(expires_at) - now)
+      if (Number(expires_at) < now) return NextResponse.redirect(new URL('/auth/logout', request.url));
     }
   } else {
     // Caso tiver ir para a tela de login e tiver autenticado

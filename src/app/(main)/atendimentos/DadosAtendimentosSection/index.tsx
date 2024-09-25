@@ -9,6 +9,7 @@ import useApi from '@/service/Api/ApiClient';
 import DtAtendimento from './DtAtendimentos';
 import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import { IActionTable } from '@/components/AcoesDataTable';
+import { PrimeIcons } from 'primereact/api';
 
 export default function DadosClientesSection() {
   const [atendimentos, setAtendimentos] = useState([]);
@@ -19,8 +20,9 @@ export default function DadosClientesSection() {
 
   const ButtonsHeader: IButtonsOthers[] = [
     {
-      label: 'Adicionar cliente',
-      icon: 'pi pi-user-plus',
+      label: 'Adicionar atendimento',
+      // @ts-ignore
+      icon: PrimeIcons.FILE_EDIT,
       action: () => router.push('/clientes/form/'),
     },
   ];
@@ -73,7 +75,7 @@ export default function DadosClientesSection() {
     rendered && (
       <>
         <TitleCards
-          title="Atendimentos"
+          title="Atendimentos dos técnicos"
           buttons={ButtonsHeader}
         />
 

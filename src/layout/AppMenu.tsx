@@ -28,6 +28,12 @@ const AppMenu = () => {
           icon: `${PrimeIcons.USERS} pi-fw`,
           to: '/clientes',
         },
+        {
+          label: 'Usuários',
+          // @ts-ignore
+          icon: `${PrimeIcons.ADDRESS_BOOK} pi-fw`,
+          to: '/usuarios',
+        },
       ],
     },
   ];

@@ -58,6 +58,10 @@ export default function ApiClient() {
     AtualizarCliente: { url: '/clients/{{client_id}}', method: 'PATCH' },
     RemoverCliente: { url: '/clients/{{client_id}}', method: 'DELETE' },
     BuscarClienteId: { url: '/clients/{{client_id}}', method: 'GET' },
+    ListarUsuarios: { url: '/users', method: 'GET' },
+    AdicionarUsuario: { url: '/users', method: 'POST' },
+    AtualizarUsuario: { url: '/users/{{user_id}}', method: 'PATCH' },
+    RemoverUsuario: { url: '/users/{{user_id}}', method: 'DELETE' },
     ListarAtendimentos: {url: '/atendimentos', method: 'GET'},
     ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
     RemoveContact: { url: '/clients/{{client_id}}/contact/{{contact_id}}', method: 'DELETE' },
@@ -97,6 +101,5 @@ export default function ApiClient() {
     FetchReq,
     baseUrl: url,
     token: token,
-    ...ListUrl,
   };
 }

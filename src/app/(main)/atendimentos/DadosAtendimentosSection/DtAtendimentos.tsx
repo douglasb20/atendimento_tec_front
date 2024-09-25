@@ -20,32 +20,52 @@ const DtAtendimentos = ({ actions, ...props }) => {
           body={(data: AtendimentosResponse) => DateToBR(data.data_referencia)}
         />
         <Column
-          field="cli_nome"
-          header="Nome"
-          alignHeader="center"
-        />
-        <Column
           field="cli_cnpj"
           header="CNPJ"
           alignHeader="center"
         />
         <Column
+          field="cli_nome"
+          header="Nome"
+          alignHeader="center"
+          body={(data: AtendimentosResponse) => {
+            return (
+              <div className="w-full flex align-items-center gap-1">
+                {data.cli_nome}
+                {data.contact_nome !== null && <>({data.contact_nome})</>}
+              </div>
+            );
+          }}
+        />
+        <Column
           field="hora_inicio"
           header="Início"
           alignHeader="center"
-          body={(data: AtendimentosResponse) => DateToBR(`${data.data_referencia} ${data.hora_inicio}`, 'HH:mm')}
+          body={(data: AtendimentosResponse) =>
+            DateToBR(`${data.data_referencia} ${data.hora_inicio}`, 'HH:mm')
+          }
         />
         <Column
           field="hora_fim"
           header="Fim"
           alignHeader="center"
-          body={(data: AtendimentosResponse) => DateToBR(`${data.data_referencia} ${data.hora_fim}`, 'HH:mm')}
+          body={(data: AtendimentosResponse) =>
+            DateToBR(`${data.data_referencia} ${data.hora_fim}`, 'HH:mm')
+          }
         />
         <Column
           field="duration"
           header="Duração"
           alignHeader="center"
-          body={(data: AtendimentosResponse) => DateToBR(`${data.data_referencia} ${data.duration}`, 'HH:mm')}
+          body={(data: AtendimentosResponse) =>
+            DateToBR(`${data.data_referencia} ${data.duration}`, 'HH:mm')
+          }
+        />
+        <Column
+          field="comentario"
+          header="Serviço"
+          alignHeader="center"
+          className="w-30rem"
         />
         <Column
           hidden={!actions ? true : false}
