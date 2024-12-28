@@ -29,17 +29,17 @@ export default function DadosClientesSection() {
 
   const acoesTable: IActionTable<AtendimentosResponse>[] = [
     {
-      label: 'Editar cliente',
-      tooltip: 'Editar cliente',
+      label: 'Editar atendimento',
+      tooltip: 'Editar atendimento',
       icon: 'pi pi-fw pi-user-edit',
       command: (data) => router.push('/clientes/form/' + data.id),
     },
     {
-      label: 'Excluir cliente',
-      tooltip: 'Excluir cliente',
+      label: 'Excluir atendimento',
+      tooltip: 'Excluir atendimento',
       icon: 'pi pi-fw pi-times',
       bgcolor: 'danger',
-      command: (data) => ConfirmaAcao("Confirma remover este cliente?", RemoverCliente, data),
+      command: (data) => ConfirmaAcao("Confirma remover este atendimento?", RemoverCliente, data),
     },
   ];
 
@@ -64,6 +64,7 @@ export default function DadosClientesSection() {
       await sleep(1);
       window.location.reload();
     } catch (err) {
+      setLoading(false);
       CatchAlerta(err, "Erro ao remover cliente.")
     }
   }
@@ -75,7 +76,7 @@ export default function DadosClientesSection() {
     rendered && (
       <>
         <TitleCards
-          title="Atendimentos dos técnicos"
+          title="Lista de atendimentos"
           buttons={ButtonsHeader}
         />
 

@@ -84,6 +84,7 @@ export default function BoxLoginSection() {
                   <InputText
                     id={field.name}
                     {...field}
+                    onKeyDown={pressEnter}
                     type="email"
                     className="shadow-none w-full md:w-25rem"
                     placeholder="Email"

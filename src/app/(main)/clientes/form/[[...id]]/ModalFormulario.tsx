@@ -44,6 +44,7 @@ function ModalFormulario(props: ModalProps) {
           size="small"
           severity="danger"
           outlined
+          onClick={onHide}
         />
         <Button
           label="Salvar"
@@ -92,6 +93,7 @@ function ModalFormulario(props: ModalProps) {
                   id={field.name}
                   {...field}
                   placeholder="Nome do contato"
+                  autoComplete='off'
                 />
                 {getFormErrorMessage(fieldState)}
               </>

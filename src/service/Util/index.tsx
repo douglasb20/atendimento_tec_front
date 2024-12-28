@@ -105,7 +105,7 @@ export function jwtDecode<T = any>(jwt: string, option = { header: false }): T {
  * @param {string} mask A mascara da string
  * @returns {string} Retorno do valor com a máscara
  */
-export const mask = (value, mask) => {
+export const Mask = (value, mask) => {
   value = value.replace(/\D/g, '');
   let maskared = '';
   let k = 0;
@@ -419,7 +419,7 @@ export const AjustaTelefone = (val: string): string => {
   let clanVal = val.replace(/\D/g, '');
   if (clanVal.replace(/\D/g, '') !== '') {
     format = clanVal.length > 10 ? '(##) # ####-####' : '(##) ####-####';
-    formatted = mask(clanVal, format);
+    formatted = Mask(clanVal, format);
   }
   return formatted;
 };

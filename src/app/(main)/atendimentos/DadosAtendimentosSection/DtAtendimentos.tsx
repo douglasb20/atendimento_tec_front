@@ -1,9 +1,9 @@
 import React, { memo } from 'react';
 import { Column } from 'primereact/column';
 
-import AcoesDataTable from '@/components/AcoesDataTable';
-import DataTableCustom from '@/components/DataTableCustom';
 import { AtendimentosResponse } from '@/Interfaces';
+import AcoesDataTable, { BodyCNPJ, BodyDateOnly } from '@/components/AcoesDataTable';
+import DataTableCustom from '@/components/DataTableCustom';
 import { DateToBR } from '@/service/Util';
 
 const DtAtendimentos = ({ actions, ...props }) => {
@@ -16,31 +16,27 @@ const DtAtendimentos = ({ actions, ...props }) => {
         <Column
           field="data_referencia"
           header="Data"
-          alignHeader="center"
-          body={(data: AtendimentosResponse) => DateToBR(data.data_referencia)}
+          align="center"
+          body={BodyDateOnly}
         />
         <Column
           field="cli_cnpj"
           header="CNPJ"
-          alignHeader="center"
+          align="center"
+          body={BodyCNPJ}
         />
         <Column
           field="cli_nome"
           header="Nome"
-          alignHeader="center"
-          body={(data: AtendimentosResponse) => {
-            return (
-              <div className="w-full flex align-items-center gap-1">
-                {data.cli_nome}
-                {data.contact_nome !== null && <>({data.contact_nome})</>}
-              </div>
-            );
-          }}
+          align="center"
+          body={(data: AtendimentosResponse) =>
+            `${data.cli_nome}${data.contact_nome !== null && ` (${data.contact_nome})`}`
+          }
         />
         <Column
           field="hora_inicio"
           header="Início"
-          alignHeader="center"
+          align="center"
           body={(data: AtendimentosResponse) =>
             DateToBR(`${data.data_referencia} ${data.hora_inicio}`, 'HH:mm')
           }
@@ -48,7 +44,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
         <Column
           field="hora_fim"
           header="Fim"
-          alignHeader="center"
+          align="center"
           body={(data: AtendimentosResponse) =>
             DateToBR(`${data.data_referencia} ${data.hora_fim}`, 'HH:mm')
           }
@@ -56,7 +52,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
         <Column
           field="duration"
           header="Duração"
-          alignHeader="center"
+          align="center"
           body={(data: AtendimentosResponse) =>
             DateToBR(`${data.data_referencia} ${data.duration}`, 'HH:mm')
           }
@@ -64,7 +60,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
         <Column
           field="comentario"
           header="Serviço"
-          alignHeader="center"
+          align="center"
           className="w-30rem"
         />
         <Column

@@ -3,30 +3,34 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { InputText } from 'primereact/inputtext';
 import { InputMask } from 'primereact/inputmask';
-import { Column } from 'primereact/column';
+import { PrimeIcons } from 'primereact/api';
+import { DataTable } from 'primereact/datatable';
+import { Button } from 'primereact/button';
+import { Column, ColumnBodyOptions } from 'primereact/column';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
 
-import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { ContactTable, IClientResponse, Masks, Shape } from '@/Interfaces';
+
+import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
+import LabelPlus from '@/components/LabelPlus';
+import AcoesDataTable, { IActionTable } from '@/components/AcoesDataTable';
 import {
   AlertaRedireciona,
   CatchAlerta,
   ConfirmaAcao,
   getFormErrorMessage,
+  Mask,
   msgRequired,
   ValidaCNPJ,
 } from '@/service/Util';
-import LabelPlus from '@/components/LabelPlus';
-import { DataTable } from 'primereact/datatable';
-import AcoesDataTable, { IActionTable } from '@/components/AcoesDataTable';
-import ModalFormulario from './ModalFormulario';
 import useApi from '@/service/Api/ApiClient';
-import { PrimeIcons } from 'primereact/api';
-import { Button } from 'primereact/button';
+
 import { useService } from '@/contexts/ServicesContext';
+
+import ModalFormulario from './ModalFormulario';
 
 type FormType = {
   nome: string;
@@ -43,6 +47,16 @@ const schema = yup.object<yup.AnyObject, Shape<FormType>>({
 const defaultForm: FormType = {
   nome: '',
   cnpj: '',
+};
+
+const BodyTelefone = (data: ContactTable, options: ColumnBodyOptions) => {
+  let value: string = data[options.field];
+  if (value) {
+    const maskType = value.length === 11 ? '(##) # ####-####' : '(##) ####-####';
+    value = Mask(value, maskType);
+  }
+
+  return value;
 };
 
 export default function FormClient() {
@@ -135,6 +149,7 @@ export default function FormClient() {
 
   const onSubmitForm = async (fields) => {
     try {
+      setLoading(true);
       const newContacts = contacts.map((contact) => {
         return {
           ...(contact.tipo !== 'new' && { id: contact.id }),
@@ -152,21 +167,20 @@ export default function FormClient() {
       if (id === undefined) {
         await FetchReq({
           endpoint: 'CriarCliente',
-          body: dataPost 
-        })
+          body: dataPost,
+        });
       } else {
         await FetchReq({
           endpoint: 'AtualizarCliente',
           body: dataPost,
-          variables: [id[0]]
-        })
-        
+          variables: [id[0]],
+        });
       }
       AlertaRedireciona('Cliente salvo com sucesso!', '/clientes', 'success');
     } catch (err) {
-      CatchAlerta(err, "Erro ao salvar cliente");
+      CatchAlerta(err, 'Erro ao salvar cliente');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   };
 
@@ -202,6 +216,7 @@ export default function FormClient() {
       GetClient(id[0]);
     }
   }, [id]);
+
   return (
     rendered && (
       <>
@@ -253,6 +268,7 @@ export default function FormClient() {
                   />
                 </div>
               </div>
+
               <div className="grid">
                 <div className="col-12 mt-3">
                   <TitleCards
@@ -278,6 +294,7 @@ export default function FormClient() {
                       header="Telefone"
                       align="center"
                       headerClassName="w-3"
+                      body={BodyTelefone}
                     />
                     <Column
                       header="Ações"
@@ -294,9 +311,18 @@ export default function FormClient() {
                 </div>
               </div>
             </div>
-            <div className="p-card-footer mt-4 flex flex-column ">
+            <div className="p-card-footer mt-4 flex flex-row justify-content-between">
               <Button
-                className="align-self-end"
+                label="Cancelar"
+                size="small"
+                severity="danger"
+                outlined
+                onClick={() => {
+                  setLoading(true);
+                  window.location.assign('/clientes');
+                }}
+              />
+              <Button
                 size="small"
                 label="Salvar"
                 onClick={() => handleSubmit(onSubmitForm)()}
