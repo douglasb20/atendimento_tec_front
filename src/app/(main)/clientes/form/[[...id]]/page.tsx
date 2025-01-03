@@ -278,10 +278,10 @@ export default function FormClient() {
                   <DataTable
                     value={contacts}
                     emptyMessage="Nenhum contato cadastrado"
-                    size="small"
                     stripedRows
                     showGridlines
                     rowHover
+                    size='small'
                   >
                     <Column
                       field="nome_contato"
@@ -314,7 +314,6 @@ export default function FormClient() {
             <div className="p-card-footer mt-4 flex flex-row justify-content-between">
               <Button
                 label="Cancelar"
-                size="small"
                 severity="danger"
                 outlined
                 onClick={() => {
@@ -323,7 +322,6 @@ export default function FormClient() {
                 }}
               />
               <Button
-                size="small"
                 label="Salvar"
                 onClick={() => handleSubmit(onSubmitForm)()}
               />

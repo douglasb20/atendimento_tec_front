@@ -41,14 +41,12 @@ function ModalFormulario(props: ModalProps) {
       <div className="flex justify-content-between">
         <Button
           label="Cancelar"
-          size="small"
           severity="danger"
           outlined
           onClick={onHide}
         />
         <Button
           label="Salvar"
-          size="small"
           onClick={() => handleSubmit(onSubmitForm)()}
         />
       </div>

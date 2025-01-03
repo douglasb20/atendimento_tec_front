@@ -35,7 +35,6 @@ const CustomHeaderPanel = ({ options, subTitle }: IProps) => {
         className={`py-2`}
         icon={`pi ${toggleIcon} text-1xl`}
         onClick={options.onTogglerClick}
-        size="small"
       />
     </div>
   );

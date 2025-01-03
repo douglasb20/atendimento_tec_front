@@ -30,7 +30,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           header="Nome"
           align="center"
           body={(data: AtendimentosResponse) =>
-            `${data.cli_nome}${data.contact_nome !== null && ` (${data.contact_nome})`}`
+            `${data.cli_nome}${data.contact_nome !== null ? ` (${data.contact_nome})` : ''}`
           }
         />
         <Column
@@ -38,7 +38,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           header="Início"
           align="center"
           body={(data: AtendimentosResponse) =>
-            DateToBR(`${data.data_referencia} ${data.hora_inicio}`, 'HH:mm')
+            data.hora_inicio && DateToBR(`${data.data_referencia} ${data.hora_inicio}`, 'HH:mm')
           }
         />
         <Column
@@ -46,7 +46,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           header="Fim"
           align="center"
           body={(data: AtendimentosResponse) =>
-            DateToBR(`${data.data_referencia} ${data.hora_fim}`, 'HH:mm')
+            data.hora_fim && DateToBR(`${data.data_referencia} ${data.hora_fim}`, 'HH:mm')
           }
         />
         <Column
@@ -54,7 +54,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           header="Duração"
           align="center"
           body={(data: AtendimentosResponse) =>
-            DateToBR(`${data.data_referencia} ${data.duration}`, 'HH:mm')
+            data.duration && DateToBR(`${data.data_referencia} ${data.duration}`, 'HH:mm')
           }
         />
         <Column

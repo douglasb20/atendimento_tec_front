@@ -89,6 +89,11 @@ export default function BoxLoginSection() {
                     className="shadow-none w-full md:w-25rem"
                     placeholder="Email"
                     autoComplete="off"
+                    pt={{
+                      root: {
+                        className: ""
+                      },
+                    }}
                   />
                 </IconField>
                 {getFormErrorMessage(fieldState)}

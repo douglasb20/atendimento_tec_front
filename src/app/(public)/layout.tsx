@@ -6,12 +6,9 @@ interface FullPageLayoutProps {
 }
 
 export const metadata: Metadata = {
-  title: {
-    default: 'AtendeCerto | Dashboard',
-    template: 'AtendeCerto | %s',
-  },
+  title: "Login",
 };
 
 export default function FullPageLayout({ children }: FullPageLayoutProps) {
-  return <React.Fragment>{children}</React.Fragment>;
+  return <React.Fragment>{children}</React.Fragment>
 }

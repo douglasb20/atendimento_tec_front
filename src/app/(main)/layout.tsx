@@ -9,7 +9,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <>
       <ModalAlteraSenha />
-      <Layout>{children}</Layout>;
+      <Layout>{children}</Layout>
     </>
   );
 }

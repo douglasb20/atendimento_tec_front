@@ -1,4 +1,9 @@
+import { Metadata } from 'next';
 import DadosClientesSection from './DadosAtendimentosSection';
+
+export const metadata: Metadata = {
+  title: "Atendimentos",
+};
 
 export default function AtendimentosPage() {
   return (

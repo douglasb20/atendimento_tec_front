@@ -1,5 +1,4 @@
 import { Viewport, Metadata } from 'next';
-import { PrimeReactProvider } from 'primereact/api';
 import { Providers } from 'providers';
 
 import 'styles/layout/layout.scss';
@@ -16,7 +15,10 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Automatec Sistemas',
+  title: {
+    default: 'Automatec Sistemas',
+    template: 'Automatec Sistemas | %s',
+  },
   metadataBase: new URL('http://dgapp:3000'),
   description: 'Automatec Sistemas',
   robots: { index: false, follow: false },
@@ -52,9 +54,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         ></link>
       </head>
       <body>
-        <PrimeReactProvider>
-          <Providers>{children}</Providers>
-        </PrimeReactProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

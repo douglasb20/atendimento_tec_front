@@ -81,7 +81,7 @@ const DataTableCustom = <P extends DataTableValueArray>({
       sortOrder={1}
       //FILTER
       filters={filters}
-      filterDisplay="menu"
+      // filterDisplay="menu"
       globalFilterFields={globalFilterFields}
       // PAGINATION
       paginator

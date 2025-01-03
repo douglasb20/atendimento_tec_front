@@ -66,13 +66,11 @@ const ModalFormUser = (props: ModalProps) => {
       <div className="flex justify-content-between">
         <Button
           label="Cancelar"
-          size="small"
           severity="danger"
           outlined
         />
         <Button
           label="Salvar"
-          size="small"
           onClick={() => handleSubmit(onSubmitForm)()}
         />
       </div>
