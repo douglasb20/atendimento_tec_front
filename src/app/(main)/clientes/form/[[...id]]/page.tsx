@@ -223,6 +223,7 @@ export default function FormClient() {
         <div className="grid">
           <div className="col-10 col-offset-1 card flex flex-column justify-content-center shadow-1">
             <TitleCards title="Cadastro de clientes" />
+
             <div className="p-card-content">
               <div className="grid p-fluid">
                 <div className="col-6">
@@ -311,6 +312,7 @@ export default function FormClient() {
                 </div>
               </div>
             </div>
+            
             <div className="p-card-footer mt-4 flex flex-row justify-content-between">
               <Button
                 label="Cancelar"

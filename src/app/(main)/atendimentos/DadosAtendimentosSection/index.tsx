@@ -1,15 +1,15 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { PrimeIcons } from 'primereact/api';
 import { useRouter } from 'next/navigation';
 
+import { AtendimentosResponse } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
-import { AtendimentosResponse } from '@/Interfaces';
-import useApi from '@/service/Api/ApiClient';
-import DtAtendimento from './DtAtendimentos';
-import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import { IActionTable } from '@/components/AcoesDataTable';
-import { PrimeIcons } from 'primereact/api';
+import useApi from '@/service/Api/ApiClient';
+import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
+import DtAtendimento from './DtAtendimentos';
 
 export default function DadosClientesSection() {
   const [atendimentos, setAtendimentos] = useState([]);
