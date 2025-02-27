@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { Column } from 'primereact/column';
 
-import AcoesDataTable from '@/components/AcoesDataTable';
+import AcoesDataTable, { BodyCNPJ } from '@/components/AcoesDataTable';
 import DataTableCustom from '@/components/DataTableCustom';
 
 const DtClientes = ({ actions, ...props }) => {
@@ -20,12 +20,14 @@ const DtClientes = ({ actions, ...props }) => {
         <Column
           field="nome"
           header="Nome"
-          alignHeader="center"
+          align="center"
         />
         <Column
           field="cnpj"
           header="CNPJ"
-          alignHeader="center"
+          align="center"
+          className="w-15rem"
+          body={BodyCNPJ}
         />
         <Column
           hidden={!actions ? true : false}

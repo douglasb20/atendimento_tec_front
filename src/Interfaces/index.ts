@@ -14,19 +14,13 @@ export type Shape<Fields = any> = {
   [Key in keyof Fields]: AnySchema<Partial<Fields[Key]>>;
 };
 
-export interface JWTToken {
-  sub: string;
-  iss: string;
-  authorities: string[];
-  aud: string;
-  nbf: number;
-  user_id: string;
-  produtos: string[];
-  scope: string[];
-  cpf: string;
+export type JWTToken = {
+  id: number;
   name: string;
-  exp: number;
+  email: string;
+  lastlogin_at: string;
   iat: number;
+  exp: number;
 }
 
 export interface IResponseError {
@@ -76,14 +70,15 @@ export type ContactTable = {
 
 export interface AtendimentosResponse {
   id: number;
-  clients_id: number;
-  contacts_id: number;
-  users_id: number;
+  client_id: number;
+  contact_id: number;
+  user_id: number;
   data_referencia: string;
   hora_inicio: string;
   hora_fim: string;
-  comentario: null;
-  tipo_entrada: string;
+  comentario: string;
+  tipo_entrada: "T" | "S";
+  esta_pago: number;
   atendimento_status_id: number;
   duration: string;
   cli_nome: string;
@@ -93,4 +88,25 @@ export interface AtendimentosResponse {
   contact_nome: string;
   contact_telefone: string;
   status_descricao: string;
+  atendimentosServicos: AtendimentoServicos[]
+}
+export interface AtendimentoServicos {
+  id: number;
+  id_atendimento: number;
+  id_service: number;
+  valor_cobrado: string;
+  service: IServiceResponse;
+}
+
+export interface IServiceResponse {
+  id: number;
+  name: string;
+  valor_servico: string;
+  created_at: string;
+  status: number;
+}
+
+export interface IAtendimentoStatus {
+  id: number;
+  descricao: string;
 }

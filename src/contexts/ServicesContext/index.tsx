@@ -1,5 +1,8 @@
 'use client';
-import { Reducer, createContext, useContext, useReducer } from 'react';
+import { Reducer, createContext, useContext, useEffect, useReducer } from 'react';
+import { addLocale, locale } from 'primereact/api';
+
+import ptBR from '@/constants/pt-br.json';
 
 export const ServiceContext = createContext({});
 
@@ -52,6 +55,11 @@ export function ServiceProvider({ children }: { children: React.ReactNode }) {
       },
     },
   );
+
+  useEffect(() => {
+    addLocale('pt-br', ptBR['pt-br']);
+    locale('pt-br');
+  }, []);
 
   return (
     <>

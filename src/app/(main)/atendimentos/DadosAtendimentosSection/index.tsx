@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { PrimeIcons } from 'primereact/api';
 import { useRouter } from 'next/navigation';
 
-import { AtendimentosResponse } from '@/Interfaces';
+import { AtendimentosResponse, IUsuariosResponse } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { IActionTable } from '@/components/AcoesDataTable';
@@ -11,8 +11,14 @@ import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import DtAtendimento from './DtAtendimentos';
 
-export default function DadosClientesSection() {
-  const [atendimentos, setAtendimentos] = useState([]);
+type DadosAtendimentoProps = {
+  data: AtendimentosResponse[];
+  users: IUsuariosResponse[]
+};
+
+export default function DadosAtendimentoSection({ data, users }: DadosAtendimentoProps) {
+  const [atendimentos, setAtendimentos] = useState(data || []);
+  const [user_id, setUserId] = useState(users[0].id);
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
@@ -23,7 +29,7 @@ export default function DadosClientesSection() {
       label: 'Adicionar atendimento',
       // @ts-ignore
       icon: PrimeIcons.FILE_EDIT,
-      action: () => router.push('/clientes/form/'),
+      action: () => router.push('/atendimentos/form/'),
     },
   ];
 
@@ -32,24 +38,24 @@ export default function DadosClientesSection() {
       label: 'Editar atendimento',
       tooltip: 'Editar atendimento',
       icon: 'pi pi-fw pi-user-edit',
-      command: (data) => router.push('/clientes/form/' + data.id),
+      bgcolor: 'primary py-2',
+      command: (data) => router.push('/atendimentos/form/' + data.id),
     },
     {
       label: 'Excluir atendimento',
       tooltip: 'Excluir atendimento',
       icon: 'pi pi-fw pi-times',
-      bgcolor: 'danger',
-      command: (data) => ConfirmaAcao("Confirma remover este atendimento?", RemoverCliente, data),
+      bgcolor: 'danger py-2',
+      command: (data) => ConfirmaAcao('Confirma remover este atendimento?', RemoverAtendimento, data),
     },
   ];
 
-  const GetAtendimentos = async () => {
+  const ReloadAtendimentos = async (): Promise<void> => {
     try {
       setLoading(true);
-      const data = await FetchReq<AtendimentosResponse[]>('ListarAtendimentos');
+      const data = await FetchReq<AtendimentosResponse[]>('BuscarAtendimentoUserId', [user_id]);
       setAtendimentos(data);
     } catch (err) {
-      console.log(err);
       CatchAlerta(err, 'Erro ao consultar atendimentos');
     } finally {
       setLoading(false);
@@ -57,21 +63,21 @@ export default function DadosClientesSection() {
     }
   };
 
-  const RemoverCliente = async (data: AtendimentosResponse) => {
+  const RemoverAtendimento = async (data: AtendimentosResponse): Promise<void> => {
     try {
       setLoading(true);
-      await FetchReq('RemoverCliente', [data.id]);
+      await FetchReq('RemoverAtendimento', [data.id]);
       await sleep(1);
       window.location.reload();
     } catch (err) {
       setLoading(false);
-      CatchAlerta(err, "Erro ao remover cliente.")
+      CatchAlerta(err, 'Erro ao remover atendimento.');
     }
-  }
+  };
 
   useEffect(() => {
-    GetAtendimentos();
-  }, []);
+    setRendered(true);
+  },[])
   return (
     rendered && (
       <>

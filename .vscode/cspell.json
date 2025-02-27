@@ -1,0 +1,48 @@
+{
+  "version": "0.2",
+  "ignoreWords": [
+    "inputicon",
+    "inputtext",
+    "inputswitch",
+    "layoutcontext",
+    "iconfield",
+    "inputmask",
+    "menutheme",
+    "primarycolor",
+    "flipleft",
+    "keyfilter",
+    "swal",
+    "sweetalert2",
+    "labelplus",
+    "topbar",
+    "menubutton",
+    "mousetrack",
+    "mousetracktop",
+    "testid",
+    "datatable",
+    "gridlines",
+    "comentario",
+    "firstname",
+    "acao",
+    "ipdf",
+    "opss",
+    "appconfig",
+    "configuracoes",
+    "configuracao",
+    "usuario",
+    "usuarios"
+  ],
+  "caseSensitive": true,
+  "ignorePaths": [
+    "**/.env",
+    "**/.env.*",
+    "**/Readme.md",
+    "**/package.json"
+  ],
+  "words": [
+    "DATEBR",
+    "servico",
+    "servicos",
+    "Servicos"
+  ]
+}

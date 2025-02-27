@@ -10,6 +10,9 @@ const nextConfig = {
   publicRuntimeConfig: {
     contextPath: '',
   },
+  sassOptions: {
+    silenceDeprecations: ['legacy-js-api'],
+  },
   env: {
     URL_ENDPOINT: process.env.URL_ENDPOINT,
   },

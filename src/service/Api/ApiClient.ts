@@ -1,4 +1,3 @@
-'use client';
 import axios from 'axios';
 import { parseCookies } from 'nookies';
 
@@ -8,8 +7,35 @@ interface ILoginResp {
   access_token: string;
 }
 
+export const ListUrl = {
+  ListarClientes: { url: '/clients', method: 'GET' },
+  CriarCliente: { url: '/clients', method: 'POST' },
+  AtualizarCliente: { url: '/clients/{{client_id}}', method: 'PATCH' },
+  RemoverCliente: { url: '/clients/{{client_id}}', method: 'DELETE' },
+  BuscarClienteId: { url: '/clients/{{client_id}}', method: 'GET' },
+  BuscarContatoClientId : {url: '/clients/{{client_id}}/contact', method: 'GET'},
+
+  ListarUsuarios: { url: '/users', method: 'GET' },
+  AdicionarUsuario: { url: '/users', method: 'POST' },
+  AtualizarUsuario: { url: '/users/{{user_id}}', method: 'PATCH' },
+  RemoverUsuario: { url: '/users/{{user_id}}', method: 'DELETE' },
+
+  ListarAtendimentos: { url: '/atendimentos', method: 'GET' },
+  ListarAtendimentoStatus: { url: '/atendimentos/status', method: 'GET' },
+  BuscarAtendimento: { url: '/atendimentos/{{id}}', method: 'GET' },
+  BuscarAtendimentoUserId: { url: '/atendimentos/get_by_user/{{user_id}}', method: 'GET' },
+  AdicionarAtendimento: { url: '/atendimentos', method: 'POST' },
+  AtualizarAtendimento: { url: '/atendimentos/{{user_id}}', method: 'PATCH' },
+  RemoverAtendimento: { url: '/atendimentos/{{user_id}}', method: 'DELETE' },
+
+  ListarServicos: { url: '/servicos', method: 'GET' },
+  
+  ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
+  RemoveContact: { url: '/clients/{{client_id}}/contact/{{contact_id}}', method: 'DELETE' },
+};
+
 /**
- * Função para transformar url com variavel na string
+ * Função para transformar url com variável na string
  * @param {string} url url que será ajeitado
  * @param {string[]} params dados que vai ajeitar o url
  */
@@ -22,7 +48,7 @@ export const AjeitaUrl = (url, params) => {
   }
 
   if (paramsUrl.length !== params.length) {
-    throw new Error('Quantidade de parametros não corresponde com parametros do url');
+    throw new Error('Quantidade de parâmetros não corresponde com parâmetros do url');
   }
 
   paramsUrl.forEach((val, key) => {
@@ -52,21 +78,6 @@ export default function ApiClient() {
     });
   };
 
-  const ListUrl = {
-    ListarClientes: { url: '/clients', method: 'GET' },
-    CriarCliente: { url: '/clients', method: 'POST' },
-    AtualizarCliente: { url: '/clients/{{client_id}}', method: 'PATCH' },
-    RemoverCliente: { url: '/clients/{{client_id}}', method: 'DELETE' },
-    BuscarClienteId: { url: '/clients/{{client_id}}', method: 'GET' },
-    ListarUsuarios: { url: '/users', method: 'GET' },
-    AdicionarUsuario: { url: '/users', method: 'POST' },
-    AtualizarUsuario: { url: '/users/{{user_id}}', method: 'PATCH' },
-    RemoverUsuario: { url: '/users/{{user_id}}', method: 'DELETE' },
-    ListarAtendimentos: {url: '/atendimentos', method: 'GET'},
-    ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
-    RemoveContact: { url: '/clients/{{client_id}}/contact/{{contact_id}}', method: 'DELETE' },
-  } as const;
-
   /**
    * Função para retornar dados das API's
    */
@@ -74,10 +85,10 @@ export default function ApiClient() {
     props:
       | keyof typeof ListUrl
       | {
-          endpoint: keyof typeof ListUrl;
-          variables?: (string | number)[];
-          body?: unknown;
-        },
+        endpoint: keyof typeof ListUrl;
+        variables?: (string | number)[];
+        body?: unknown;
+      },
     vars: (string | number)[] = [],
   ): Promise<T> => {
     if (typeof props === 'string') {

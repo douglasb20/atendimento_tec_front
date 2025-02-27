@@ -17,7 +17,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           field="data_referencia"
           header="Data"
           align="center"
-          body={BodyDateOnly}
+          // body={BodyDateOnly}
         />
         <Column
           field="cli_cnpj"

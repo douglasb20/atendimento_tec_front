@@ -12,9 +12,10 @@
       "glimmer-ts",
       "glimmer-js"
     ],
-    "gitlens.ai.experimental.generateCommitMessage.enabled": false,
+    "gitlens.ai.generateCommitMessage.enabled": false,
     "breadcrumbs.enabled": true,
     "explorer.fileNesting.enabled": true,
+    "typescript.referencesCodeLens.enabled": true,
     "explorer.fileNesting.patterns": {
       "*.ts": "${capture}.js",
       "*.js": "${capture}.js.map, ${capture}.min.js, ${capture}.d.ts",

@@ -91,10 +91,10 @@ function AcoesDataTable<T>({ actions, rowData }: { actions: IActionTable<T>[]; r
 export default AcoesDataTable;
 
 export const BodyCurrency = (data: any, options: ColumnBodyOptions) =>
-  data[options.field] && FormatCurrency(data[options.field]);
+  data[options.field] && FormatCurrency(data[options.field], 'currency');
 
 export const BodyPercentage = (data: any, options: ColumnBodyOptions) =>
-  data[options.field] && FormatCurrency(data[options.field], 'currency');
+  data[options.field] && FormatCurrency(data[options.field] / 100, 'percent');
 
 export const BodyDecimal = (data: any, options: ColumnBodyOptions) =>
   data[options.field] && FormatCurrency(data[options.field], 'decimal');
@@ -106,4 +106,4 @@ export const BodyDateAndTime = (data: any, options: ColumnBodyOptions) =>
   data[options.field] && DateToBR(data[options.field], 'hm');
 
 export const BodyCNPJ = (data: any, options: ColumnBodyOptions) =>
-  Mask(data[options.field], "##.###.###/####-##");
+  data[options.field] && Mask(data[options.field], '##.###.###/####-##');

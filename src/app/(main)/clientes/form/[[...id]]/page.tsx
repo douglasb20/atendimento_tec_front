@@ -84,17 +84,18 @@ export default function FormClient() {
 
   const acoesTable: IActionTable<ContactTable>[] = [
     {
-      label: 'Editar cliente',
-      tooltip: 'Editar cliente',
+      label: 'Editar contato',
+      tooltip: 'Editar contato',
       icon: 'pi pi-fw pi-user-edit',
+      bgcolor: 'primary py-2',
       command: (data) => AbrirModalForm(data),
     },
     {
-      label: 'Excluir cliente',
-      tooltip: 'Excluir cliente',
+      label: 'Excluir contato',
+      tooltip: 'Excluir contato',
       icon: 'pi pi-fw pi-times',
-      bgcolor: 'danger',
-      command: (data) => ConfirmaAcao('Deseja remover este contato?', RemoveBeneficiario, data),
+      bgcolor: 'danger py-2',
+      command: (data) => ConfirmaAcao('Deseja remover este contato?', RemoveContato, data),
     },
   ];
 
@@ -128,7 +129,7 @@ export default function FormClient() {
     closeModalContact();
   };
 
-  const RemoveBeneficiario = async (fields: ContactTable) => {
+  const RemoveContato = async (fields: ContactTable) => {
     try {
       let editContact: ContactTable[] = [];
       if (fields.tipo !== 'new') {

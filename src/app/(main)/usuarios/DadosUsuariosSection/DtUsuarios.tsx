@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { Column } from 'primereact/column';
 
-import AcoesDataTable from '@/components/AcoesDataTable';
+import AcoesDataTable, { BodyCurrency } from '@/components/AcoesDataTable';
 import DataTableCustom from '@/components/DataTableCustom';
 import { DateToBR } from '@/service/Util';
 import { IUsuariosResponse } from '@/Interfaces';
@@ -28,6 +28,12 @@ const DtUsuarios = ({ actions, ...props }) => {
           field="email"
           header="Email"
           alignHeader="center"
+        />
+        <Column
+          field="valor_hora"
+          header="Valor hora"
+          align="center"
+          body={BodyCurrency}
         />
         <Column
           field="lastlogin_at"

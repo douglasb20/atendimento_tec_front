@@ -6,7 +6,7 @@ import { ControllerFieldState } from 'react-hook-form';
 import { parse, parseISO, format, add, sub, Duration, toDate } from 'date-fns';
 import { isAxiosError, AxiosError } from 'axios';
 import { ptBR } from 'date-fns/locale';
-import { IResponseError, JWTToken } from '@/Interfaces';
+import { IResponseError } from '@/Interfaces';
 
 interface IDateToBr {
   (
@@ -327,43 +327,43 @@ export const FormatCurrency = (value, type: 'currency' | 'decimal' | 'percent' =
  * @returns {string} retorno com a data formatado
  */
 export const DateToBR: IDateToBr = (date, formatDate = 'P', addDate = null, subDate = null) => {
-  let dateFormated: Date;
+  let dateFormatted: Date;
 
   if (typeof date == 'undefined') return date;
 
   switch (true) {
     case String(date).includes('/'):
-      dateFormated = parse(date as string, 'dd/MM/yyyy', new Date());
+      dateFormatted = parse(date as string, 'dd/MM/yyyy', new Date());
       break;
     case date instanceof Date:
-      dateFormated = date as Date;
+      dateFormatted = date as Date;
       break;
     case typeof date == 'number':
       if (String(date as number).length === 10) {
-        dateFormated = toDate((date as number) * 1000);
+        dateFormatted = toDate((date as number) * 1000);
       } else {
-        dateFormated = toDate(date as number);
+        dateFormatted = toDate(date as number);
       }
       break;
     default:
       if ((date as string).split(' ').length > 1 || (date as string).includes('T')) {
-        dateFormated = parseISO(date as string);
+        dateFormatted = parseISO(date as string);
       } else {
-        dateFormated = parseISO((date as string) + ' 00:00:00');
+        dateFormatted = parseISO((date as string) + ' 00:00:00');
       }
   }
 
   if (addDate !== null) {
-    dateFormated = add(dateFormated, addDate);
+    dateFormatted = add(dateFormatted, addDate);
   }
   if (subDate !== null) {
-    dateFormated = sub(dateFormated, subDate);
+    dateFormatted = sub(dateFormatted, subDate);
   }
 
   formatDate = formatDate.toLocaleLowerCase() === 'dh' ? 'P HH:mm:ss' : formatDate;
 
-  const newFormated = format(dateFormated, formatDate, { locale: ptBR });
-  return newFormated;
+  const newFormatted = format(dateFormatted, formatDate, { locale: ptBR });
+  return newFormatted;
 };
 
 export const ValidaCPF = (cpf: string): boolean => {

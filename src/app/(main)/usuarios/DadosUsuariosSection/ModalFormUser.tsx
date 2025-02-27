@@ -83,7 +83,7 @@ const ModalFormUser = (props: ModalProps) => {
       const dataPost = {
         name: fields.name,
         email: fields.email,
-        valor_hora: fields.valor_hora,
+        valor_hora: fields.valor_hora.toFixed(2),
       }
       if (!data?.id) {
         dataPost['password'] = fields.senha

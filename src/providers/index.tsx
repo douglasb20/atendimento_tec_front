@@ -38,7 +38,13 @@ const GeneralProvider = ({ children }) => {
               className: 'p-inputtext-sm',
             },
           },
+          dropdown: {
+            root: {
+              className: 'p-inputtext-sm',
+            },
+          },
         },
+        locale: 'pt-br',
       }}
     >
       <OthersProvider>{children}</OthersProvider>

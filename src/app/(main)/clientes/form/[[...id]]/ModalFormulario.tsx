@@ -90,6 +90,7 @@ function ModalFormulario(props: ModalProps) {
                 <InputText
                   id={field.name}
                   {...field}
+                  value={field?.value || ""}
                   placeholder="Nome do contato"
                   autoComplete='off'
                 />
@@ -113,8 +114,9 @@ function ModalFormulario(props: ModalProps) {
                   {...field}
                   placeholder="(00) 0000-0000"
                   mask={
-                    field.value.replace(/\D/g, '').length > 10 ? Masks.CELULAR : Masks.FIXO_OPCIONAL
+                    field?.value?.replace(/\D/g, '').length > 10 ? Masks.CELULAR : Masks.FIXO_OPCIONAL
                   }
+                  value={field?.value || ""}
                 />
                 {getFormErrorMessage(fieldState)}
               </>
