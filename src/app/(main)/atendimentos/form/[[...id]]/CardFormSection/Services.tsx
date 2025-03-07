@@ -1,4 +1,4 @@
-import { useFieldArray, useFormContext, Controller } from 'react-hook-form';
+import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import { AtendimentoFormType } from '.';
 import { useEffect, useState } from 'react';
@@ -19,7 +19,7 @@ type ServicesSectionProps = {
 export default function ServicesSection(props: ServicesSectionProps) {
   const { services } = props;
   const [inputService, setInputService] = useState({
-    id_service: -1,
+    service_id: -1,
     valor_cobrado: 0,
   });
   const { control, watch } = useFormContext<AtendimentoFormType>();
@@ -31,32 +31,32 @@ export default function ServicesSection(props: ServicesSectionProps) {
 
   const onChangeServiceDD = (id: number): void => {
     const service = services.find((e) => e.id === id);
-    setInputService({ id_service: id, valor_cobrado: +service.valor_servico });
+    setInputService({ service_id: id, valor_cobrado: +service.valor_servico });
   };
 
   const onUpdateService = (id: number, valor_cobrado: string): void => {
-    setInputService({ id_service: id, valor_cobrado: +valor_cobrado });
+    setInputService({ service_id: id, valor_cobrado: +valor_cobrado });
   };
 
   const onAddService = (): void => {
-    const service = fields.find((e) => e.id_service === inputService.id_service);
+    const service = fields.find((e) => e.service_id === inputService.service_id);
 
     if (!service) {
       append({
         id: null,
-        id_atendimento: watch('id'),
+        atendimento_id: watch('id'),
         service: null,
-        id_service: inputService.id_service,
+        service_id: inputService.service_id,
         valor_cobrado: inputService.valor_cobrado.toString(),
       });
     } else {
-      const index = fields.findIndex((e) => e.id_service === inputService.id_service);
+      const index = fields.findIndex((e) => e.service_id === inputService.service_id);
       update(index, {
         ...service,
         valor_cobrado: inputService.valor_cobrado.toString(),
       });
     }
-    setInputService({ id_service: -1, valor_cobrado: 0 });
+    setInputService({ service_id: -1, valor_cobrado: 0 });
   };
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function ServicesSection(props: ServicesSectionProps) {
         <Dropdown
           options={services.map((e) => ({ label: e.name, value: e.id }))}
           filter
-          value={inputService.id_service}
+          value={inputService.service_id}
           onChange={(e) => onChangeServiceDD(e.value)}
         />
       </div>
@@ -85,6 +85,7 @@ export default function ServicesSection(props: ServicesSectionProps) {
       </div>
       <div className="col-12 md:col-4">
         <Button
+          disabled={inputService.service_id === -1}
           label="Adicionar serviço"
           onClick={onAddService}
         />
@@ -94,8 +95,8 @@ export default function ServicesSection(props: ServicesSectionProps) {
           <Column
             header="Serviço"
             align="center"
-            body={({ id_service }: AtendimentoServicos) =>
-              services.find((e) => e.id === id_service).name
+            body={({ service_id }: AtendimentoServicos) =>
+              services.find((e) => e.id === service_id).name
             }
           />
           <Column
@@ -106,14 +107,15 @@ export default function ServicesSection(props: ServicesSectionProps) {
           <Column
             header="Ações"
             align="center"
-            body={({ id_service, valor_cobrado }: AtendimentoServicos, options) => (
+            body={({ service_id, valor_cobrado }: AtendimentoServicos, options) => (
               <>
                 <Button
+                  className="py-2"
                   icon={PrimeIcons.PENCIL}
-                  onClick={() => onUpdateService(id_service, valor_cobrado)}
+                  onClick={() => onUpdateService(service_id, valor_cobrado)}
                 />
                 <Button
-                  className="ml-1"
+                  className="ml-1 py-2"
                   severity="danger"
                   icon={PrimeIcons.TIMES}
                   onClick={() => remove(options.rowIndex)}

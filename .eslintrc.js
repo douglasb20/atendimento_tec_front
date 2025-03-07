@@ -6,7 +6,7 @@ module.exports = {
     'prettier',
     'plugin:prettier/recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:@tanstack/eslint-plugin-query/recommended',
+    // 'plugin:@tanstack/eslint-plugin-query/recommended',
   ],
   rules: {
     '@next/next/no-img-element': 'off',

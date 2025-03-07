@@ -18,6 +18,7 @@ type FormSectionProps = {
   tipoEntrada: SelectItem[];
   atendimentoStatus: SelectItem[];
   services: IServiceResponse[];
+  usersOptions: SelectItem[];
 };
 
 const isPaid: SelectItem[] = [
@@ -32,7 +33,7 @@ const isPaid: SelectItem[] = [
 ];
 
 export default function FormSection(props: FormSectionProps) {
-  const { atendimentoStatus, clientOptions, tipoEntrada, services } = props;
+  const { atendimentoStatus, clientOptions, tipoEntrada, services, usersOptions} = props;
   const { setLoading } = useService();
   const { FetchReq } = ApiClient();
   const { control, setValue, watch } = useFormContext<AtendimentoFormType>();
@@ -69,6 +70,30 @@ export default function FormSection(props: FormSectionProps) {
 
   return (
     <>
+      <div className="col-12 md:col-6">
+        <Controller
+          control={control}
+          name="user_id"
+          render={({ field, fieldState }) => (
+            <>
+              <LabelPlus
+                text="Atendente"
+                htmlFor={field.name}
+                required
+              />
+              <Dropdown
+                {...field}
+                disabled
+                invalid={fieldState.invalid}
+                options={usersOptions}
+                filter
+              />
+            </>
+          )}
+        />
+      </div>
+
+      <div className="col-12 md:col-6"></div>
       <div className="col-12 md:col-3">
         <Controller
           control={control}
@@ -173,6 +198,7 @@ export default function FormSection(props: FormSectionProps) {
               />
               <Calendar
                 {...field}
+                value={field.value as Date}
                 invalid={fieldState.invalid}
                 maxDate={new Date()}
               />
@@ -194,6 +220,7 @@ export default function FormSection(props: FormSectionProps) {
               />
               <Calendar
                 {...field}
+                value={field.value as Date}
                 invalid={fieldState.invalid}
                 timeOnly
                 mask="99:99"
@@ -216,6 +243,7 @@ export default function FormSection(props: FormSectionProps) {
               />
               <Calendar
                 {...field}
+                value={field.value as Date}
                 invalid={fieldState.invalid}
                 timeOnly
                 mask="99:99"

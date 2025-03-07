@@ -1,11 +1,8 @@
 import axios from 'axios';
 import { parseCookies } from 'nookies';
+import { ILoginResp } from '@/Interfaces';
 
 const url = process.env.URL_ENDPOINT;
-
-interface ILoginResp {
-  access_token: string;
-}
 
 export const ListUrl = {
   ListarClientes: { url: '/clients', method: 'GET' },
@@ -78,6 +75,17 @@ export default function ApiClient() {
     });
   };
 
+  const apiRefreshToken = async (refreshToken: string): Promise<ILoginResp> => {
+    return new Promise<ILoginResp>(async (res, rej) => {
+      try {
+        const { data } = await req.post<ILoginResp>('/auth/refresh', { refreshToken });
+        res(data);
+      } catch (error) {
+        rej(error);
+      }
+    });
+  };
+
   /**
    * Função para retornar dados das API's
    */
@@ -109,6 +117,7 @@ export default function ApiClient() {
   return {
     req,
     apiLogin,
+    apiRefreshToken,
     FetchReq,
     baseUrl: url,
     token: token,

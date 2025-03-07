@@ -16,6 +16,7 @@ export type Shape<Fields = any> = {
 
 export type JWTToken = {
   id: number;
+  sub: number;
   name: string;
   email: string;
   lastlogin_at: string;
@@ -27,6 +28,12 @@ export interface IResponseError {
   message: string;
   error: string;
   statusCode: number;
+}
+
+export interface ILoginResp {
+  access_token: string;
+  refresh_token: string;
+  expiresIn: number;
 }
 
 export interface IUsuariosResponse {
@@ -88,12 +95,13 @@ export interface AtendimentosResponse {
   contact_nome: string;
   contact_telefone: string;
   status_descricao: string;
+  valor_total: number;
   atendimentosServicos: AtendimentoServicos[]
 }
 export interface AtendimentoServicos {
   id: number;
-  id_atendimento: number;
-  id_service: number;
+  atendimento_id: number;
+  service_id: number;
   valor_cobrado: string;
   service: IServiceResponse;
 }

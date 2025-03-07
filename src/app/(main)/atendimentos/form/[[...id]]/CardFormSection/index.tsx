@@ -6,14 +6,15 @@ import { SelectItem } from 'primereact/selectitem';
 import TitleCards from '@/components/TitleCards';
 import { AtendimentosResponse, IServiceResponse } from '@/Interfaces';
 import FormSection from './Form';
-import { DateToBR } from '@/service/Util';
+import ButtonsForm from './ButtonsForm';
 
 type CardFormProps = {
   data: AtendimentosResponse;
   clientOptions: SelectItem[];
   tipoEntrada: SelectItem[];
   atendimentoStatus: SelectItem[];
-  services: IServiceResponse[],
+  services: IServiceResponse[];
+  usersOptions: SelectItem[];
   user: {
     id: number;
     name: string;
@@ -26,15 +27,15 @@ export type AtendimentoFormType = {
   comentario: string;
   client_id: number;
   contact_id?: number;
-  data_referencia: Date;
-  hora_inicio: Date;
-  hora_fim: Date;
+  data_referencia: Date | string;
+  hora_inicio: Date | string;
+  hora_fim: Date | string;
   user_id?: number;
   user_nome: string;
-  tipo_entrada: "T" | "S";
+  tipo_entrada: 'T' | 'S';
   esta_pago: number;
-  services?: AtendimentosResponse['atendimentosServicos']
-}
+  services?: AtendimentosResponse['atendimentosServicos'];
+};
 
 const defaultForm: AtendimentoFormType = {
   id: null,
@@ -47,29 +48,32 @@ const defaultForm: AtendimentoFormType = {
   hora_fim: null,
   user_id: null,
   user_nome: '',
-  tipo_entrada: "T",
+  tipo_entrada: 'T',
   esta_pago: 0,
-  services: []
-}
+  services: [],
+};
 
 export default function CardFormSection(props: CardFormProps) {
-  const { data, atendimentoStatus, clientOptions, tipoEntrada, services, user } = props;
+  const { data, atendimentoStatus, clientOptions, tipoEntrada, services, usersOptions, user } =
+    props;
   const [render, setRender] = useState(false);
   const methods = useForm<AtendimentoFormType>({
-    reValidateMode: 'onChange'
+    reValidateMode: 'onChange',
   });
 
   useEffect(() => {
-    console.log()
+    console.log();
     methods.reset({
       ...defaultForm,
       ...data,
       user_id: user.id,
       user_nome: user.name,
-      ...(data?.data_referencia && { data_referencia: new Date(`${data.data_referencia} 00:00:00`) }),
+      ...(data?.data_referencia && {
+        data_referencia: new Date(`${data.data_referencia} 00:00:00`),
+      }),
       ...(data?.hora_inicio && { hora_inicio: new Date(`${data.data_referencia} 00:00:00`) }),
-      ...(data?.hora_fim && { hora_fim: new Date(`${data.data_referencia} 00:00:00`) })
-    })
+      ...(data?.hora_fim && { hora_fim: new Date(`${data.data_referencia} 00:00:00`) }),
+    });
     setRender(true);
   }, []);
   return (
@@ -83,11 +87,12 @@ export default function CardFormSection(props: CardFormProps) {
               clientOptions={clientOptions}
               tipoEntrada={tipoEntrada}
               services={services}
+              usersOptions={usersOptions}
             />
+            <ButtonsForm />
           </div>
         </FormProvider>
       </>
     )
   );
 }
-

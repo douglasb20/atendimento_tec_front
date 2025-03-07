@@ -3,6 +3,7 @@
   "ignoreWords": [
     "inputicon",
     "inputtext",
+    "inputtextarea",
     "inputswitch",
     "layoutcontext",
     "iconfield",

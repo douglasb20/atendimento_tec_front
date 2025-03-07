@@ -151,11 +151,12 @@ export default function FormClient() {
   const onSubmitForm = async (fields) => {
     try {
       setLoading(true);
+      
       const newContacts = contacts.map((contact) => {
         return {
           ...(contact.tipo !== 'new' && { id: contact.id }),
           nome_contato: contact.nome_contato,
-          telefone_contato: contact.telefone_contato.replace(/\D/g, ''),
+          telefone_contato: contact?.telefone_contato?.replace(/\D/g, ''),
         };
       });
 

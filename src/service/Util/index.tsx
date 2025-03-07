@@ -1,7 +1,6 @@
 import Swal, { SweetAlertIcon } from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { Button } from 'primereact/button';
-import { redirect } from 'next/navigation';
 import { ControllerFieldState } from 'react-hook-form';
 import { parse, parseISO, format, add, sub, Duration, toDate } from 'date-fns';
 import { isAxiosError, AxiosError } from 'axios';
@@ -42,62 +41,6 @@ const MySwal = withReactContent(
     allowOutsideClick: false,
   }),
 );
-
-/**
- *
- * @param {string} jwt token JWT a ser decodificado
- * @param {object} option um objeto {header : false} pra definir se retorna o header junto
- */
-export function jwtDecode<T = any>(jwt: string, option = { header: false }): T {
-  function b64DecodeUnicode(str) {
-    return decodeURIComponent(
-      atob(str).replace(/(.)/g, function (m, p) {
-        let code = p.charCodeAt(0).toString(16).toUpperCase();
-        if (code.length < 2) {
-          code = '0' + code;
-        }
-        return '%' + code;
-      }),
-    );
-  }
-
-  function decode(str) {
-    let output = str.replace(/-/g, '+').replace(/_/g, '/');
-    switch (output.length % 4) {
-      case 0:
-        break;
-      case 2:
-        output += '==';
-        break;
-      case 3:
-        output += '=';
-        break;
-      default:
-        // eslint-disable-next-line
-        throw 'Illegal base64url string!';
-    }
-
-    try {
-      return b64DecodeUnicode(output);
-    } catch (err) {
-      return atob(output);
-    }
-  }
-
-  let jwtArray = jwt.split('.');
-  let payload = JSON.parse(decode(jwtArray[1]));
-  let currentTime = Math.floor(new Date().getTime() / 1000.0);
-
-  if (currentTime >= payload.exp) {
-    throw new Error('Expired Token');
-  }
-
-  if (option.header) {
-    return JSON.parse(decode(jwtArray[0]));
-  }
-
-  return payload as T;
-}
 
 /**
  * Função para adicionar uma máscara na string

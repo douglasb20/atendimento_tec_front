@@ -4,8 +4,8 @@ import { SelectItem } from 'primereact/selectitem';
 
 import CardFormSection from './CardFormSection';
 import ApiService from '@/service/Api/ApiServer';
-import { AtendimentosResponse, IAtendimentoStatus, IClientResponse, IServiceResponse, JWTToken } from '@/Interfaces';
-import { jwtDecode } from '@/service/Util';
+import { AtendimentosResponse, IAtendimentoStatus, IClientResponse, IServiceResponse, IUsuariosResponse, JWTToken } from '@/Interfaces';
+import { jwtDecode } from 'jwt-decode';
 
 export const metadata: Metadata = {
   title: 'Cadastro de atendimento',
@@ -25,16 +25,18 @@ export default async function FormAtendimentoPage({
   if (id?.length > 0) {
     data = await FetchReq<AtendimentosResponse>('BuscarAtendimento', [id[0]]);
   }
-  const [dataClients, dataAtendimentoStatus, dataServices ] = await Promise.all(
+  const [dataClients, dataAtendimentoStatus, dataServices, dataUsers ] = await Promise.all(
     [
       FetchReq<IClientResponse[]>('ListarClientes'),
       FetchReq<IAtendimentoStatus[]>('ListarAtendimentoStatus'),
       FetchReq<IServiceResponse[]>('ListarServicos'),
+      FetchReq<IUsuariosResponse[]>('ListarUsuarios'),
     ]
   )
 
   const clientOptions: SelectItem[] = dataClients.map((e) => ({ label: e.nome, value: e.id }));
   const atStatusOptions: SelectItem[] = dataAtendimentoStatus.map((e) => ({ label: e.descricao, value: e.id }));
+  const usersOptions: SelectItem[] = dataUsers.map((e) => ({ label: e.name, value: e.id }));
   const tipoEntrada: SelectItem[] = [
     {
       value: "T",
@@ -59,6 +61,7 @@ export default async function FormAtendimentoPage({
           tipoEntrada={tipoEntrada}
           atendimentoStatus={atStatusOptions}
           services={dataServices}
+          usersOptions={usersOptions}
           user={{
             id: tokenDecoded.id,
             name: tokenDecoded.name

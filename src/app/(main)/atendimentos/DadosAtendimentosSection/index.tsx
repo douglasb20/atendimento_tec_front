@@ -10,15 +10,17 @@ import { IActionTable } from '@/components/AcoesDataTable';
 import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import DtAtendimento from './DtAtendimentos';
+import { Dropdown } from 'primereact/dropdown';
 
 type DadosAtendimentoProps = {
   data: AtendimentosResponse[];
-  users: IUsuariosResponse[]
+  users: IUsuariosResponse[];
+  currentUser: number;
 };
 
-export default function DadosAtendimentoSection({ data, users }: DadosAtendimentoProps) {
+export default function DadosAtendimentoSection({ data, users, currentUser }: DadosAtendimentoProps) {
   const [atendimentos, setAtendimentos] = useState(data || []);
-  const [user_id, setUserId] = useState(users[0].id);
+  const [user_id, setUserId] = useState(currentUser);
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
@@ -46,14 +48,16 @@ export default function DadosAtendimentoSection({ data, users }: DadosAtendiment
       tooltip: 'Excluir atendimento',
       icon: 'pi pi-fw pi-times',
       bgcolor: 'danger py-2',
-      command: (data) => ConfirmaAcao('Confirma remover este atendimento?', RemoverAtendimento, data),
+      command: (data) =>
+        ConfirmaAcao('Confirma remover este atendimento?', RemoverAtendimento, data),
     },
   ];
 
-  const ReloadAtendimentos = async (): Promise<void> => {
+  const ReloadAtendimentos = async (id: number): Promise<void> => {
     try {
       setLoading(true);
-      const data = await FetchReq<AtendimentosResponse[]>('BuscarAtendimentoUserId', [user_id]);
+      setUserId(id);
+      const data = await FetchReq<AtendimentosResponse[]>('BuscarAtendimentoUserId', [id]);
       setAtendimentos(data);
     } catch (err) {
       CatchAlerta(err, 'Erro ao consultar atendimentos');
@@ -77,7 +81,7 @@ export default function DadosAtendimentoSection({ data, users }: DadosAtendiment
 
   useEffect(() => {
     setRendered(true);
-  },[])
+  }, []);
   return (
     rendered && (
       <>
@@ -87,6 +91,14 @@ export default function DadosAtendimentoSection({ data, users }: DadosAtendiment
         />
 
         <div className="p-card-content">
+          <div className="col-3 p-fluid mb-2 pl-0">
+            <Dropdown
+              options={users.map((e) => ({ label: e.name, value: e.id }))}
+              filter
+              value={user_id}
+              onChange={(e) => ReloadAtendimentos(e.value)}
+            />
+          </div>
           <DtAtendimento
             actions={acoesTable}
             value={atendimentos}

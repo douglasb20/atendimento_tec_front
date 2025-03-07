@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { cookies } from 'next/headers';
-import { ListUrl } from './ApiClient';
+import { ListUrl,  } from './ApiClient';
+
+import { ILoginResp } from '@/Interfaces';
 
 const url = process.env.URL_ENDPOINT;
 
@@ -31,12 +33,23 @@ export const AjeitaUrl = (url: string, params: (string | number)[]): string => {
 
 export default async function ApiService() {
   const cookiesStore = await cookies();
-  const token = cookiesStore.get('token').value;
+  const token = cookiesStore.get('token')?.value;
 
   const req = axios.create({
     baseURL: url,
     headers: { Authorization: 'Bearer ' + token },
   });
+  
+  const apiRefreshToken = async (refreshToken: string): Promise<ILoginResp> => {
+    return new Promise<ILoginResp>(async (res, rej) => {
+      try {
+        const { data } = await req.post<ILoginResp>('/auth/refresh', { refreshToken });
+        res(data);
+      } catch (error) {
+        rej(error);
+      }
+    });
+  };
 
   /**
    * Função para retornar dados das API's
@@ -69,6 +82,7 @@ export default async function ApiService() {
 
   return {
     req,
+    apiRefreshToken,
     FetchReq,
     baseUrl: url,
     token: token,

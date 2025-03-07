@@ -1,24 +1,27 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { useService } from '@/contexts/ServicesContext';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
-import { IUsuariosResponse } from '@/Interfaces';
-import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import { IActionTable } from '@/components/AcoesDataTable';
+import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import useApi from '@/service/Api/ApiClient';
+import { IUsuariosResponse } from '@/Interfaces';
+
 import DtUsuarios from './DtUsuarios';
 import ModalFormUser from './ModalFormUser';
 
-export default function DadosClientesSection() {
-  const [usuarios, setUsuarios] = useState<IUsuariosResponse[]>([]);
+type DadosUsuariosProps = {
+  data: IUsuariosResponse[];
+};
+
+export default function DadosClientesSection({ data }: DadosUsuariosProps) {
+  const [usuarios, setUsuarios] = useState<IUsuariosResponse[]>(data || []);
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<IUsuariosResponse>(null);
   const [rendered, setRendered] = useState(false);
   const [modalForm, setModalForm] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
-  const router = useRouter();
 
   const ButtonsHeader: IButtonsOthers[] = [
     {
@@ -59,7 +62,6 @@ export default function DadosClientesSection() {
       CatchAlerta(err, 'Erro ao consultar usuários');
     } finally {
       setLoading(false);
-      setRendered(true);
     }
   };
 
@@ -75,7 +77,7 @@ export default function DadosClientesSection() {
   };
 
   useEffect(() => {
-    GetUsers();
+    setRendered(true);
   }, []);
   return (
     rendered && (

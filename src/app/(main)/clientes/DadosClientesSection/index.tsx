@@ -10,8 +10,12 @@ import DtClientes from './DtClientes';
 import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import { IActionTable } from '@/components/AcoesDataTable';
 
-export default function DadosClientesSection() {
-  const [clients, setClients] = useState([]);
+type DadosClientesProps = {
+  data: IClientes[];
+};
+
+export default function DadosClientesSection({ data }: DadosClientesProps) {
+  const [clients, setClients] = useState(data || []);
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
@@ -37,7 +41,7 @@ export default function DadosClientesSection() {
       tooltip: 'Excluir cliente',
       icon: 'pi pi-fw pi-times',
       bgcolor: 'danger',
-      command: (data) => ConfirmaAcao("Confirma remover este cliente?", RemoverCliente, data),
+      command: (data) => ConfirmaAcao('Confirma remover este cliente?', RemoverCliente, data),
     },
   ];
 
@@ -47,27 +51,27 @@ export default function DadosClientesSection() {
       const data = await FetchReq<IClientes[]>('ListarClientes');
       setClients(data);
     } catch (err) {
-      console.log(err);
       CatchAlerta(err, 'Erro ao consultar clientes');
     } finally {
       setLoading(false);
-      setRendered(true);
     }
   };
 
   const RemoverCliente = async (data: IClientes) => {
     try {
-      setLoading(true);
+      setLoading();
       await FetchReq('RemoverCliente', [data.id]);
       await sleep(1);
-      window.location.reload();
+      await GetClients()
     } catch (err) {
-      CatchAlerta(err, "Erro ao remover cliente.")
+      CatchAlerta(err, 'Erro ao remover cliente.');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    GetClients();
+    setRendered(true);
   }, []);
   return (
     rendered && (

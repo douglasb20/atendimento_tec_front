@@ -7,7 +7,7 @@ import ptBR from '@/constants/pt-br.json';
 export const ServiceContext = createContext({});
 
 interface IServiceContext {
-  setLoading?: (state: boolean) => void;
+  setLoading?: (state?: boolean) => void;
   setPdfPreview?: (props: IPDFPreview) => void;
   setModalPasswordVisible?: (state: boolean) => void;
   readonly modalPasswordVisible?: boolean;
@@ -21,7 +21,7 @@ interface IPDFPreview {
 }
 
 export function ServiceProvider({ children }: { children: React.ReactNode }) {
-  const setLoading = (state: boolean) => {
+  const setLoading = (state: boolean = true) => {
     setContexts({ isLoading: state });
   };
 

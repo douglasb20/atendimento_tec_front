@@ -1,8 +1,9 @@
 'use client';
 import { createContext, useContext, useReducer } from 'react';
 import { parseCookies, setCookie, destroyCookie } from 'nookies';
-import { jwtDecode } from '@/service/Util';
+import { jwtDecode } from 'jwt-decode';
 import useApi from '@/service/Api/ApiClient';
+import { JWTToken } from '@/Interfaces';
 
 export const AuthContext = createContext({});
 
@@ -11,29 +12,26 @@ interface IAuthContext {
   logout?: () => Promise<void>;
 }
 
-interface IJwtDecode {
-  id: number;
-  name: string;
-  email: string;
-  iat: number;
-  exp: number;
-}
-
 export function AuthProvider({ children }) {
   const cookies = parseCookies();
   const { apiLogin } = useApi();
 
   const login = async (email: string, password: string) => {
     try {
-      const { access_token } = await apiLogin(email, password);
-      const decodedToken = jwtDecode<IJwtDecode>(access_token);
+      const { access_token, refresh_token } = await apiLogin(email, password);
+      const decodedToken = jwtDecode<JWTToken>(access_token);
+      const decodedRefresh = jwtDecode<Pick<JWTToken, 'exp'>>(refresh_token);
 
       setCookie(null, 'token', access_token, {
-        maxAge: 60 * 60,
+        maxAge: (decodedToken.exp + (60 * 5)) - Math.floor(Date.now() / 1000.0),
+        path: '/',
+      });
+      setCookie(null, 'refresh_token', refresh_token, {
+        maxAge: decodedRefresh.exp - Math.floor(Date.now() / 1000.0),
         path: '/',
       });
       setCookie(null, 'expires_at', decodedToken.exp.toString(), {
-        maxAge: 60 * 60,
+        maxAge: 20000,
         path: '/',
       });
 
