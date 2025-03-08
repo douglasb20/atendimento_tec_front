@@ -19,11 +19,11 @@ export const ListUrl = {
 
   ListarAtendimentos: { url: '/atendimentos', method: 'GET' },
   ListarAtendimentoStatus: { url: '/atendimentos/status', method: 'GET' },
-  BuscarAtendimento: { url: '/atendimentos/{{id}}', method: 'GET' },
-  BuscarAtendimentoUserId: { url: '/atendimentos/get_by_user/{{user_id}}', method: 'GET' },
+  BuscarAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'GET' },
+  BuscarAtendimentoUserId: { url: '/atendimentos/get_by_user/{{atendimento_id}}', method: 'GET' },
   AdicionarAtendimento: { url: '/atendimentos', method: 'POST' },
-  AtualizarAtendimento: { url: '/atendimentos/{{user_id}}', method: 'PATCH' },
-  RemoverAtendimento: { url: '/atendimentos/{{user_id}}', method: 'DELETE' },
+  AtualizarAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'PATCH' },
+  RemoverAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'DELETE' },
 
   ListarServicos: { url: '/servicos', method: 'GET' },
   

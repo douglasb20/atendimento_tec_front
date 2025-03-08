@@ -62,7 +62,7 @@ export default function CardFormSection(props: CardFormProps) {
   });
 
   useEffect(() => {
-    console.log();
+    console.log(data);
     methods.reset({
       ...defaultForm,
       ...data,
@@ -71,8 +71,9 @@ export default function CardFormSection(props: CardFormProps) {
       ...(data?.data_referencia && {
         data_referencia: new Date(`${data.data_referencia} 00:00:00`),
       }),
-      ...(data?.hora_inicio && { hora_inicio: new Date(`${data.data_referencia} 00:00:00`) }),
-      ...(data?.hora_fim && { hora_fim: new Date(`${data.data_referencia} 00:00:00`) }),
+      ...(data?.hora_inicio && { hora_inicio: new Date(`${data.data_referencia} ${data.hora_inicio}`) }),
+      ...(data?.hora_fim && { hora_fim: new Date(`${data.data_referencia} ${data.hora_fim}`) }),
+      ...(data?.atendimentosServicos.length > 0 && { services: data.atendimentosServicos }),
     });
     setRender(true);
   }, []);

@@ -1,7 +1,7 @@
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import { AtendimentoFormType } from '.';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Divider } from 'primereact/divider';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
@@ -59,9 +59,6 @@ export default function ServicesSection(props: ServicesSectionProps) {
     setInputService({ service_id: -1, valor_cobrado: 0 });
   };
 
-  useEffect(() => {
-    remove();
-  },[])
   return (
     <>
       <div className="col-12">

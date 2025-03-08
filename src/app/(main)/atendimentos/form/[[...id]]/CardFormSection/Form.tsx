@@ -158,6 +158,10 @@ export default function FormSection(props: FormSectionProps) {
                 {...field}
                 invalid={fieldState.invalid}
                 options={tipoEntrada}
+                onChange={(e) => {
+                  field.onChange(e);
+                  setValue('services', []);
+                }}
               />
             </>
           )}

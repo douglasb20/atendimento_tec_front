@@ -1,5 +1,7 @@
 import { Button } from 'primereact/button';
 import { useFormContext } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
+
 import { useService } from '@/contexts/ServicesContext';
 import { AlertaRedireciona, CatchAlerta, DateToBR } from '@/service/Util';
 import ApiClient from '@/service/Api/ApiClient';
@@ -9,7 +11,7 @@ export default function ButtonsForm() {
   const { handleSubmit } = useFormContext<AtendimentoFormType>();
   const { setLoading } = useService();
   const { FetchReq } = ApiClient();
-
+  const router = useRouter();
 
   const onSubmit = async (fields: AtendimentoFormType) => {
     try {
@@ -33,15 +35,24 @@ export default function ButtonsForm() {
         tipo_entrada: fields.tipo_entrada,
         esta_pago: fields.esta_pago,
         atendimento_status_id: fields.atendimento_status_id,
-        atendimentosServicos: fields.services.map(e => ({service_id: e.service_id, valor_cobrado: e.valor_cobrado})),
+        atendimentosServicos: fields.services.map((e) => ({
+          service_id: e.service_id,
+          valor_cobrado: e.valor_cobrado,
+        })),
       };
       if (fields.id === null) {
         await FetchReq({
           endpoint: 'AdicionarAtendimento',
-          body: dataPost
+          body: dataPost,
+        });
+      } else {
+        await FetchReq({
+          endpoint: 'AtualizarAtendimento',
+          body: dataPost,
+          variables: [fields.id],
         });
       }
-      AlertaRedireciona("Atendimento salvo com sucesso", '/atendimentos', 'success');
+      AlertaRedireciona('Atendimento salvo com sucesso', '/atendimentos', 'success');
     } catch (err) {
       CatchAlerta(err, 'Erro ao salvar atendimento');
     } finally {
@@ -55,6 +66,7 @@ export default function ButtonsForm() {
         label="Voltar"
         outlined
         severity="warning"
+        onClick={() => router.push('/atendimentos')}
       />
       <Button
         className="w-auto"
