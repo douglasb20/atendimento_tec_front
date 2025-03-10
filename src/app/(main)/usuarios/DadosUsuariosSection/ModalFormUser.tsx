@@ -10,8 +10,8 @@ import { IUsuariosResponse, Shape } from '@/Interfaces';
 import LabelPlus from '@/components/LabelPlus';
 import InputDecimal from '@/components/InputDecimal';
 import { useService } from '@/contexts/ServicesContext';
-import { Alerta, CatchAlerta, getFormErrorMessage, msgRequired } from '@/service/Util';
-import useApi from '@/service/Api/ApiClient'
+import { AlertaCallback, CatchAlerta, getFormErrorMessage, msgRequired } from '@/service/Util';
+import ApiClient from '@/service/Api/ApiClient';
 
 type ModalProps = {
   visible: boolean;
@@ -35,14 +35,15 @@ const defaultForm: UsuarioForm = {
 
 const ModalFormUser = (props: ModalProps) => {
   const { visible, onHide, data, onConfirm } = props;
-  const {FetchReq, } = useApi()
+  const { FetchReq } = ApiClient();
 
   const schema = yup.object<yup.AnyObject, Shape<UsuarioForm>>({
     name: yup.string().required(msgRequired),
     email: yup.string().required(msgRequired).email('Email incorreto'),
     senha: yup.string().when('id', {
       is: () => data?.id === undefined,
-      then: (schema) => schema.required(msgRequired).min(4, "Senha precisa ter mais de 4 caracteres"),
+      then: (schema) =>
+        schema.required(msgRequired).min(4, 'Senha precisa ter mais de 4 caracteres'),
       otherwise: (schema) => schema.notRequired(),
     }),
     confirma_senha: yup
@@ -50,7 +51,8 @@ const ModalFormUser = (props: ModalProps) => {
       .oneOf([yup.ref('senha')], 'Senha não coincide')
       .when('senha', {
         is: () => data?.id === undefined,
-        then: (schema) => schema.required(msgRequired).min(4, "Campo precisa ter no mínimo 4 caracteres"),
+        then: (schema) =>
+          schema.required(msgRequired).min(4, 'Campo precisa ter no mínimo 4 caracteres'),
         otherwise: (schema) => schema.notRequired(),
       }),
   });
@@ -59,7 +61,7 @@ const ModalFormUser = (props: ModalProps) => {
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
   });
-  const { setLoading } = useService()
+  const { setLoading } = useService();
 
   const modalFooter = () => {
     return (
@@ -84,28 +86,27 @@ const ModalFormUser = (props: ModalProps) => {
         name: fields.name,
         email: fields.email,
         valor_hora: Number(fields.valor_hora).toFixed(2),
-      }
+      };
       if (!data?.id) {
-        dataPost['password'] = fields.senha
+        dataPost['password'] = fields.senha;
         await FetchReq({
           endpoint: 'AdicionarUsuario',
-          body: dataPost
-        })
+          body: dataPost,
+        });
       } else {
         if (fields.senha !== '') {
-          dataPost['password'] = fields.senha
+          dataPost['password'] = fields.senha;
         }
         await FetchReq({
           endpoint: 'AtualizarUsuario',
           body: dataPost,
-          variables: [fields?.id]
-        })
+          variables: [fields?.id],
+        });
       }
-      Alerta("Usuário salvo com sucesso!", 'Sucesso!', 'success');
-      onConfirm && onConfirm();
+      AlertaCallback('Usuário salvo com sucesso!', () => onConfirm && onConfirm(), 'success');
       onHide && onHide();
     } catch (err) {
-      CatchAlerta(err, 'Erro ao salvar usuário')
+      CatchAlerta(err, 'Erro ao salvar usuário');
     } finally {
       setLoading(false);
     }
@@ -116,7 +117,7 @@ const ModalFormUser = (props: ModalProps) => {
       reset({
         ...defaultForm,
         ...data,
-        ...(data?.valor_hora === null && { valor_hora: 0.00 }),
+        ...(data?.valor_hora === null && { valor_hora: 0.0 }),
       });
     }
   }, [visible]);
@@ -210,7 +211,7 @@ const ModalFormUser = (props: ModalProps) => {
                   <InputText
                     id={field.name}
                     {...field}
-                    type='password'
+                    type="password"
                   />
                   {getFormErrorMessage(fieldState)}
                 </>
@@ -231,7 +232,7 @@ const ModalFormUser = (props: ModalProps) => {
                   <InputText
                     id={field.name}
                     {...field}
-                    type='password'
+                    type="password"
                   />
                   {getFormErrorMessage(fieldState)}
                 </>
@@ -245,4 +246,3 @@ const ModalFormUser = (props: ModalProps) => {
 };
 
 export default ModalFormUser;
-

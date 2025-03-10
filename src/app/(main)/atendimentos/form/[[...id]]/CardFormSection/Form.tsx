@@ -6,7 +6,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { AtendimentoFormType } from '.';
 import LabelPlus from '@/components/LabelPlus';
 import { useService } from '@/contexts/ServicesContext';
-import { CatchAlerta } from '@/service/Util';
+import { CatchAlerta, getFormErrorMessage } from '@/service/Util';
 import ApiClient from '@/service/Api/ApiClient';
 import { IContactResponse, IServiceResponse } from '@/Interfaces';
 import { Calendar } from 'primereact/calendar';
@@ -88,6 +88,7 @@ export default function FormSection(props: FormSectionProps) {
                 options={usersOptions}
                 filter
               />
+              {getFormErrorMessage(fieldState)}
             </>
           )}
         />
@@ -116,6 +117,7 @@ export default function FormSection(props: FormSectionProps) {
                 }}
                 filter
               />
+              {getFormErrorMessage(fieldState)}
             </>
           )}
         />
@@ -163,6 +165,7 @@ export default function FormSection(props: FormSectionProps) {
                   setValue('services', []);
                 }}
               />
+              {getFormErrorMessage(fieldState)}
             </>
           )}
         />
@@ -184,6 +187,7 @@ export default function FormSection(props: FormSectionProps) {
                 invalid={fieldState.invalid}
                 options={atendimentoStatus}
               />
+              {getFormErrorMessage(fieldState)}
             </>
           )}
         />
@@ -206,6 +210,7 @@ export default function FormSection(props: FormSectionProps) {
                 invalid={fieldState.invalid}
                 maxDate={new Date()}
               />
+              {getFormErrorMessage(fieldState)}
             </>
           )}
         />
@@ -229,6 +234,7 @@ export default function FormSection(props: FormSectionProps) {
                 timeOnly
                 mask="99:99"
               />
+              {getFormErrorMessage(fieldState)}
             </>
           )}
         />
@@ -252,6 +258,7 @@ export default function FormSection(props: FormSectionProps) {
                 timeOnly
                 mask="99:99"
               />
+              {getFormErrorMessage(fieldState)}
             </>
           )}
         />
@@ -273,6 +280,7 @@ export default function FormSection(props: FormSectionProps) {
                 invalid={fieldState.invalid}
                 options={isPaid}
               />
+              {getFormErrorMessage(fieldState)}
             </>
           )}
         />
@@ -293,7 +301,9 @@ export default function FormSection(props: FormSectionProps) {
                 {...field}
                 invalid={fieldState.invalid}
                 autoResize
+                className='pb-0 mb-0'
               />
+              {getFormErrorMessage(fieldState)}
             </>
           )}
         />

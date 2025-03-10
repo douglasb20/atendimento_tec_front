@@ -5,6 +5,15 @@ import { PUBLIC_ROUTES } from './constants';
 import { jwtDecode } from 'jwt-decode';
 import { JWTToken } from './Interfaces';
 
+const isPublicRoute = (route: string) => {
+  return PUBLIC_ROUTES.some((publicRoute) => {
+    if (publicRoute instanceof RegExp) {
+      return publicRoute.test(route);
+    }
+    return publicRoute === route;
+  });
+};
+
 export async function middleware(request: NextRequest) {
   const { nextUrl } = request;
   const { apiRefreshToken } = await ApiService();
@@ -42,7 +51,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Verifica se a roda que está passando é publica
-  if (!PUBLIC_ROUTES.includes(path)) {
+  if (!isPublicRoute(path)) {
     // verifica se está autenticado,
     // se não tiver, redireciona para tela de login
     if (!autenticado) {

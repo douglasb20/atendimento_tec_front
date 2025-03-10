@@ -1,6 +1,7 @@
 import axios from 'axios';
-import { parseCookies } from 'nookies';
-import { ILoginResp } from '@/Interfaces';
+import { parseCookies, setCookie } from 'nookies';
+import { jwtDecode } from 'jwt-decode';
+import { ILoginResp, JWTToken } from '@/Interfaces';
 
 const url = process.env.URL_ENDPOINT;
 
@@ -10,7 +11,7 @@ export const ListUrl = {
   AtualizarCliente: { url: '/clients/{{client_id}}', method: 'PATCH' },
   RemoverCliente: { url: '/clients/{{client_id}}', method: 'DELETE' },
   BuscarClienteId: { url: '/clients/{{client_id}}', method: 'GET' },
-  BuscarContatoClientId : {url: '/clients/{{client_id}}/contact', method: 'GET'},
+  BuscarContatoClientId: { url: '/clients/{{client_id}}/contact', method: 'GET' },
 
   ListarUsuarios: { url: '/users', method: 'GET' },
   AdicionarUsuario: { url: '/users', method: 'POST' },
@@ -26,7 +27,7 @@ export const ListUrl = {
   RemoverAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'DELETE' },
 
   ListarServicos: { url: '/servicos', method: 'GET' },
-  
+
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
   RemoveContact: { url: '/clients/{{client_id}}/contact/{{contact_id}}', method: 'DELETE' },
 };
@@ -61,7 +62,6 @@ export default function ApiClient() {
 
   const req = axios.create({
     baseURL: url,
-    headers: { Authorization: 'Bearer ' + token },
   });
 
   const apiLogin = async (email: string, password: string): Promise<ILoginResp> => {
@@ -86,6 +86,68 @@ export default function ApiClient() {
     });
   };
 
+  const UpdateToken = async (refreshToken: string) => {
+    const { access_token, refresh_token } = await apiRefreshToken(refreshToken);
+    const decodedToken = jwtDecode<JWTToken>(access_token);
+    const decodedRefresh = jwtDecode<Pick<JWTToken, 'exp'>>(refresh_token);
+
+    setCookie(null, 'token', access_token, {
+      maxAge: (decodedToken.exp + (60 * 5)) - Math.floor(Date.now() / 1000.0),
+      path: '/',
+    });
+    setCookie(null, 'refresh_token', refresh_token, {
+      maxAge: decodedRefresh.exp - Math.floor(Date.now() / 1000.0),
+      path: '/',
+    });
+    setCookie(null, 'expires_at', decodedToken.exp.toString(), {
+      maxAge: 20000,
+      path: '/',
+    });
+
+    return access_token
+  }
+
+  const ValidateToken = async (): Promise<string> => {
+    return new Promise(async (res) => {
+      const cookiesStore = parseCookies(null);
+      const refreshToken = cookiesStore['refresh_token'];
+      const now = Math.floor(new Date().getTime() / 1000.0);
+      const expires_at = cookiesStore['expires_at'];
+      const token = cookiesStore['token'];
+
+      if (!token) {
+        const refreshDecoded = jwtDecode<Pick<JWTToken, "exp">>(refreshToken);
+        if (Number(refreshDecoded.exp) >= now) {
+          try {
+            const newToken = await UpdateToken(refreshToken);
+            res(newToken);
+          } catch (err) {
+            window.location.href = "/auth/logout"
+          }
+        }
+      } else {
+        if (Number(expires_at) < now) {
+          if (refreshToken) {
+            const refreshDecoded = jwtDecode<Pick<JWTToken, "exp">>(refreshToken);
+            if (Number(refreshDecoded.exp) >= now) {
+              try {
+                const newToken = await UpdateToken(refreshToken);
+                res(newToken);
+              } catch (err) {
+                console.log('erro', err.message)
+                // window.location.href = "/auth/logout";
+              }
+            }
+          } else {
+            console.log("Aqui");
+            window.location.href = "/auth/logout";
+          }
+        }
+        res(token);
+      }
+    })
+  }
+
   /**
    * Função para retornar dados das API's
    */
@@ -102,6 +164,9 @@ export default function ApiClient() {
     if (typeof props === 'string') {
       props = { endpoint: props, body: null, variables: vars };
     }
+
+    const validatedToken = await ValidateToken();
+
     const { endpoint, body, variables } = props;
     const newUrl = AjeitaUrl(ListUrl[endpoint].url, variables);
 
@@ -109,6 +174,7 @@ export default function ApiClient() {
       url: newUrl,
       method: ListUrl[endpoint].method,
       data: ListUrl[endpoint].method === 'GET' ? null : body,
+      headers: { Authorization: 'Bearer ' + validatedToken },
     });
 
     return data;
@@ -119,7 +185,7 @@ export default function ApiClient() {
     apiLogin,
     apiRefreshToken,
     FetchReq,
+    token,
     baseUrl: url,
-    token: token,
   };
 }

@@ -403,7 +403,7 @@ export const FileToBase64 = (file: File): Promise<string> => {
 };
 
 export const getFormErrorMessage = (state: ControllerFieldState) => {
-  return state.invalid && <small className="p-error">{state.error?.message}</small>;
+  return state.invalid && <small className="p-error pt-0 mt-0">{state.error?.message}</small>;
 };
 
 export const RemoveTZDate = (date: string) => date.replace(/(.000\+00\:00)/g, '').trim();

@@ -1,4 +1,4 @@
-export const PUBLIC_ROUTES = [
+export const PUBLIC_ROUTES: (string | RegExp)[] = [
   '/auth/login',
   '/auth/logout',
   '/auth',

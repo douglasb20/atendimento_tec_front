@@ -5,7 +5,7 @@ import { useService } from '@/contexts/ServicesContext';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { IActionTable } from '@/components/AcoesDataTable';
 import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
-import useApi from '@/service/Api/ApiClient';
+import ApiClient from '@/service/Api/ApiClient';
 import { IUsuariosResponse } from '@/Interfaces';
 
 import DtUsuarios from './DtUsuarios';
@@ -21,7 +21,7 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
   const [rendered, setRendered] = useState(false);
   const [modalForm, setModalForm] = useState(false);
   const { setLoading } = useService();
-  const { FetchReq } = useApi();
+  const { FetchReq } = ApiClient();
 
   const ButtonsHeader: IButtonsOthers[] = [
     {

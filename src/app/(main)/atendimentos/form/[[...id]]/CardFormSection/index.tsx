@@ -2,11 +2,14 @@
 import { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { SelectItem } from 'primereact/selectitem';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import TitleCards from '@/components/TitleCards';
-import { AtendimentosResponse, IServiceResponse } from '@/Interfaces';
+import { AtendimentosResponse, IServiceResponse, Shape } from '@/Interfaces';
 import FormSection from './Form';
 import ButtonsForm from './ButtonsForm';
+import { msgRequired } from '@/service/Util';
 
 type CardFormProps = {
   data: AtendimentosResponse;
@@ -31,7 +34,7 @@ export type AtendimentoFormType = {
   hora_inicio: Date | string;
   hora_fim: Date | string;
   user_id?: number;
-  user_nome: string;
+  user_nome?: string;
   tipo_entrada: 'T' | 'S';
   esta_pago: number;
   services?: AtendimentosResponse['atendimentosServicos'];
@@ -53,16 +56,29 @@ const defaultForm: AtendimentoFormType = {
   services: [],
 };
 
+const schema = yup.object<yup.AnyObject, Shape<AtendimentoFormType>>({
+  atendimento_status_id: yup.number().required(msgRequired),
+  client_id: yup.number().required(msgRequired),
+  contact_id: yup.number().notRequired(),
+  comentario: yup.string().required(msgRequired),
+  data_referencia: yup.mixed().required(msgRequired),
+  hora_inicio: yup.mixed().required(msgRequired),
+  hora_fim: yup.mixed().required(msgRequired),
+  esta_pago: yup.number().required(msgRequired),
+  tipo_entrada: yup.mixed<"T" | "S">().required(),
+})
+
 export default function CardFormSection(props: CardFormProps) {
   const { data, atendimentoStatus, clientOptions, tipoEntrada, services, usersOptions, user } =
     props;
   const [render, setRender] = useState(false);
   const methods = useForm<AtendimentoFormType>({
+    shouldFocusError: false,
     reValidateMode: 'onChange',
+    resolver: yupResolver<any>(schema)
   });
 
   useEffect(() => {
-    console.log(data);
     methods.reset({
       ...defaultForm,
       ...data,
@@ -73,7 +89,7 @@ export default function CardFormSection(props: CardFormProps) {
       }),
       ...(data?.hora_inicio && { hora_inicio: new Date(`${data.data_referencia} ${data.hora_inicio}`) }),
       ...(data?.hora_fim && { hora_fim: new Date(`${data.data_referencia} ${data.hora_fim}`) }),
-      ...(data?.atendimentosServicos.length > 0 && { services: data.atendimentosServicos }),
+      ...(data?.tipo_entrada === "S" && { services: data.atendimentosServicos }),
     });
     setRender(true);
   }, []);

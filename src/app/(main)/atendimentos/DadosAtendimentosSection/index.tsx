@@ -18,7 +18,11 @@ type DadosAtendimentoProps = {
   currentUser: number;
 };
 
-export default function DadosAtendimentoSection({ data, users, currentUser }: DadosAtendimentoProps) {
+export default function DadosAtendimentoSection({
+  data,
+  users,
+  currentUser,
+}: DadosAtendimentoProps) {
   const [atendimentos, setAtendimentos] = useState(data || []);
   const [user_id, setUserId] = useState(currentUser);
   const [rendered, setRendered] = useState(false);
@@ -56,7 +60,6 @@ export default function DadosAtendimentoSection({ data, users, currentUser }: Da
   const ReloadAtendimentos = async (id: number): Promise<void> => {
     try {
       setLoading(true);
-      setUserId(id);
       const data = await FetchReq<AtendimentosResponse[]>('BuscarAtendimentoUserId', [id]);
       setAtendimentos(data);
     } catch (err) {
@@ -72,7 +75,7 @@ export default function DadosAtendimentoSection({ data, users, currentUser }: Da
       setLoading(true);
       await FetchReq('RemoverAtendimento', [data.id]);
       await sleep(1);
-      window.location.reload();
+      await ReloadAtendimentos(user_id);
     } catch (err) {
       setLoading(false);
       CatchAlerta(err, 'Erro ao remover atendimento.');
@@ -96,7 +99,10 @@ export default function DadosAtendimentoSection({ data, users, currentUser }: Da
               options={users.map((e) => ({ label: e.name, value: e.id }))}
               filter
               value={user_id}
-              onChange={(e) => ReloadAtendimentos(e.value)}
+              onChange={async (e) => {
+                setUserId(e.value);
+                await ReloadAtendimentos(e.value);
+              }}
             />
           </div>
           <DtAtendimento
