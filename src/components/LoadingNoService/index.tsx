@@ -1,7 +1,11 @@
 'use client';
-import Lottie from 'lottie-react';
-import * as animationData from 'assets/loading.json';
+import dynamic from 'next/dynamic';
+import * as animationData from '@/assets/loading.json';
 import styles from './loading.module.scss';
+
+const Lottie = dynamic(() => import('lottie-react'), {
+  ssr: false,
+});
 
 export default function LoadingNoService() {
   return (

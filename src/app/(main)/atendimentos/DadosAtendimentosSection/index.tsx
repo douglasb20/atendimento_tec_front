@@ -8,9 +8,10 @@ import { useService } from '@/contexts/ServicesContext';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { IActionTable } from '@/components/AcoesDataTable';
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
+import { CatchAlerta, ConfirmaAcao, DateToBR, sleep } from '@/service/Util';
 import DtAtendimento from './DtAtendimentos';
-import { Dropdown } from 'primereact/dropdown';
+import FiltrosDados from './FiltrosDados';
+import { startOfMonth } from 'date-fns';
 
 type DadosAtendimentoProps = {
   data: AtendimentosResponse[];
@@ -18,14 +19,25 @@ type DadosAtendimentoProps = {
   currentUser: number;
 };
 
+interface FiltroForm {
+  user_id: number;
+  data_inicio: Date;
+  data_fim: Date;
+}
+
 export default function DadosAtendimentoSection({
   data,
   users,
   currentUser,
 }: DadosAtendimentoProps) {
   const [atendimentos, setAtendimentos] = useState(data || []);
-  const [user_id, setUserId] = useState(currentUser);
+
   const [rendered, setRendered] = useState(false);
+  const [currentFilter, setCurrentFilter] = useState<FiltroForm>({
+    user_id: currentUser,
+    data_inicio: startOfMonth(new Date()),
+    data_fim: new Date(),
+  });
   const { setLoading } = useService();
   const { FetchReq } = useApi();
   const router = useRouter();
@@ -36,6 +48,7 @@ export default function DadosAtendimentoSection({
       // @ts-ignore
       icon: PrimeIcons.FILE_EDIT,
       action: () => router.push('/atendimentos/form/'),
+      bgColor: 'primary p-button-outlined',
     },
   ];
 
@@ -57,11 +70,20 @@ export default function DadosAtendimentoSection({
     },
   ];
 
-  const ReloadAtendimentos = async (id: number): Promise<void> => {
+  const ReloadAtendimentos = async (
+    userId: number,
+    data_inicio: Date,
+    data_fim: Date,
+  ): Promise<void> => {
     try {
       setLoading(true);
-      const data = await FetchReq<AtendimentosResponse[]>('BuscarAtendimentoUserId', [id]);
+      const data = await FetchReq<AtendimentosResponse[]>('ListarAtendimentosPorData', [
+        userId,
+        DateToBR(data_inicio, 'yyyy-MM-dd'),
+        DateToBR(data_fim, 'yyyy-MM-dd'),
+      ]);
       setAtendimentos(data);
+      setCurrentFilter({ user_id: userId, data_inicio, data_fim });
     } catch (err) {
       CatchAlerta(err, 'Erro ao consultar atendimentos');
     } finally {
@@ -75,7 +97,11 @@ export default function DadosAtendimentoSection({
       setLoading(true);
       await FetchReq('RemoverAtendimento', [data.id]);
       await sleep(1);
-      await ReloadAtendimentos(user_id);
+      await ReloadAtendimentos(
+        currentFilter.user_id,
+        currentFilter.data_inicio,
+        currentFilter.data_fim,
+      );
     } catch (err) {
       setLoading(false);
       CatchAlerta(err, 'Erro ao remover atendimento.');
@@ -94,17 +120,11 @@ export default function DadosAtendimentoSection({
         />
 
         <div className="p-card-content">
-          <div className="col-3 p-fluid mb-2 pl-0">
-            <Dropdown
-              options={users.map((e) => ({ label: e.name, value: e.id }))}
-              filter
-              value={user_id}
-              onChange={async (e) => {
-                setUserId(e.value);
-                await ReloadAtendimentos(e.value);
-              }}
-            />
-          </div>
+          <FiltrosDados
+            users={users}
+            currentUser={currentUser}
+            onSubmitFilter={ReloadAtendimentos}
+          />
           <DtAtendimento
             actions={acoesTable}
             value={atendimentos}

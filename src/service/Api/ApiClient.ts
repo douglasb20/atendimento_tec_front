@@ -19,14 +19,16 @@ export const ListUrl = {
   RemoverUsuario: { url: '/users/{{user_id}}', method: 'DELETE' },
 
   ListarAtendimentos: { url: '/atendimentos', method: 'GET' },
+  ListarAtendimentosPorData: { url: '/atendimentos/{{user_id}}/filter?dataInicio={{dataInicio}}&dataFim={{dataFim}}', method: 'GET' },
   ListarAtendimentoStatus: { url: '/atendimentos/status', method: 'GET' },
   BuscarAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'GET' },
-  BuscarAtendimentoUserId: { url: '/atendimentos/get_by_user/{{atendimento_id}}', method: 'GET' },
+  BuscarAtendimentoUserId: { url: '/atendimentos/get_by_user/{{user_id}}', method: 'GET' },
   AdicionarAtendimento: { url: '/atendimentos', method: 'POST' },
   AtualizarAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'PATCH' },
   RemoverAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'DELETE' },
 
   ListarServicos: { url: '/servicos', method: 'GET' },
+  UserInfo : { url: '/users/info', method: 'GET' },
 
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
   RemoveContact: { url: '/clients/{{client_id}}/contact/{{contact_id}}', method: 'DELETE' },

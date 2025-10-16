@@ -118,3 +118,17 @@ export interface IAtendimentoStatus {
   id: number;
   descricao: string;
 }
+
+export type UserInfo = {
+  id: number;
+  name: string;
+  email: string;
+  valor_hora: string;
+  is_requestpassword: number;
+  created_at: string;
+  lastlogin_at: string;
+  role: string;
+  is_superuser: number;
+  status: number;
+  permissions: string[];
+}

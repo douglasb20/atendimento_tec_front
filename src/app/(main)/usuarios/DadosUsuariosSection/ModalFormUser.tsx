@@ -70,6 +70,7 @@ const ModalFormUser = (props: ModalProps) => {
           label="Cancelar"
           severity="danger"
           outlined
+          onClick={onHide}
         />
         <Button
           label="Salvar"

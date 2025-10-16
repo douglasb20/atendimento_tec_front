@@ -21,6 +21,21 @@ interface IPDFPreview {
 }
 
 export function ServiceProvider({ children }: { children: React.ReactNode }) {
+  const [contexts, setContexts] = useReducer<Reducer<IServiceContext, IServiceContext>>(
+    (state: IServiceContext, newState: IServiceContext): IServiceContext => ({
+      ...state,
+      ...newState,
+    }),
+    {
+      isLoading: false,
+      modalPasswordVisible: false,
+      pdfPreview: {
+        visible: false,
+        file: null,
+      },
+    },
+  );
+
   const setLoading = (state: boolean = true) => {
     setContexts({ isLoading: state });
   };
@@ -38,24 +53,6 @@ export function ServiceProvider({ children }: { children: React.ReactNode }) {
     setContexts({ modalPasswordVisible: state });
   };
 
-  const [contexts, setContexts] = useReducer<Reducer<IServiceContext, IServiceContext>>(
-    (state: IServiceContext, newState: IServiceContext): IServiceContext => ({
-      ...state,
-      ...newState,
-    }),
-    {
-      setLoading,
-      setPdfPreview,
-      setModalPasswordVisible,
-      isLoading: false,
-      modalPasswordVisible: false,
-      pdfPreview: {
-        visible: false,
-        file: null,
-      },
-    },
-  );
-
   useEffect(() => {
     addLocale('pt-br', ptBR['pt-br']);
     locale('pt-br');
@@ -63,7 +60,11 @@ export function ServiceProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <ServiceContext.Provider value={contexts}>{children}</ServiceContext.Provider>
+      <ServiceContext.Provider
+        value={{ ...contexts, setLoading, setPdfPreview, setModalPasswordVisible }}
+      >
+        {children}
+      </ServiceContext.Provider>
     </>
   );
 }

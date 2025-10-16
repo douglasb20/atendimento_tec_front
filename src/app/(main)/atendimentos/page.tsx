@@ -4,6 +4,8 @@ import { jwtDecode } from 'jwt-decode';
 import { AtendimentosResponse, IUsuariosResponse, JWTToken } from '@/Interfaces';
 import ApiService from '@/service/Api/ApiServer';
 import DadosAtendimentoSection from './DadosAtendimentosSection';
+import { startOfMonth } from 'date-fns';
+import { DateToBR } from '@/service/Util';
 
 export const metadata: Metadata = {
   title: 'Atendimentos',
@@ -13,9 +15,14 @@ export default async function AtendimentosPage() {
   const { FetchReq, token } = await ApiService();
   const tokenDecoded = jwtDecode<JWTToken>(token);
 
+  const dataInicio = startOfMonth(new Date());
+  const dataFim = new Date();
+
   const dataUser = await FetchReq<IUsuariosResponse[]>('ListarUsuarios');
-  const data = await FetchReq<AtendimentosResponse[]>('BuscarAtendimentoUserId', [
+  const data = await FetchReq<AtendimentosResponse[]>('ListarAtendimentosPorData', [
     tokenDecoded.sub,
+    DateToBR(dataInicio, 'yyyy-MM-dd'),
+    DateToBR(dataFim, 'yyyy-MM-dd'),
   ]);
   return (
     <div className="grid">

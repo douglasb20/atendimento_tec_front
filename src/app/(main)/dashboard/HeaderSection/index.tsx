@@ -1,14 +1,25 @@
-import { memo } from 'react';
-import { UcWords } from 'service/Util';
-import { Button } from 'primereact/button';
+'use client'
+import { useService } from '@/contexts/ServicesContext';
+import { memo, useEffect } from 'react';
+import { DateToBR, UcWords } from 'service/Util';
 
-const HeaderSection = () => {
+type HeaderSectionProps = {
+  name: string;
+  lastLogin: string;
+}
 
-  const ArrumaPrimeiroNome = (nome) => {
-    let separaNome = nome.split(' ');
-    separaNome = separaNome[0].toLowerCase();
-    return separaNome[0].toUpperCase() + separaNome.slice(1);
+const HeaderSection = ({ name, lastLogin }: HeaderSectionProps) => {
+  const {setLoading} = useService()
+
+  const ArrumaPrimeiroNome = (nome: string): string => {
+    let separaNome: string[] = nome.split(' ');
+    const primeiroNome: string = separaNome[0].toLowerCase();
+    return UcWords(primeiroNome);
   };
+
+  useEffect(() => {
+    setLoading(false);
+  }, [])
 
   return (
     <div className="col-12 mb-4 ">
@@ -16,26 +27,20 @@ const HeaderSection = () => {
         <div className="flex flex-column sm:flex-row align-items-center gap-3 w-full">
           <img
             alt="avatar"
-            src={`/image/avatar/avatar-m-8.png`}
+            src={`/images/avatar/avatar-m-8.png`}
             className="w-4rem h-4rem flex-shrink-0 inside-shadow"
           />
           <div className="flex flex-column align-items-center sm:align-items-start w-full">
             <div className="flex justify-content-between w-full">
               <span className="font-bold text-4xl text-10">
-                Olá, {ArrumaPrimeiroNome("Douglas Amaro da Silva")}
+                Olá, {ArrumaPrimeiroNome(name)}
               </span>
-              <Button
-                label="Realizar um aporte"
-                icon="fa-light fa-sack-dollar"
-                onClick={() => {}}
-              />
             </div>
             <p className="text-600 m-0">
-              Você está{' '}
+              Último login realizado em {' '}
               <span className="font-bold text-primary">
-                {UcWords("Ativo")}
+                {DateToBR(lastLogin, 'dh')}
               </span>{' '}
-              no plano Prever
             </p>
           </div>
         </div>

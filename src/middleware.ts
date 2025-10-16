@@ -4,6 +4,7 @@ import ApiService from './service/Api/ApiServer';
 import { PUBLIC_ROUTES } from './constants';
 import { jwtDecode } from 'jwt-decode';
 import { JWTToken } from './Interfaces';
+import { getUserInfo } from './actions/userInfo';
 
 const isPublicRoute = (route: string) => {
   return PUBLIC_ROUTES.some((publicRoute) => {
@@ -84,6 +85,7 @@ export async function middleware(request: NextRequest) {
         }
         return NextResponse.redirect(new URL('/auth/logout', request.url))
       }
+      await getUserInfo();
     }
   } else {
     // Caso tiver ir para a tela de login e tiver autenticado

@@ -1,6 +1,6 @@
 {
-    "name": "area_do_participante",
-    "version": "2.0.0",
+    "name": "tecnicos_automate",
+    "version": "1.0.0",
     "private": true,
     "scripts": {
         "dev": "env-cmd -f .env.homolog next dev",
@@ -24,7 +24,6 @@
         "chartjs-plugin-datalabels": "^2.2.0",
         "chartjs-plugin-doughnutlabel-rebourne": "^3.0.0-beta.4",
         "date-fns": "^3.6.0",
-        "jquery": "^3.7.1",
         "jwt-decode": "^4.0.0",
         "lottie-react": "^2.3.1",
         "next": "^15.1.7",
@@ -46,7 +45,6 @@
     },
     "devDependencies": {
         "@types/eslint": "^8.56.1",
-        "@types/jquery": "^3.5.27",
         "@types/node": "^20.2.5",
         "@types/react": "^18.3.5",
         "@types/react-dom": "^18.3.0",
@@ -60,7 +58,8 @@
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-prettier": "^5.2.1",
         "prettier": "^3.3.3",
-        "sass": "^1.78.0",
+        "sass": "^1.93.2",
+        "sass-loader": "^16.0.5",
         "typescript": "^5.5.4"
     }
 }

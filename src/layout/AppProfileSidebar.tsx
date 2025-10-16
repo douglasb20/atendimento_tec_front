@@ -22,7 +22,7 @@ const AppProfileSidebar = () => {
       className="layout-profile-sidebar w-full sm:w-25rem"
     >
       <div className="flex flex-column mx-auto md:mx-0">
-        <span className="mb-2 font-semibold">Welcome</span>
+        <span className="mb-2 font-semibold">Olá</span>
         <span className="text-color-secondary font-medium mb-5">Isabella Andolini</span>
 
         <ul className="list-none m-0 p-0">
