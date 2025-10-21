@@ -16,7 +16,18 @@ const AppMenu = () => {
         {
           label: 'Atendimentos',
           icon: `pi pi-pen-to-square pi-fw`,
-          to: '/atendimentos',
+          items: [
+            {
+              label: 'Chat',
+              icon: `pi pi-comments pi-fw`,
+              to: '/chat',
+            },
+            {
+              label: 'Gerenciamento',
+              icon: `pi pi-pen-to-square pi-fw`,
+              to: '/atendimentos',
+            },
+          ]
         },
         {
           label: 'Relatórios',

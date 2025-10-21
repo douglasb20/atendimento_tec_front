@@ -32,6 +32,7 @@ export const ListUrl = {
 
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
   RemoveContact: { url: '/clients/{{client_id}}/contact/{{contact_id}}', method: 'DELETE' },
+  SendMessage: { url: '/whatsapp/send-message', method: 'POST' },
 };
 
 /**

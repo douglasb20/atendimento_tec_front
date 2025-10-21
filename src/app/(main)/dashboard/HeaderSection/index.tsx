@@ -1,6 +1,7 @@
 'use client'
-import { useService } from '@/contexts/ServicesContext';
 import { memo, useEffect } from 'react';
+
+import { useService } from '@/contexts/ServicesContext';
 import { DateToBR, UcWords } from 'service/Util';
 
 type HeaderSectionProps = {
