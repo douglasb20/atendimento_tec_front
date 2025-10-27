@@ -1,17 +1,20 @@
-import { memo, useEffect, useState } from 'react';
-import { Dialog as Modal } from 'primereact/dialog';
-import { Timeline } from 'primereact/timeline';
-import { Button } from 'primereact/button';
-import { ChannelResponse } from '@/Interfaces';
-import { classNames } from 'primereact/utils';
-import { PrimeIcons } from 'primereact/api';
-import { ProgressSpinner } from 'primereact/progressspinner';
+import { memo } from 'react';
 import QRCode from 'qrcode.react';
+import { PrimeIcons } from 'primereact/api';
+import { Button } from 'primereact/button';
+import { Dialog as Modal } from 'primereact/dialog';
+import { ProgressSpinner } from 'primereact/progressspinner';
+import { Timeline } from 'primereact/timeline';
+import { classNames } from 'primereact/utils';
+
+import { ChannelResponse } from '@/Interfaces';
 
 interface IProps<T> {
   visible: boolean;
   value?: T;
   onHide: () => void;
+  onStartSession: () => void;
+  onDisconnectSession: () => void;
 }
 
 const stepValues = [
@@ -39,12 +42,7 @@ const stepValues = [
 ];
 
 const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
-  const { visible, onHide, value } = props;
-  // const [value, setValue] = useState<ChannelResponse | null>(null);
-
-  // useEffect(() => {
-  //   setValue(data || null);
-  // }, [data]);
+  const { visible, onHide, value, onStartSession, onDisconnectSession } = props;
 
   return (
     <>
@@ -58,7 +56,7 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
         closeOnEscape={false}
         position="top"
       >
-        <div className="formgrid grid px-4 row-gap-5 ">
+        <div className="formgrid grid row-gap-5 ">
           <div className="col-12 flex gap-2">
             <div className="flex-grow-1 flex align-items-center ">
               <span
@@ -82,27 +80,25 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
                 {value?.channel_status_id === 3 ? 'Conectado' : 'Desconectado'}
               </span>
             </div>
-            <div className="flex-shrink-0 flex justify-content-center align-items-center gap-2 px-1">
+            <div className="flex-shrink-0 flex justify-content-center align-items-center gap-2 ">
               <Button
-                label={value?.channel_status_id === 1 ? 'Iniciar sessão' : 'Reiniciar sessão'}
-                icon={value?.channel_status_id === 1 ? PrimeIcons.SIGN_IN : PrimeIcons.REFRESH}
-                onClick={() => {}}
-                disabled={value?.channel_status_id === 3}
+                label={value?.channel_status_id === 1 ? 'Iniciar sessão' : 'Desconectar'}
+                icon={value?.channel_status_id === 1 ? PrimeIcons.SIGN_IN : PrimeIcons.TIMES}
+                onClick={() => {
+                  if (value?.channel_status_id === 1) {
+                    onStartSession && onStartSession();
+                  } else if (value?.channel_status_id === 3) {
+                    onDisconnectSession && onDisconnectSession();
+                  }
+                }}
+                disabled={value?.channel_status_id === 2}
                 outlined
-                severity="warning"
-              />
-              <Button
-                label={'Desconectar'}
-                icon={PrimeIcons.TIMES}
-                onClick={() => {}}
-                outlined
-                severity="danger"
-                disabled={value?.channel_status_id !== 3}
+                severity={value?.channel_status_id === 1 ? 'success' : 'danger'}
               />
             </div>
           </div>
           {value?.channel_status_id === 2 && (
-            <>
+            <div className="col-12 grid px-4">
               <div className="field col-8 flex flex-column gap-3">
                 <span className="mb-5 text-3xl font-semibold">Etapas para acessar</span>
                 <Timeline
@@ -137,7 +133,7 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
                   />
                 )}
               </div>
-            </>
+            </div>
           )}
         </div>
       </Modal>
@@ -146,4 +142,3 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
 };
 
 export default memo(ModalConfigChannel);
-

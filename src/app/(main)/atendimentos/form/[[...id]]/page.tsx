@@ -4,7 +4,14 @@ import { SelectItem } from 'primereact/selectitem';
 
 import CardFormSection from './CardFormSection';
 import ApiService from '@/service/Api/ApiServer';
-import { AtendimentosResponse, IAtendimentoStatus, IClientResponse, IServiceResponse, IUsuariosResponse, JWTToken } from '@/Interfaces';
+import {
+  AtendimentosResponse,
+  IAtendimentoStatus,
+  IClientResponse,
+  IServiceResponse,
+  IUsuariosResponse,
+  JWTToken,
+} from '@/Interfaces';
 import { jwtDecode } from 'jwt-decode';
 
 export const metadata: Metadata = {
@@ -18,36 +25,36 @@ export default async function FormAtendimentoPage({
 }) {
   const { id } = await params;
   const { FetchReq, token } = await ApiService();
-  const tokenDecoded = jwtDecode<JWTToken>( token )
+  const tokenDecoded = jwtDecode<JWTToken>(token);
 
   let dataForm = null;
   let data = null;
   if (id?.length > 0) {
     data = await FetchReq<AtendimentosResponse>('BuscarAtendimento', [id[0]]);
   }
-  const [dataClients, dataAtendimentoStatus, dataServices, dataUsers ] = await Promise.all(
-    [
-      FetchReq<IClientResponse[]>('ListarClientes'),
-      FetchReq<IAtendimentoStatus[]>('ListarAtendimentoStatus'),
-      FetchReq<IServiceResponse[]>('ListarServicos'),
-      FetchReq<IUsuariosResponse[]>('ListarUsuarios'),
-    ]
-  )
+  const [dataClients, dataAtendimentoStatus, dataServices, dataUsers] = await Promise.all([
+    FetchReq<IClientResponse[]>('ListarClientes'),
+    FetchReq<IAtendimentoStatus[]>('ListarAtendimentoStatus'),
+    FetchReq<IServiceResponse[]>('ListarServicos'),
+    FetchReq<IUsuariosResponse[]>('ListarUsuarios'),
+  ]);
 
   const clientOptions: SelectItem[] = dataClients.map((e) => ({ label: e.nome, value: e.id }));
-  const atStatusOptions: SelectItem[] = dataAtendimentoStatus.map((e) => ({ label: e.descricao, value: e.id }));
+  const atStatusOptions: SelectItem[] = dataAtendimentoStatus.map((e) => ({
+    label: e.descricao,
+    value: e.id,
+  }));
   const usersOptions: SelectItem[] = dataUsers.map((e) => ({ label: e.name, value: e.id }));
   const tipoEntrada: SelectItem[] = [
     {
-      value: "T",
-      label: "Tempo"
+      value: 'T',
+      label: 'Tempo',
     },
     {
-      value: "S",
-      label: "Serviço"
-    }
+      value: 'S',
+      label: 'Serviço',
+    },
   ];
-
 
   dataForm = {
     ...data,
@@ -64,11 +71,10 @@ export default async function FormAtendimentoPage({
           usersOptions={usersOptions}
           user={{
             id: tokenDecoded.id,
-            name: tokenDecoded.name
+            name: tokenDecoded.name,
           }}
         />
       </div>
     </div>
   );
 }
-

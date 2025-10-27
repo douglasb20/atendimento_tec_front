@@ -22,7 +22,7 @@ export type JWTToken = {
   lastlogin_at: string;
   iat: number;
   exp: number;
-}
+};
 
 export interface IResponseError {
   message: string;
@@ -55,8 +55,8 @@ export interface IClientes {
   status: number;
 }
 
-export interface IClientResponse extends IClientes{
-  contacts?: IContactResponse[]
+export interface IClientResponse extends IClientes {
+  contacts?: IContactResponse[];
 }
 
 export interface IContactResponse {
@@ -84,7 +84,7 @@ export interface AtendimentosResponse {
   hora_inicio: string;
   hora_fim: string;
   comentario: string;
-  tipo_entrada: "T" | "S";
+  tipo_entrada: 'T' | 'S';
   esta_pago: number;
   atendimento_status_id: number;
   duration: string;
@@ -96,7 +96,7 @@ export interface AtendimentosResponse {
   contact_telefone: string;
   status_descricao: string;
   valor_total: number;
-  atendimentosServicos: AtendimentoServicos[]
+  atendimentosServicos: AtendimentoServicos[];
 }
 export interface AtendimentoServicos {
   id: number;
@@ -131,7 +131,7 @@ export type UserInfo = {
   is_superuser: number;
   status: number;
   permissions: string[];
-}
+};
 
 export type ChannelResponse = {
   id: number;
@@ -147,9 +147,9 @@ export type ChannelResponse = {
   updated_at: string | null;
   deleted_at: string | null;
   channelStatus: ChannelStatus;
-}
+};
 
 type ChannelStatus = {
   id: number;
   name: string;
-}
+};

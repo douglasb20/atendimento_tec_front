@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
       const decodedRefresh = jwtDecode<Pick<JWTToken, 'exp'>>(refresh_token);
 
       setCookie(null, 'token', access_token, {
-        maxAge: (decodedToken.exp + (60 * 5)) - Math.floor(Date.now() / 1000.0),
+        maxAge: decodedToken.exp + 60 * 5 - Math.floor(Date.now() / 1000.0),
         path: '/',
       });
       setCookie(null, 'refresh_token', refresh_token, {

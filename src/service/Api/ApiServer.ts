@@ -1,11 +1,10 @@
 import axios from 'axios';
 import { cookies } from 'next/headers';
-import { ListUrl,  } from './ApiClient';
+import { ListUrl } from './ApiClient';
 
 import { ILoginResp } from '@/Interfaces';
 
 const url = process.env.URL_ENDPOINT;
-
 
 /**
  * Função para transformar url com variável na string
@@ -29,7 +28,7 @@ export const AjeitaUrl = (url: string, params: (string | number)[]): string => {
   });
 
   return newUrl;
-}
+};
 
 export default async function ApiService() {
   const cookiesStore = await cookies();
@@ -39,7 +38,7 @@ export default async function ApiService() {
     baseURL: url,
     headers: { Authorization: 'Bearer ' + token },
   });
-  
+
   const apiRefreshToken = async (refreshToken: string): Promise<ILoginResp> => {
     return new Promise<ILoginResp>(async (res, rej) => {
       try {
@@ -68,7 +67,7 @@ export default async function ApiService() {
       props = { endpoint: props, body: null, variables: vars };
     }
     const { endpoint, body, variables } = props;
-    
+
     const newUrl = AjeitaUrl(ListUrl[endpoint].url, variables);
 
     const { data } = await req({

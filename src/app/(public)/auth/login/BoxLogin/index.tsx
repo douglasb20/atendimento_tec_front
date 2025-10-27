@@ -91,7 +91,7 @@ export default function BoxLoginSection() {
                     autoComplete="off"
                     pt={{
                       root: {
-                        className: ""
+                        className: '',
                       },
                     }}
                   />

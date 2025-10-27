@@ -8,7 +8,7 @@ import { JWTToken } from '@/Interfaces';
 export default async function DashboardPage() {
   const cookieStorage = await cookies();
   const tokenString: string = cookieStorage.get('token')?.value;
-  const tokenDecoded = jwtDecode<JWTToken>(tokenString)
+  const tokenDecoded = jwtDecode<JWTToken>(tokenString);
 
   return (
     <Fragment>
@@ -25,5 +25,4 @@ export default async function DashboardPage() {
       </div>
     </Fragment>
   );
-};
-
+}

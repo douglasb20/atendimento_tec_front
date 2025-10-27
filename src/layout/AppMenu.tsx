@@ -27,7 +27,7 @@ const AppMenu = () => {
               icon: `pi pi-pen-to-square pi-fw`,
               to: '/atendimentos',
             },
-          ]
+          ],
         },
         {
           label: 'Canais',

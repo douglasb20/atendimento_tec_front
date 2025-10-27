@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { memo, useEffect } from 'react';
 
 import { useService } from '@/contexts/ServicesContext';
@@ -7,10 +7,10 @@ import { DateToBR, UcWords } from 'service/Util';
 type HeaderSectionProps = {
   name: string;
   lastLogin: string;
-}
+};
 
 const HeaderSection = ({ name, lastLogin }: HeaderSectionProps) => {
-  const {setLoading} = useService()
+  const { setLoading } = useService();
 
   const ArrumaPrimeiroNome = (nome: string): string => {
     let separaNome: string[] = nome.split(' ');
@@ -20,7 +20,7 @@ const HeaderSection = ({ name, lastLogin }: HeaderSectionProps) => {
 
   useEffect(() => {
     setLoading(false);
-  }, [])
+  }, []);
 
   return (
     <div className="col-12 mb-4 ">
@@ -33,15 +33,11 @@ const HeaderSection = ({ name, lastLogin }: HeaderSectionProps) => {
           />
           <div className="flex flex-column align-items-center sm:align-items-start w-full">
             <div className="flex justify-content-between w-full">
-              <span className="font-bold text-4xl text-10">
-                Olá, {ArrumaPrimeiroNome(name)}
-              </span>
+              <span className="font-bold text-4xl text-10">Olá, {ArrumaPrimeiroNome(name)}</span>
             </div>
             <p className="text-600 m-0">
-              Último login realizado em {' '}
-              <span className="font-bold text-primary">
-                {DateToBR(lastLogin, 'dh')}
-              </span>{' '}
+              Último login realizado em{' '}
+              <span className="font-bold text-primary">{DateToBR(lastLogin, 'dh')}</span>{' '}
             </p>
           </div>
         </div>

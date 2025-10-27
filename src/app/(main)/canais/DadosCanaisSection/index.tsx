@@ -124,9 +124,33 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     ReloadCanais(false);
     console.log(data);
     if (activeChannelRef.current && data.channel_id === activeChannelRef.current.id) {
-        console.log(`Canal ativo (${activeChannelRef.current.id}) corresponde ao evento. Buscando dados...`);
-        BuscarCanal(data.channel_id, false);
+      console.log(
+        `Canal ativo (${activeChannelRef.current.id}) corresponde ao evento. Buscando dados...`,
+      );
+      BuscarCanal(data.channel_id, false);
+    }
+  };
+
+  const onStartSession = async () => {
+    try {
+      if (activeChannel) {
+        // Inicia a sessão para o canal ativo
+        await FetchReq('IniciarSessao', [activeChannel.id]);
       }
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao iniciar sessão.');
+    }
+  };
+
+  const onDisconnectSession = async () => {
+    try {
+      if (activeChannel) {
+        // Inicia a sessão para o canal ativo
+        await FetchReq('FinalizarSessao', [activeChannel.id]);
+      }
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao finalizar sessão.');
+    }
   };
 
   useEffect(() => {
@@ -191,6 +215,8 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
           visible={modalVisible.configChannel}
           value={activeChannel}
           onHide={FecharModalConfig}
+          onStartSession={onStartSession}
+          onDisconnectSession={onDisconnectSession}
         />
       </>
     )

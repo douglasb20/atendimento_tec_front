@@ -65,8 +65,8 @@ const schema = yup.object<yup.AnyObject, Shape<AtendimentoFormType>>({
   hora_inicio: yup.mixed().required(msgRequired),
   hora_fim: yup.mixed().required(msgRequired),
   esta_pago: yup.number().required(msgRequired),
-  tipo_entrada: yup.mixed<"T" | "S">().required(),
-})
+  tipo_entrada: yup.mixed<'T' | 'S'>().required(),
+});
 
 export default function CardFormSection(props: CardFormProps) {
   const { data, atendimentoStatus, clientOptions, tipoEntrada, services, usersOptions, user } =
@@ -75,7 +75,7 @@ export default function CardFormSection(props: CardFormProps) {
   const methods = useForm<AtendimentoFormType>({
     shouldFocusError: false,
     reValidateMode: 'onChange',
-    resolver: yupResolver<any>(schema)
+    resolver: yupResolver<any>(schema),
   });
 
   useEffect(() => {
@@ -87,9 +87,11 @@ export default function CardFormSection(props: CardFormProps) {
       ...(data?.data_referencia && {
         data_referencia: new Date(`${data.data_referencia} 00:00:00`),
       }),
-      ...(data?.hora_inicio && { hora_inicio: new Date(`${data.data_referencia} ${data.hora_inicio}`) }),
+      ...(data?.hora_inicio && {
+        hora_inicio: new Date(`${data.data_referencia} ${data.hora_inicio}`),
+      }),
       ...(data?.hora_fim && { hora_fim: new Date(`${data.data_referencia} ${data.hora_fim}`) }),
-      ...(data?.tipo_entrada === "S" && { services: data.atendimentosServicos }),
+      ...(data?.tipo_entrada === 'S' && { services: data.atendimentosServicos }),
     });
     setRender(true);
   }, []);

@@ -26,14 +26,14 @@ const defaultForm: ContactTable = {
 
 const schema = yup.object<yup.AnyObject, Shape<ContactTable>>({
   nome_contato: yup.string().required(msgRequired),
-  telefone_contato: yup.string().notRequired()
-})
+  telefone_contato: yup.string().notRequired(),
+});
 
 function ModalFormulario(props: ModalProps) {
   const { visible, onHide, data, onConfirm } = props;
   const { control, handleSubmit, reset } = useForm<ContactTable>({
     reValidateMode: 'onBlur',
-    resolver: yupResolver<any>(schema)
+    resolver: yupResolver<any>(schema),
   });
 
   const modalFooter = () => {
@@ -55,7 +55,7 @@ function ModalFormulario(props: ModalProps) {
 
   const onSubmitForm = (fields: ContactTable) => {
     onConfirm && onConfirm(fields);
-  }
+  };
 
   useEffect(() => {
     if (visible) {
@@ -90,9 +90,9 @@ function ModalFormulario(props: ModalProps) {
                 <InputText
                   id={field.name}
                   {...field}
-                  value={field?.value || ""}
+                  value={field?.value || ''}
                   placeholder="Nome do contato"
-                  autoComplete='off'
+                  autoComplete="off"
                 />
                 {getFormErrorMessage(fieldState)}
               </>
@@ -114,9 +114,11 @@ function ModalFormulario(props: ModalProps) {
                   {...field}
                   placeholder="(00) 0000-0000"
                   mask={
-                    field?.value?.replace(/\D/g, '').length > 10 ? Masks.CELULAR : Masks.FIXO_OPCIONAL
+                    field?.value?.replace(/\D/g, '').length > 10
+                      ? Masks.CELULAR
+                      : Masks.FIXO_OPCIONAL
                   }
-                  value={field?.value || ""}
+                  value={field?.value || ''}
                 />
                 {getFormErrorMessage(fieldState)}
               </>

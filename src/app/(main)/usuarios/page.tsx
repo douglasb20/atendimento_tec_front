@@ -16,9 +16,7 @@ export default async function UsuariosPage() {
   return (
     <div className="grid">
       <div className="col-12 card flex flex-column justify-content-center shadow-1">
-        <DadosUsuariosSection
-          data={dataUser}
-        />
+        <DadosUsuariosSection data={dataUser} />
       </div>
     </div>
   );

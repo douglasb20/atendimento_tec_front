@@ -49,7 +49,10 @@ const AppProfileSidebar = () => {
             </a>
           </li>
           <li>
-            <Link href={"/auth/logout"} className="cursor-pointer flex surface-border mb-3 p-3 align-items-center border-1 surface-border border-round hover:surface-hover transition-colors transition-duration-150">
+            <Link
+              href={'/auth/logout'}
+              className="cursor-pointer flex surface-border mb-3 p-3 align-items-center border-1 surface-border border-round hover:surface-hover transition-colors transition-duration-150"
+            >
               <span>
                 <i className="pi pi-power-off text-xl text-primary"></i>
               </span>

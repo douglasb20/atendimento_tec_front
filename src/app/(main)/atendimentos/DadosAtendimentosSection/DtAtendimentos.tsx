@@ -35,7 +35,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           </div>
           <div className="col-2 text-center py-0">
             <div className="col-2 py-0 font-bold text-10 w-full">Contato</div>
-            <div className="col-6 py-0 w-full">{data.contact_nome || "-"}</div>
+            <div className="col-6 py-0 w-full">{data.contact_nome || '-'}</div>
           </div>
           <div className="col-2 text-center py-0">
             <div className="col-4 py-0 font-bold text-10 w-full">Valor</div>
@@ -82,9 +82,9 @@ const DtAtendimentos = ({ actions, ...props }) => {
         value={props.value}
         emptyMessage="Nenhum atendimento encontrado"
         expandedRows={expandedRows as any}
-        onRowToggle={({data}) => setExpandedRows(data as unknown as AtendimentosResponse)}
+        onRowToggle={({ data }) => setExpandedRows(data as unknown as AtendimentosResponse)}
         onRowCollapse={() => setDataExpand(null)}
-        onRowExpand={({data}) => setDataExpand(data as AtendimentosResponse)}
+        onRowExpand={({ data }) => setDataExpand(data as AtendimentosResponse)}
         rowExpansionTemplate={rowExpansionTemplate}
       >
         <Column
@@ -111,7 +111,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           field="hora_inicio"
           header="Início"
           align="center"
-          body={({hora_inicio, data_referencia}: AtendimentosResponse) =>
+          body={({ hora_inicio, data_referencia }: AtendimentosResponse) =>
             hora_inicio && DateToBR(`${data_referencia} ${hora_inicio}`, 'HH:mm')
           }
         />
@@ -119,7 +119,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           field="hora_fim"
           header="Fim"
           align="center"
-          body={({hora_fim, data_referencia}: AtendimentosResponse) =>
+          body={({ hora_fim, data_referencia }: AtendimentosResponse) =>
             hora_fim && DateToBR(`${data_referencia} ${hora_fim}`, 'HH:mm')
           }
         />
@@ -127,7 +127,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           field="duration"
           header="Duração"
           align="center"
-          body={({duration, data_referencia}: AtendimentosResponse) =>
+          body={({ duration, data_referencia }: AtendimentosResponse) =>
             duration && DateToBR(`${data_referencia} ${duration}`, 'HH:mm')
           }
         />
@@ -144,7 +144,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           field="status_descricao"
           header="Status"
           align="center"
-          body={({atendimento_status_id, status_descricao}: AtendimentosResponse) => (
+          body={({ atendimento_status_id, status_descricao }: AtendimentosResponse) => (
             <Tag
               severity={GetTagSeverity(atendimento_status_id)}
               value={status_descricao}

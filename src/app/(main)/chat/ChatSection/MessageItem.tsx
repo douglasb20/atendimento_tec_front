@@ -1,6 +1,6 @@
 'use client';
 import React, { useMemo } from 'react';
-import {v4} from 'uuid';
+import { v4 } from 'uuid';
 
 interface MessageData {
   id: string;
@@ -26,22 +26,22 @@ function parseMensagem(texto: string): React.ReactNode[] {
     if (!token) return;
 
     // 🟢 Negrito
-    if (token.startsWith("*") && token.endsWith("*")) {
+    if (token.startsWith('*') && token.endsWith('*')) {
       const conteudo = token.slice(1, -1);
       elementos.push(<strong key={i}>{parseMensagem(conteudo)}</strong>);
     }
     // 🟣 Itálico
-    else if (token.startsWith("_") && token.endsWith("_")) {
+    else if (token.startsWith('_') && token.endsWith('_')) {
       const conteudo = token.slice(1, -1);
       elementos.push(<em key={i}>{parseMensagem(conteudo)}</em>);
     }
     // 🔴 Riscado
-    else if (token.startsWith("~") && token.endsWith("~")) {
+    else if (token.startsWith('~') && token.endsWith('~')) {
       const conteudo = token.slice(1, -1);
       elementos.push(<s key={i}>{parseMensagem(conteudo)}</s>);
     }
     // 🟠 Código
-    else if (token.startsWith("`") && token.endsWith("`")) {
+    else if (token.startsWith('`') && token.endsWith('`')) {
       const conteudo = token.slice(1, -1);
       elementos.push(
         <code
@@ -49,7 +49,7 @@ function parseMensagem(texto: string): React.ReactNode[] {
           className="bg-gray-200 px-1 rounded font-mono"
         >
           {conteudo}
-        </code>
+        </code>,
       );
     }
     // Texto comum - preserva quebras de linha
@@ -101,13 +101,17 @@ export default function MessageItem({ messages }: { messages?: Message[] }) {
         if (msg?.dataType !== 'message_create') {
           return null;
         }
-        
+
         // --- 6. Chave (key) Estável e Única ---
         // Usar o ID da mensagem é a melhor prática. `v4()` ou `index` são anti-padrões
         // que causam re-renderizações desnecessárias.
-        return <SingleMessage key={v4()} message={msg} />;
+        return (
+          <SingleMessage
+            key={v4()}
+            message={msg}
+          />
+        );
       })}
     </>
   );
 }
-

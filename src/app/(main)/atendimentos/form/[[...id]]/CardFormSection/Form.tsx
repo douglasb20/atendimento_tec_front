@@ -33,7 +33,7 @@ const isPaid: SelectItem[] = [
 ];
 
 export default function FormSection(props: FormSectionProps) {
-  const { atendimentoStatus, clientOptions, tipoEntrada, services, usersOptions} = props;
+  const { atendimentoStatus, clientOptions, tipoEntrada, services, usersOptions } = props;
   const { setLoading } = useService();
   const { FetchReq } = ApiClient();
   const { control, setValue, watch } = useFormContext<AtendimentoFormType>();
@@ -301,15 +301,14 @@ export default function FormSection(props: FormSectionProps) {
                 {...field}
                 invalid={fieldState.invalid}
                 autoResize
-                className='pb-0 mb-0'
+                className="pb-0 mb-0"
               />
               {getFormErrorMessage(fieldState)}
             </>
           )}
         />
       </div>
-      {watch('tipo_entrada') === 'S' && (<ServicesSection services={services} />)}
+      {watch('tipo_entrada') === 'S' && <ServicesSection services={services} />}
     </>
   );
 }
-

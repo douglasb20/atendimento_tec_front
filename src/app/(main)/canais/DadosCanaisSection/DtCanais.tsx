@@ -61,7 +61,12 @@ const DtCanais = ({ actions, ...props }) => {
           className="w-8rem"
           body={({ channel_status_id, channelStatus }: ChannelResponse) => {
             const severity = GetStatusSeverity(channel_status_id);
-            return <Tag severity={severity} value={channelStatus.name} />;
+            return (
+              <Tag
+                severity={severity}
+                value={channelStatus.name}
+              />
+            );
           }}
         />
         <Column

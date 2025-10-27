@@ -57,20 +57,21 @@ export default function ChatSection() {
     });
   }, [messages]);
 
-  return rendered && (
-    <>
-      <TitleCards title="Mensagens" />
+  return (
+    rendered && (
+      <>
+        <TitleCards title="Mensagens" />
 
-      <div className="p-card-content">
-        <div
-          ref={bottomEl}
-          className="flex flex-column bg-gray-100 h-30rem border-round p-3 overflow-y-auto mb-3"
-        >
-          <MessageItem messages={messages} />
+        <div className="p-card-content">
+          <div
+            ref={bottomEl}
+            className="flex flex-column bg-gray-100 h-30rem border-round p-3 overflow-y-auto mb-3"
+          >
+            <MessageItem messages={messages} />
+          </div>
+          <SendMessageBox />
         </div>
-        <SendMessageBox />
-      </div>
-    </>
+      </>
+    )
   );
 }
-

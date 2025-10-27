@@ -26,30 +26,30 @@ export async function middleware(request: NextRequest) {
   const now = Math.floor(new Date().getTime() / 1000.0);
 
   const UpdateToken = async () => {
-    const { access_token, refresh_token } = await apiRefreshToken(refresh)
-    const newRefreshTokenDecoded = jwtDecode<Pick<JWTToken, "exp">>(refresh_token);
+    const { access_token, refresh_token } = await apiRefreshToken(refresh);
+    const newRefreshTokenDecoded = jwtDecode<Pick<JWTToken, 'exp'>>(refresh_token);
     const newAccessTokenDecoded = jwtDecode<JWTToken>(access_token);
 
     cookies.set({
       name: 'token',
       value: access_token,
       maxAge: Number(newAccessTokenDecoded.exp) - Math.floor(Date.now() / 1000.0),
-      path: "/"
+      path: '/',
     });
     cookies.set({
       name: 'refresh_token',
       value: refresh_token,
       maxAge: Number(newRefreshTokenDecoded.exp) - Math.floor(Date.now() / 1000.0),
-      path: "/"
+      path: '/',
     });
     cookies.set({
       name: 'expires_at',
       value: newAccessTokenDecoded.exp.toString(),
       maxAge: Number(newRefreshTokenDecoded.exp) - Math.floor(Date.now() / 1000.0),
-      path: "/"
+      path: '/',
     });
     return true;
-  }
+  };
 
   // Verifica se a roda que está passando é publica
   if (!isPublicRoute(path)) {
@@ -57,14 +57,14 @@ export async function middleware(request: NextRequest) {
     // se não tiver, redireciona para tela de login
     if (!autenticado) {
       if (refresh) {
-        const refreshDecoded = jwtDecode<Pick<JWTToken, "exp">>(refresh);
+        const refreshDecoded = jwtDecode<Pick<JWTToken, 'exp'>>(refresh);
         if (Number(refreshDecoded.exp) >= now) {
           try {
             const updated = await UpdateToken();
             if (updated) {
               return NextResponse.redirect(new URL(request.url, request.url));
             }
-          } catch (err) { }
+          } catch (err) {}
         }
       }
       return NextResponse.redirect(new URL('/auth/logout', request.url));
@@ -73,17 +73,17 @@ export async function middleware(request: NextRequest) {
       // se tiver expirado, valida o refresh token
       if (Number(expires_at) < now) {
         if (refresh) {
-          const refreshDecoded = jwtDecode<Pick<JWTToken, "exp">>(refresh);
+          const refreshDecoded = jwtDecode<Pick<JWTToken, 'exp'>>(refresh);
           if (Number(refreshDecoded.exp) >= now) {
             try {
               const updated = await UpdateToken();
               if (updated) {
                 return NextResponse.redirect(new URL(request.url, request.url));
               }
-            } catch (err) { }
+            } catch (err) {}
           }
         }
-        return NextResponse.redirect(new URL('/auth/logout', request.url))
+        return NextResponse.redirect(new URL('/auth/logout', request.url));
       }
       await getUserInfo();
     }

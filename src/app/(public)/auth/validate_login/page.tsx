@@ -8,7 +8,7 @@ const ValidateLoginPage = () => {
   useEffect(() => {
     getUserInfo().then(() => {
       router.push('/');
-    })
+    });
   }, []);
   return null;
 };

@@ -151,7 +151,7 @@ export default function FormClient() {
   const onSubmitForm = async (fields) => {
     try {
       setLoading(true);
-      
+
       const newContacts = contacts.map((contact) => {
         return {
           ...(contact.tipo !== 'new' && { id: contact.id }),
@@ -284,7 +284,7 @@ export default function FormClient() {
                     stripedRows
                     showGridlines
                     rowHover
-                    size='small'
+                    size="small"
                   >
                     <Column
                       field="nome_contato"
@@ -314,7 +314,7 @@ export default function FormClient() {
                 </div>
               </div>
             </div>
-            
+
             <div className="p-card-footer mt-4 flex flex-row justify-content-between">
               <Button
                 label="Cancelar"

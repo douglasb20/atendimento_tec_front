@@ -32,7 +32,7 @@ export default function FiltrosDados(props: FiltrosDadosProps) {
 
   const onSubmit = (fields: FiltroForm) => {
     onSubmitFilter && onSubmitFilter(fields.user_id, fields.data_inicio, fields.data_fim);
-  }
+  };
 
   useEffect(() => {
     reset({ ...defaultValues, user_id: currentUser });
@@ -100,7 +100,6 @@ export default function FiltrosDados(props: FiltrosDadosProps) {
                 showButtonBar
                 todayButtonClassName="noHidden"
                 hideOnDateTimeSelect
-
               />
             </>
           )}
@@ -108,8 +107,8 @@ export default function FiltrosDados(props: FiltrosDadosProps) {
       </div>
       <div className="col-3 p-fluid mb-2 pl-0">
         <Button
-          label='Filtrar'
-          className='mt-4'
+          label="Filtrar"
+          className="mt-4"
           onClick={() => {
             handleSubmit(onSubmit)();
           }}
@@ -118,4 +117,3 @@ export default function FiltrosDados(props: FiltrosDadosProps) {
     </div>
   );
 }
-

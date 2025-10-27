@@ -19,7 +19,10 @@ export const ListUrl = {
   RemoverUsuario: { url: '/users/{{user_id}}', method: 'DELETE' },
 
   ListarAtendimentos: { url: '/atendimentos', method: 'GET' },
-  ListarAtendimentosPorData: { url: '/atendimentos/{{user_id}}/filter?dataInicio={{dataInicio}}&dataFim={{dataFim}}', method: 'GET' },
+  ListarAtendimentosPorData: {
+    url: '/atendimentos/{{user_id}}/filter?dataInicio={{dataInicio}}&dataFim={{dataFim}}',
+    method: 'GET',
+  },
   ListarAtendimentoStatus: { url: '/atendimentos/status', method: 'GET' },
   BuscarAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'GET' },
   BuscarAtendimentoUserId: { url: '/atendimentos/get_by_user/{{user_id}}', method: 'GET' },
@@ -27,13 +30,14 @@ export const ListUrl = {
   AtualizarAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'PATCH' },
   RemoverAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'DELETE' },
 
-  ListarCanais : { url: '/channels', method: 'GET' },
+  ListarCanais: { url: '/channels', method: 'GET' },
   BuscarCanal: { url: '/channels/{{channel_id}}', method: 'GET' },
-  IniciarCanal: { url: '/channels/{{channel_id}}/start', method: 'POST' },
+  IniciarSessao: { url: '/channels/{{channel_id}}/start', method: 'GET' },
+  FinalizarSessao: { url: '/channels/{{channel_id}}/terminate', method: 'GET' },
 
   ListarServicos: { url: '/servicos', method: 'GET' },
-  UserInfo : { url: '/users/info', method: 'GET' },
-  
+  UserInfo: { url: '/users/info', method: 'GET' },
+
   SendMessage: { url: '/atendimento-chat/send-message', method: 'POST' },
 
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
@@ -100,7 +104,7 @@ export default function ApiClient() {
     const decodedRefresh = jwtDecode<Pick<JWTToken, 'exp'>>(refresh_token);
 
     setCookie(null, 'token', access_token, {
-      maxAge: (decodedToken.exp + (60 * 5)) - Math.floor(Date.now() / 1000.0),
+      maxAge: decodedToken.exp + 60 * 5 - Math.floor(Date.now() / 1000.0),
       path: '/',
     });
     setCookie(null, 'refresh_token', refresh_token, {
@@ -112,8 +116,8 @@ export default function ApiClient() {
       path: '/',
     });
 
-    return access_token
-  }
+    return access_token;
+  };
 
   const ValidateToken = async (): Promise<string> => {
     return new Promise(async (res) => {
@@ -124,37 +128,37 @@ export default function ApiClient() {
       const token = cookiesStore['token'];
 
       if (!token) {
-        const refreshDecoded = jwtDecode<Pick<JWTToken, "exp">>(refreshToken);
+        const refreshDecoded = jwtDecode<Pick<JWTToken, 'exp'>>(refreshToken);
         if (Number(refreshDecoded.exp) >= now) {
           try {
             const newToken = await UpdateToken(refreshToken);
             res(newToken);
           } catch (err) {
-            window.location.href = "/auth/logout"
+            window.location.href = '/auth/logout';
           }
         }
       } else {
         if (Number(expires_at) < now) {
           if (refreshToken) {
-            const refreshDecoded = jwtDecode<Pick<JWTToken, "exp">>(refreshToken);
+            const refreshDecoded = jwtDecode<Pick<JWTToken, 'exp'>>(refreshToken);
             if (Number(refreshDecoded.exp) >= now) {
               try {
                 const newToken = await UpdateToken(refreshToken);
                 res(newToken);
               } catch (err) {
-                console.log('erro', err.message)
+                console.log('erro', err.message);
                 // window.location.href = "/auth/logout";
               }
             }
           } else {
-            console.log("Aqui");
-            window.location.href = "/auth/logout";
+            console.log('Aqui');
+            window.location.href = '/auth/logout';
           }
         }
         res(token);
       }
-    })
-  }
+    });
+  };
 
   /**
    * Função para retornar dados das API's
@@ -163,10 +167,10 @@ export default function ApiClient() {
     props:
       | keyof typeof ListUrl
       | {
-        endpoint: keyof typeof ListUrl;
-        variables?: (string | number)[];
-        body?: unknown;
-      },
+          endpoint: keyof typeof ListUrl;
+          variables?: (string | number)[];
+          body?: unknown;
+        },
     vars: (string | number)[] = [],
   ): Promise<T> => {
     if (typeof props === 'string') {

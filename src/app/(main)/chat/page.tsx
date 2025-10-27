@@ -2,7 +2,6 @@ import { Fragment } from 'react';
 import ChatSection from './ChatSection';
 
 export default async function DashboardPage() {
-
   return (
     <Fragment>
       <div className="grid">
@@ -12,5 +11,4 @@ export default async function DashboardPage() {
       </div>
     </Fragment>
   );
-};
-
+}

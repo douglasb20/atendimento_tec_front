@@ -13,7 +13,7 @@ export default function SendMessageBox() {
     // Implement message sending logic here
     const dataPost = {
       to: '556492698043@c.us',
-      message: "*Atendente:*\n" + text.trim(),
+      message: '*Atendente:*\n' + text.trim(),
     };
 
     await FetchReq({
@@ -53,4 +53,3 @@ export default function SendMessageBox() {
     </div>
   );
 }
-

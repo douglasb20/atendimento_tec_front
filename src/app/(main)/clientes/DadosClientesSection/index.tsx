@@ -62,7 +62,7 @@ export default function DadosClientesSection({ data }: DadosClientesProps) {
       setLoading();
       await FetchReq('RemoverCliente', [data.id]);
       await sleep(1);
-      await GetClients()
+      await GetClients();
     } catch (err) {
       CatchAlerta(err, 'Erro ao remover cliente.');
     } finally {

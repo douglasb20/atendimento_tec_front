@@ -13,15 +13,15 @@ const OthersProvider = ({ children }) => {
       <LayoutProvider>{children}</LayoutProvider>
     </ServiceProvider>
   );
-}
+};
 
 const LoginProvider = ({ children }) => {
   return (
     <PrimeReactProvider value={{}}>
       <OthersProvider>{children}</OthersProvider>
     </PrimeReactProvider>
-  )
-}
+  );
+};
 
 const GeneralProvider = ({ children }) => {
   return (
@@ -50,7 +50,7 @@ const GeneralProvider = ({ children }) => {
       <OthersProvider>{children}</OthersProvider>
     </PrimeReactProvider>
   );
-}
+};
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   const path = usePathname();
@@ -61,4 +61,4 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
   ) : (
     <GeneralProvider>{children}</GeneralProvider>
   );
-}
+};
