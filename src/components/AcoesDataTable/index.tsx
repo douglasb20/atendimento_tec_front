@@ -103,7 +103,13 @@ export const BodyDateOnly = (data: any, options: ColumnBodyOptions) =>
   data[options.field] && DateToBR(data[options.field]);
 
 export const BodyDateAndTime = (data: any, options: ColumnBodyOptions) =>
-  data[options.field] && DateToBR(data[options.field], 'hm');
+  data[options.field] && DateToBR(data[options.field], 'dh');
 
 export const BodyCNPJ = (data: any, options: ColumnBodyOptions) =>
   data[options.field] && Mask(data[options.field], '##.###.###/####-##');
+
+export const BodyCPF = (data: any, options: ColumnBodyOptions) =>
+  data[options.field] && Mask(data[options.field], '###.###.###-##');
+
+export const BodyPhone = (data: any, options: ColumnBodyOptions) =>
+  data[options.field] && Mask(data[options.field], '(##) # ####-####');

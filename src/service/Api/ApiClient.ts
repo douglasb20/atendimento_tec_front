@@ -27,12 +27,17 @@ export const ListUrl = {
   AtualizarAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'PATCH' },
   RemoverAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'DELETE' },
 
+  ListarCanais : { url: '/channels', method: 'GET' },
+  BuscarCanal: { url: '/channels/{{channel_id}}', method: 'GET' },
+  IniciarCanal: { url: '/channels/{{channel_id}}/start', method: 'POST' },
+
   ListarServicos: { url: '/servicos', method: 'GET' },
   UserInfo : { url: '/users/info', method: 'GET' },
+  
+  SendMessage: { url: '/atendimento-chat/send-message', method: 'POST' },
 
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
   RemoveContact: { url: '/clients/{{client_id}}/contact/{{contact_id}}', method: 'DELETE' },
-  SendMessage: { url: '/whatsapp/send-message', method: 'POST' },
 };
 
 /**

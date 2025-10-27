@@ -30,6 +30,12 @@ const AppMenu = () => {
           ]
         },
         {
+          label: 'Canais',
+          // @ts-ignore
+          icon: `${PrimeIcons.OBJECTS_COLUMN} pi-fw`,
+          to: '/canais',
+        },
+        {
           label: 'Relatórios',
           icon: `${PrimeIcons.BOOK} pi-fw`,
           to: '/relatorios',
