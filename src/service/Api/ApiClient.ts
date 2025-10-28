@@ -32,6 +32,9 @@ export const ListUrl = {
 
   ListarCanais: { url: '/channels', method: 'GET' },
   BuscarCanal: { url: '/channels/{{channel_id}}', method: 'GET' },
+  AdicionarCanal: { url: '/channels', method: 'POST' },
+  AtualizarCanal: { url: '/channels/{{channel_id}}', method: 'PATCH' },
+  RemoverCanal: { url: '/channels/{{channel_id}}', method: 'DELETE' },
   IniciarSessao: { url: '/channels/{{channel_id}}/start', method: 'GET' },
   FinalizarSessao: { url: '/channels/{{channel_id}}/terminate', method: 'GET' },
 

@@ -112,4 +112,7 @@ export const BodyCPF = (data: any, options: ColumnBodyOptions) =>
   data[options.field] && Mask(data[options.field], '###.###.###-##');
 
 export const BodyPhone = (data: any, options: ColumnBodyOptions) =>
+  data[options.field] && Mask(data[options.field], '(##) ####-####');
+
+export const BodyPhoneCel = (data: any, options: ColumnBodyOptions) =>
   data[options.field] && Mask(data[options.field], '(##) # ####-####');

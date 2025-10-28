@@ -1,5 +1,4 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { parseCookies } from 'nookies';
 import { PrimeIcons } from 'primereact/api';
 import { useEffect, useRef, useState } from 'react';
@@ -8,13 +7,14 @@ import { io } from 'socket.io-client';
 import { ChannelResponse } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta, ConfirmaAcao } from '@/service/Util';
+import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 
 import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 
 import DtCanais from './DtCanais';
 import ModalConfigChannel from './ModalConfigChannel';
+import ModalForm from './ModalForm';
 
 type DadosCanaisProps = {
   data: ChannelResponse[];
@@ -31,15 +31,13 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
-  const router = useRouter();
   const activeChannelRef = useRef<ChannelResponse | null>(null);
 
   const ButtonsHeader: IButtonsOthers[] = [
     {
       label: 'Adicionar canal',
-      // @ts-ignore
-      icon: PrimeIcons.FILE_EDIT,
-      action: () => router.push('/canais/form/'),
+      icon: PrimeIcons.PLUS,
+      action: () => AbrirModalForm(null),
       bgColor: 'primary p-button-outlined',
     },
   ];
@@ -50,7 +48,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       tooltip: 'Editar canal',
       icon: 'pi pi-fw pi-file-edit',
       bgcolor: 'primary py-2',
-      command: (data) => BuscarCanal(data.id!),
+      command: (data) => AbrirModalForm(data),
     },
     {
       label: 'Configurar canal',
@@ -68,13 +66,53 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     },
   ];
 
+  const onSubmitForm = async (data: Pick<ChannelResponse, 'name' | 'id'>) => {
+    try {
+      setLoading();
+      if (!data?.id) { 
+        await FetchReq({
+          endpoint: 'AdicionarCanal',
+          body: {
+            name: data.name,
+          }
+        });
+      } else {
+        await FetchReq({
+          endpoint: 'AtualizarCanal',
+          variables: [data.id],
+          body: {
+            name: data.name,
+          }
+        });
+      }
+      await ReloadCanais();
+      await FecharModalForm();
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao salvar canal');
+    } finally { 
+      setLoading(false);
+    }
+  }
+
+  const AbrirModalForm = async (canal: ChannelResponse = null) => {
+    setActiveChannel(canal);
+    setModalVisible((prev) => ({ ...prev, formChannel: true }));
+  };
+
+  const FecharModalForm = async () => {
+    setModalVisible((prev) => ({ ...prev, formChannel: false }));
+    await sleep(1/2);
+    setActiveChannel(null);
+  };
+
   const AbrirModalConfig = async (id: number) => {
     await BuscarCanal(id);
     setModalVisible((prev) => ({ ...prev, configChannel: true }));
   };
 
-  const FecharModalConfig = () => {
+  const FecharModalConfig = async () => {
     setModalVisible((prev) => ({ ...prev, configChannel: false }));
+    await sleep(1/2);
     setActiveChannel(null);
   };
 
@@ -105,19 +143,16 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   };
 
   const RemoverCanal = async (data: ChannelResponse): Promise<void> => {
-    // try {
-    //   setLoading(true);
-    //   await FetchReq('RemoverCanal', [data.id]);
-    //   await sleep(1);
-    //   await ReloadCanais(
-    //     currentFilter.user_id,
-    //     currentFilter.data_inicio,
-    //     currentFilter.data_fim,
-    //   );
-    // } catch (err) {
-    //   setLoading(false);
-    //   CatchAlerta(err, 'Erro ao remover canal.');
-    // }
+    try {
+      setLoading(true);
+      await FetchReq('RemoverCanal', [data.id]);
+      await sleep(1);
+      await ReloadCanais();
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao remover canal.');
+    }finally{
+      setLoading(false);
+    }
   };
 
   const onMessageChannelStatus = (data: { channel_id: number }) => {
@@ -217,6 +252,12 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
           onHide={FecharModalConfig}
           onStartSession={onStartSession}
           onDisconnectSession={onDisconnectSession}
+        />
+        <ModalForm
+          visible={modalVisible.formChannel}
+          value={activeChannel}
+          onHide={FecharModalForm}
+          onComplete={onSubmitForm}
         />
       </>
     )

@@ -51,6 +51,7 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
         header={`${value?.name} `}
         visible={visible}
         className="w-11 md:w-12 lg:w-6 mt-8"
+        style={{ maxWidth: '30vw' }}
         onHide={onHide}
         blockScroll
         closeOnEscape={false}
@@ -94,6 +95,16 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
                 disabled={value?.channel_status_id === 2}
                 outlined
                 severity={value?.channel_status_id === 1 ? 'success' : 'danger'}
+              />
+              <Button
+                label={'Fechar sessão'}
+                icon={PrimeIcons.SIGN_OUT}
+                onClick={() => {
+                  onDisconnectSession && onDisconnectSession();
+                }}
+                outlined
+                severity={'info'}
+                visible={value?.channel_status_id === 2}
               />
             </div>
           </div>
