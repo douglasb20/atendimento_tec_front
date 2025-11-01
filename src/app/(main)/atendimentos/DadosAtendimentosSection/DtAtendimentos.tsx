@@ -152,7 +152,7 @@ const DtAtendimentos = ({ actions, ...props }) => {
           )}
         />
         <Column
-          field="valor_total"
+          field="total_amount"
           header="Valor"
           align="center"
           className="w-10rem"

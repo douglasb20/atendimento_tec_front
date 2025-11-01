@@ -62,16 +62,16 @@ export interface IClientResponse extends IClientes {
 export interface IContactResponse {
   id: number;
   clients_id: number;
-  nome_contato: string;
-  telefone_contato: string;
+  name: string;
+  phone: string;
   created_at: string;
   status: number;
 }
 
 export type ContactTable = {
   id?: string | null;
-  nome_contato: string;
-  telefone_contato?: string;
+  name: string;
+  phone?: string;
   tipo?: 'new' | 'old';
 };
 

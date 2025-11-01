@@ -20,13 +20,13 @@ type ModalProps = {
 
 const defaultForm: ContactTable = {
   id: null,
-  nome_contato: '',
-  telefone_contato: '',
+  name: '',
+  phone: '',
 };
 
 const schema = yup.object<yup.AnyObject, Shape<ContactTable>>({
-  nome_contato: yup.string().required(msgRequired),
-  telefone_contato: yup.string().notRequired(),
+  name: yup.string().required(msgRequired),
+  phone: yup.string().notRequired(),
 });
 
 function ModalFormulario(props: ModalProps) {
@@ -79,7 +79,7 @@ function ModalFormulario(props: ModalProps) {
         <div className="col-6">
           <Controller
             control={control}
-            name="nome_contato"
+            name="name"
             render={({ field, fieldState }) => (
               <>
                 <LabelPlus
@@ -102,7 +102,7 @@ function ModalFormulario(props: ModalProps) {
         <div className="col-6">
           <Controller
             control={control}
-            name="telefone_contato"
+            name="phone"
             render={({ field, fieldState }) => (
               <>
                 <LabelPlus

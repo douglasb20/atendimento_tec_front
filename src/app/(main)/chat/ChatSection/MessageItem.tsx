@@ -1,19 +1,9 @@
 'use client';
 import React, { useMemo } from 'react';
 import { v4 } from 'uuid';
+import { Message } from '../types';
 
-interface MessageData {
-  id: string;
-  fromMe: boolean;
-  body: string;
-}
 
-interface Message {
-  dataType: string;
-  data: {
-    message: MessageData;
-  };
-}
 
 function parseMensagem(texto: string): React.ReactNode[] {
   if (!texto) return [];

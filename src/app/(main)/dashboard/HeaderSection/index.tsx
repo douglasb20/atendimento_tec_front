@@ -35,10 +35,12 @@ const HeaderSection = ({ name, lastLogin }: HeaderSectionProps) => {
             <div className="flex justify-content-between w-full">
               <span className="font-bold text-4xl text-10">Olá, {ArrumaPrimeiroNome(name)}</span>
             </div>
-            <p className="text-600 m-0">
-              Último login realizado em{' '}
-              <span className="font-bold text-primary">{DateToBR(lastLogin, 'dh')}</span>{' '}
-            </p>
+            {lastLogin && (
+              <p className="text-600 m-0">
+                Último login realizado em{' '}
+                <span className="font-bold text-primary">{DateToBR(lastLogin, 'dh')}</span>{' '}
+              </p>
+            )}
           </div>
         </div>
       </div>

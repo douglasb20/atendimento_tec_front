@@ -18,17 +18,17 @@ export const ListUrl = {
   AtualizarUsuario: { url: '/users/{{user_id}}', method: 'PATCH' },
   RemoverUsuario: { url: '/users/{{user_id}}', method: 'DELETE' },
 
-  ListarAtendimentos: { url: '/atendimentos', method: 'GET' },
+  ListarAtendimentos: { url: '/supports', method: 'GET' },
   ListarAtendimentosPorData: {
-    url: '/atendimentos/{{user_id}}/filter?dataInicio={{dataInicio}}&dataFim={{dataFim}}',
+    url: '/supports/{{user_id}}/filter?dataInicio={{dataInicio}}&dataFim={{dataFim}}',
     method: 'GET',
   },
-  ListarAtendimentoStatus: { url: '/atendimentos/status', method: 'GET' },
-  BuscarAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'GET' },
-  BuscarAtendimentoUserId: { url: '/atendimentos/get_by_user/{{user_id}}', method: 'GET' },
-  AdicionarAtendimento: { url: '/atendimentos', method: 'POST' },
-  AtualizarAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'PATCH' },
-  RemoverAtendimento: { url: '/atendimentos/{{atendimento_id}}', method: 'DELETE' },
+  ListarAtendimentoStatus: { url: '/supports/status', method: 'GET' },
+  BuscarAtendimento: { url: '/supports/{{support_id}}', method: 'GET' },
+  BuscarAtendimentoUserId: { url: '/supports/get_by_user/{{user_id}}', method: 'GET' },
+  AdicionarAtendimento: { url: '/supports', method: 'POST' },
+  AtualizarAtendimento: { url: '/supports/{{support_id}}', method: 'PATCH' },
+  RemoverAtendimento: { url: '/supports/{{support_id}}', method: 'DELETE' },
 
   ListarCanais: { url: '/channels', method: 'GET' },
   BuscarCanal: { url: '/channels/{{channel_id}}', method: 'GET' },
@@ -41,7 +41,7 @@ export const ListUrl = {
   ListarServicos: { url: '/servicos', method: 'GET' },
   UserInfo: { url: '/users/info', method: 'GET' },
 
-  SendMessage: { url: '/atendimento-chat/send-message', method: 'POST' },
+  SendMessage: { url: '/support-chat/send-message', method: 'POST' },
 
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
   RemoveContact: { url: '/clients/{{client_id}}/contact/{{contact_id}}', method: 'DELETE' },

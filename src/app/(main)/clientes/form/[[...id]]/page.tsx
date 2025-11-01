@@ -112,8 +112,8 @@ export default function FormClient() {
         ...contacts,
         {
           id: uuidv4(),
-          nome_contato: fields.nome_contato,
-          telefone_contato: fields.telefone_contato,
+          name: fields.name,
+          phone: fields.phone,
           tipo: 'new',
         },
       ];
@@ -121,8 +121,8 @@ export default function FormClient() {
       editContact = [...contacts];
       let index = editContact.map((e) => e.id).indexOf(selectedContact.id);
 
-      editContact[index].nome_contato = fields.nome_contato;
-      editContact[index].telefone_contato = fields.telefone_contato;
+      editContact[index].name = fields.name;
+      editContact[index].phone = fields.phone;
     }
 
     setContacts(editContact);
@@ -155,8 +155,8 @@ export default function FormClient() {
       const newContacts = contacts.map((contact) => {
         return {
           ...(contact.tipo !== 'new' && { id: contact.id }),
-          nome_contato: contact.nome_contato,
-          telefone_contato: contact?.telefone_contato?.replace(/\D/g, ''),
+          name: contact.name,
+          phone: contact?.phone?.replace(/\D/g, ''),
         };
       });
 
@@ -197,8 +197,8 @@ export default function FormClient() {
       setContacts(
         oldContact.map((e) => ({
           id: String(e.id),
-          nome_contato: e.nome_contato,
-          telefone_contato: e.telefone_contato,
+          name: e.name,
+          phone: e.phone,
           tipo: 'old',
         })),
       );
@@ -287,13 +287,13 @@ export default function FormClient() {
                     size="small"
                   >
                     <Column
-                      field="nome_contato"
+                      field="name"
                       header="Nome"
                       align="center"
                       headerClassName=""
                     />
                     <Column
-                      field="telefone_contato"
+                      field="phone"
                       header="Telefone"
                       align="center"
                       headerClassName="w-3"
