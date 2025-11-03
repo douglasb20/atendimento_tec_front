@@ -8,30 +8,30 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
 import { getFormErrorMessage, msgRequired } from '@/service/Util';
-import { ContactTable, Masks, Shape } from '@/Interfaces';
+import { ContactResponse, Masks, Shape } from '@/Interfaces';
 import LabelPlus from '@/components/LabelPlus';
 
 type ModalProps = {
   visible: boolean;
   onHide: () => void;
-  data: ContactTable;
-  onConfirm: (fields: ContactTable) => void;
+  data: ContactResponse;
+  onConfirm: (fields: ContactResponse) => void;
 };
 
-const defaultForm: ContactTable = {
+const defaultForm: Pick<ContactResponse, 'name' | 'phone' | 'id'> = {
   id: null,
   name: '',
   phone: '',
 };
 
-const schema = yup.object<yup.AnyObject, Shape<ContactTable>>({
+const schema = yup.object<yup.AnyObject, Shape<Pick<ContactResponse, 'name' | 'phone'>>>({
   name: yup.string().required(msgRequired),
   phone: yup.string().notRequired(),
 });
 
 function ModalFormulario(props: ModalProps) {
   const { visible, onHide, data, onConfirm } = props;
-  const { control, handleSubmit, reset } = useForm<ContactTable>({
+  const { control, handleSubmit, reset } = useForm<ContactResponse>({
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
   });
@@ -53,8 +53,13 @@ function ModalFormulario(props: ModalProps) {
     );
   };
 
-  const onSubmitForm = (fields: ContactTable) => {
-    onConfirm && onConfirm(fields);
+  const onSubmitForm = (fields: ContactResponse) => {
+    try {
+      
+      onConfirm && onConfirm(fields);
+    } catch (error) { 
+
+    }
   };
 
   useEffect(() => {

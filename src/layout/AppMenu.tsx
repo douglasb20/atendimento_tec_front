@@ -32,7 +32,7 @@ const AppMenu = () => {
         {
           label: 'Canais',
           // @ts-ignore
-          icon: `${PrimeIcons.OBJECTS_COLUMN} pi-fw`,
+          icon: `fa fa-plug text-2xl font-light text-center`,
           to: '/canais',
         },
         {
@@ -43,7 +43,19 @@ const AppMenu = () => {
         {
           label: 'Clientes',
           icon: `${PrimeIcons.USERS} pi-fw`,
-          to: '/clientes',
+          items: [
+            {
+              label: 'Gerenciamento',
+              // @ts-ignore
+              icon: `${PrimeIcons.PEN_TO_SQUARE} pi-fw`,
+              to: '/clientes',
+            },
+            {
+              label: 'Contatos',
+              icon: `${PrimeIcons.ID_CARD} pi-fw`,
+              to: '/clientes/contatos',
+            },
+          ],
         },
         {
           label: 'Usuários',

@@ -69,12 +69,12 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   const onSubmitForm = async (data: Pick<ChannelResponse, 'name' | 'id'>) => {
     try {
       setLoading();
-      if (!data?.id) { 
+      if (!data?.id) {
         await FetchReq({
           endpoint: 'AdicionarCanal',
           body: {
             name: data.name,
-          }
+          },
         });
       } else {
         await FetchReq({
@@ -82,17 +82,17 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
           variables: [data.id],
           body: {
             name: data.name,
-          }
+          },
         });
       }
       await ReloadCanais();
       await FecharModalForm();
     } catch (err) {
       CatchAlerta(err, 'Erro ao salvar canal');
-    } finally { 
+    } finally {
       setLoading(false);
     }
-  }
+  };
 
   const AbrirModalForm = async (canal: ChannelResponse = null) => {
     setActiveChannel(canal);
@@ -101,7 +101,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
 
   const FecharModalForm = async () => {
     setModalVisible((prev) => ({ ...prev, formChannel: false }));
-    await sleep(1/2);
+    await sleep(1 / 2);
     setActiveChannel(null);
   };
 
@@ -112,7 +112,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
 
   const FecharModalConfig = async () => {
     setModalVisible((prev) => ({ ...prev, configChannel: false }));
-    await sleep(1/2);
+    await sleep(1 / 2);
     setActiveChannel(null);
   };
 
@@ -150,7 +150,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       await ReloadCanais();
     } catch (err) {
       CatchAlerta(err, 'Erro ao remover canal.');
-    }finally{
+    } finally {
       setLoading(false);
     }
   };

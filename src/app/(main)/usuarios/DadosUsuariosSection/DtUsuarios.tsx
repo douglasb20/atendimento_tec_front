@@ -1,10 +1,8 @@
-import React, { memo } from 'react';
 import { Column } from 'primereact/column';
+import { memo } from 'react';
 
-import AcoesDataTable, { BodyCurrency } from '@/components/AcoesDataTable';
+import AcoesDataTable, { BodyCurrency, BodyDateAndTime } from '@/components/AcoesDataTable';
 import DataTableCustom from '@/components/DataTableCustom';
-import { DateToBR } from '@/service/Util';
-import { IUsuariosResponse } from '@/Interfaces';
 
 const DtUsuarios = ({ actions, ...props }) => {
   return (
@@ -40,7 +38,7 @@ const DtUsuarios = ({ actions, ...props }) => {
           header="Último login"
           alignHeader="center"
           headerClassName="w-12rem"
-          body={(data: IUsuariosResponse) => data.lastlogin_at && DateToBR(data.lastlogin_at, 'dh')}
+          body={BodyDateAndTime}
         />
         <Column
           hidden={!actions ? true : false}

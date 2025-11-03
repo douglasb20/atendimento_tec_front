@@ -1,36 +1,31 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { useParams } from 'next/navigation';
-import { InputText } from 'primereact/inputtext';
-import { InputMask } from 'primereact/inputmask';
-import { PrimeIcons } from 'primereact/api';
-import { DataTable } from 'primereact/datatable';
 import { Button } from 'primereact/button';
 import { Column, ColumnBodyOptions } from 'primereact/column';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { v4 as uuidv4 } from 'uuid';
+import { DataTable } from 'primereact/datatable';
+import { InputMask } from 'primereact/inputmask';
+import { InputText } from 'primereact/inputtext';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 
-import { ContactTable, IClientResponse, Masks, Shape } from '@/Interfaces';
+import { ContactResponse, IClientResponse, Masks, Shape } from '@/Interfaces';
 
-import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
+import AcoesDataTable from '@/components/AcoesDataTable';
 import LabelPlus from '@/components/LabelPlus';
-import AcoesDataTable, { IActionTable } from '@/components/AcoesDataTable';
+import TitleCards from '@/components/TitleCards';
+import useApi from '@/service/Api/ApiClient';
 import {
   AlertaRedireciona,
   CatchAlerta,
-  ConfirmaAcao,
   getFormErrorMessage,
   Mask,
   msgRequired,
   ValidaCNPJ,
 } from '@/service/Util';
-import useApi from '@/service/Api/ApiClient';
 
 import { useService } from '@/contexts/ServicesContext';
-
-import ModalFormulario from './ModalFormulario';
 
 type FormType = {
   nome: string;
@@ -49,7 +44,7 @@ const defaultForm: FormType = {
   cnpj: '',
 };
 
-const BodyTelefone = (data: ContactTable, options: ColumnBodyOptions) => {
+const BodyTelefone = (data: ContactResponse, options: ColumnBodyOptions) => {
   let value: string = data[options.field];
   if (value) {
     const maskType = value.length === 11 ? '(##) # ####-####' : '(##) ####-####';
@@ -61,9 +56,7 @@ const BodyTelefone = (data: ContactTable, options: ColumnBodyOptions) => {
 
 export default function FormClient() {
   const [rendered, setRendered] = useState(false);
-  const [contacts, setContacts] = useState<ContactTable[]>([]);
-  const [selectedContact, setSelectedContact] = useState<ContactTable>(null);
-  const [formContactStatus, setFormContactStatus] = useState(false);
+  const [contacts, setContacts] = useState<ContactResponse[]>([]);
   const { FetchReq } = useApi();
   const { control, handleSubmit, reset } = useForm<FormType>({
     reValidateMode: 'onBlur',
@@ -73,98 +66,14 @@ export default function FormClient() {
   const params = useParams();
   const { id } = params as { id: string[] } | null;
 
-  const ButtonsHeader: IButtonsOthers[] = [
-    {
-      label: 'Adicionar contato',
-      bgColor: 'primary p-button-outlined',
-      icon: PrimeIcons.ID_CARD,
-      action: () => AbrirModalForm(null),
-    },
-  ];
-
-  const acoesTable: IActionTable<ContactTable>[] = [
-    {
-      label: 'Editar contato',
-      tooltip: 'Editar contato',
-      icon: 'pi pi-fw pi-user-edit',
-      bgcolor: 'primary py-2',
-      command: (data) => AbrirModalForm(data),
-    },
-    {
-      label: 'Excluir contato',
-      tooltip: 'Excluir contato',
-      icon: 'pi pi-fw pi-times',
-      bgcolor: 'danger py-2',
-      command: (data) => ConfirmaAcao('Deseja remover este contato?', RemoveContato, data),
-    },
-  ];
-
-  const AbrirModalForm = (dados: ContactTable | null) => {
-    setSelectedContact(dados);
-    setFormContactStatus(true);
-  };
-
-  const onConfirmContact = (fields: ContactTable) => {
-    let editContact: ContactTable[] = [];
-
-    if (!fields.id) {
-      editContact = [
-        ...contacts,
-        {
-          id: uuidv4(),
-          name: fields.name,
-          phone: fields.phone,
-          tipo: 'new',
-        },
-      ];
-    } else {
-      editContact = [...contacts];
-      let index = editContact.map((e) => e.id).indexOf(selectedContact.id);
-
-      editContact[index].name = fields.name;
-      editContact[index].phone = fields.phone;
-    }
-
-    setContacts(editContact);
-    closeModalContact();
-  };
-
-  const RemoveContato = async (fields: ContactTable) => {
-    try {
-      let editContact: ContactTable[] = [];
-      if (fields.tipo !== 'new') {
-        await FetchReq('RemoveContact', [id[0], fields.id]);
-      }
-
-      editContact = contacts.filter((e) => e.id !== fields.id);
-      setContacts(editContact);
-    } catch (err) {
-    } finally {
-    }
-  };
-
-  const closeModalContact = () => {
-    setFormContactStatus(false);
-    setSelectedContact(null);
-  };
-
   const onSubmitForm = async (fields) => {
     try {
       setLoading(true);
-
-      const newContacts = contacts.map((contact) => {
-        return {
-          ...(contact.tipo !== 'new' && { id: contact.id }),
-          name: contact.name,
-          phone: contact?.phone?.replace(/\D/g, ''),
-        };
-      });
 
       const dataPost = {
         ...(id !== undefined && { id: id[0] }),
         ...fields,
         cnpj: fields.cnpj.replace(/\D/g, ''),
-        ...(newContacts.length > 0 && { contacts: newContacts }),
       };
       if (id === undefined) {
         await FetchReq({
@@ -194,14 +103,7 @@ export default function FormClient() {
       data.cnpj = data.cnpj === null ? '' : data.cnpj;
       delete data.contacts;
       reset({ ...defaultForm, ...data });
-      setContacts(
-        oldContact.map((e) => ({
-          id: String(e.id),
-          name: e.name,
-          phone: e.phone,
-          tipo: 'old',
-        })),
-      );
+      setContacts(oldContact || []);
       setRendered(true);
     } catch (err) {
       CatchAlerta(err, 'Erro ao consultar cliente', '/clientes');
@@ -274,10 +176,7 @@ export default function FormClient() {
 
               <div className="grid">
                 <div className="col-12 mt-3">
-                  <TitleCards
-                    title="Contatos"
-                    buttons={ButtonsHeader}
-                  />
+                  <TitleCards title="Contatos" />
                   <DataTable
                     value={contacts}
                     emptyMessage="Nenhum contato cadastrado"
@@ -303,12 +202,7 @@ export default function FormClient() {
                       header="Ações"
                       align="center"
                       headerClassName="w-12rem"
-                      body={(rowData) => (
-                        <AcoesDataTable
-                          rowData={rowData}
-                          actions={acoesTable}
-                        />
-                      )}
+                      body={(rowData) => <AcoesDataTable rowData={rowData} />}
                     />
                   </DataTable>
                 </div>
@@ -332,13 +226,6 @@ export default function FormClient() {
             </div>
           </div>
         </div>
-
-        <ModalFormulario
-          visible={formContactStatus}
-          onHide={() => setFormContactStatus(false)}
-          data={selectedContact}
-          onConfirm={onConfirmContact}
-        />
       </>
     )
   );

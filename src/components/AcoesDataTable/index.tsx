@@ -24,7 +24,7 @@ export interface IActionTable<T = any> extends IActions<T> {
   template?: (item: IActions<T>, data: T) => ReactNode;
 }
 
-function AcoesDataTable<T>({ actions, rowData }: { actions: IActionTable<T>[]; rowData: T }) {
+function AcoesDataTable<T>({ actions, rowData }: { actions?: IActionTable<T>[]; rowData: T }) {
   const menuRef = useRef<Menu>(null);
 
   const AcaoBodyTemplate = ({ rowData }) => {

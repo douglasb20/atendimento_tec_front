@@ -1,4 +1,4 @@
-import { create  } from 'zustand';
+import { create } from 'zustand';
 import { createSocketSlice } from './socketSlice';
 import { createMessageSlice } from './messageSlice';
 import { MessageSlice, SocketSlice } from '../../types';

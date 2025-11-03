@@ -3,8 +3,6 @@ import React, { useMemo } from 'react';
 import { v4 } from 'uuid';
 import { Message } from '../types';
 
-
-
 function parseMensagem(texto: string): React.ReactNode[] {
   if (!texto) return [];
 

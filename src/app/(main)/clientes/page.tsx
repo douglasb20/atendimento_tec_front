@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import ApiService from '@/service/Api/ApiServer';
 
-import DadosClientesSection from './DadosClientesSection';
+import DadosClientesSection from './_DadosClientesSection';
 import { IClientes } from '@/Interfaces';
 
 export const metadata: Metadata = {

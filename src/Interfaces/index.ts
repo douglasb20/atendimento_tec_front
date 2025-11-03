@@ -42,6 +42,7 @@ export interface IUsuariosResponse {
   email: string;
   status?: number;
   valor_hora?: number;
+  avatar_url?: string | null;
   is_requestpassword?: number;
   created_at?: string;
   lastlogin_at?: string;
@@ -56,11 +57,11 @@ export interface IClientes {
 }
 
 export interface IClientResponse extends IClientes {
-  contacts?: IContactResponse[];
+  contacts?: ContactResponse[];
 }
 
-export interface IContactResponse {
-  id: number;
+export type ContactResponse = {
+  id?: number;
   clients_id: number;
   name: string;
   phone: string;
@@ -68,14 +69,7 @@ export interface IContactResponse {
   status: number;
 }
 
-export type ContactTable = {
-  id?: string | null;
-  name: string;
-  phone?: string;
-  tipo?: 'new' | 'old';
-};
-
-export interface AtendimentosResponse {
+export type AtendimentosResponse = {
   id: number;
   client_id: number;
   contact_id: number;
@@ -153,3 +147,19 @@ type ChannelStatus = {
   id: number;
   name: string;
 };
+
+type FieldsSignature = {
+  acl: string;
+  bucket: string;
+  'X-Amz-Algorithm': string;
+  'X-Amz-Credential': string;
+  'X-Amz-Date': string;
+  key: string;
+  Policy: string;
+  'X-Amz-Signature': string;
+}
+
+export type SignatureResponse = {
+  url: string;
+  fields: FieldsSignature;
+}

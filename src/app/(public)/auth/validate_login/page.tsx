@@ -6,9 +6,17 @@ import { useEffect } from 'react';
 const ValidateLoginPage = () => {
   const router = useRouter();
   useEffect(() => {
-    getUserInfo().then(() => {
-      router.push('/');
-    });
+    try {
+      
+      getUserInfo().then(() => {
+        router.push('/');
+      }).catch((error) => {
+        console.error(error);
+        
+      });
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+    }
   }, []);
   return null;
 };

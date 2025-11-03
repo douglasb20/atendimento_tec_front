@@ -3,12 +3,10 @@ import type { StateCreator } from 'zustand';
 import { MessageSlice, SocketSlice } from '../../types';
 import { parseCookies } from 'nookies';
 
-export const createSocketSlice: StateCreator<
-  SocketSlice & MessageSlice,
-  [],
-  [],
-  SocketSlice
-> = (set, get) => ({
+export const createSocketSlice: StateCreator<SocketSlice & MessageSlice, [], [], SocketSlice> = (
+  set,
+  get,
+) => ({
   socket: null,
 
   connect: () => {

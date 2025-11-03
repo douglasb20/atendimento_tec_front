@@ -1,13 +1,9 @@
 import type { StateCreator } from 'zustand';
 import { MessageSlice, SocketSlice } from '../../types';
 
-
-export const createMessageSlice: StateCreator<
-  SocketSlice & MessageSlice,
-  [],
-  [],
-  MessageSlice
-> = (set) => ({
+export const createMessageSlice: StateCreator<SocketSlice & MessageSlice, [], [], MessageSlice> = (
+  set,
+) => ({
   messages: [],
   unreadMessages: [],
 
@@ -21,7 +17,7 @@ export const createMessageSlice: StateCreator<
   markAsRead: (messageId) => {
     set((state) => ({
       messages: state.messages.map((m) =>
-        m.data.message.id === messageId ? { ...m, read: true } : m
+        m.data.message.id === messageId ? { ...m, read: true } : m,
       ),
       unreadMessages: state.unreadMessages.filter((m) => m.data.message.id !== messageId),
     }));

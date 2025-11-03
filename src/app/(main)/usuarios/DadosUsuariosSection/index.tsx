@@ -40,8 +40,7 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
       tooltip: 'Editar usuário',
       icon: 'pi pi-fw pi-user-edit',
       command: (data) => {
-        setUsuarioSelecionado(data);
-        setModalForm(true);
+        GetUserById(data.id);
       },
     },
     {
@@ -64,6 +63,23 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
       setLoading(false);
     }
   };
+
+  const GetUserById = async (id: number) => {
+    try {
+      setLoading(true);
+      const data = await FetchReq<IUsuariosResponse>('BuscarUsuarioPorId', [id]);
+      ShowModalFormUser(data);
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao consultar usuários');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ShowModalFormUser = (data?: IUsuariosResponse) => {
+    setUsuarioSelecionado(data || null);
+    setModalForm(true);
+  }
 
   const RemoverUsuario = async (data: IUsuariosResponse) => {
     try {

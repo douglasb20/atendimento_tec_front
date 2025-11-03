@@ -13,10 +13,17 @@ export const ListUrl = {
   BuscarClienteId: { url: '/clients/{{client_id}}', method: 'GET' },
   BuscarContatoClientId: { url: '/clients/{{client_id}}/contact', method: 'GET' },
 
+  ListarContatos: { url: '/contacts', method: 'GET' },
+  AdicionarContato: { url: '/contacts', method: 'POST' },
+  AtualizarContato: { url: '/contacts/{{contact_id}}', method: 'PATCH' },
+  RemoverContato: { url: '/contacts/{{contact_id}}', method: 'DELETE' },
+
   ListarUsuarios: { url: '/users', method: 'GET' },
+  BuscarUsuarioPorId: { url: '/users/{{user_id}}', method: 'GET' },
   AdicionarUsuario: { url: '/users', method: 'POST' },
   AtualizarUsuario: { url: '/users/{{user_id}}', method: 'PATCH' },
   RemoverUsuario: { url: '/users/{{user_id}}', method: 'DELETE' },
+  AssinarAvatarUsuario: { url: '/users/sign-avatar', method: 'POST' },
 
   ListarAtendimentos: { url: '/supports', method: 'GET' },
   ListarAtendimentosPorData: {
@@ -44,7 +51,6 @@ export const ListUrl = {
   SendMessage: { url: '/support-chat/send-message', method: 'POST' },
 
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
-  RemoveContact: { url: '/clients/{{client_id}}/contact/{{contact_id}}', method: 'DELETE' },
 };
 
 /**
