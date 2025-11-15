@@ -160,3 +160,5 @@ export const LayoutProvider = (props: ChildContainerProps) => {
     </LayoutContext.Provider>
   );
 };
+
+export const useLayoutStore = () => React.useContext(LayoutContext);

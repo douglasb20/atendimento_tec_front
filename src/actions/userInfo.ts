@@ -7,16 +7,14 @@ import ApiServer from 'service/Api/ApiServer';
 
 export async function getUserInfo() {
   try {
-    
     const cookieStorage = await cookies();
-    if (cookieStorage.has('userInfo')) return null;
-  
+
     const { FetchReq } = await ApiServer();
     const user = await FetchReq<UserInfo>('UserInfo');
-  
+
     const tokenString: string = cookieStorage.get('token')?.value;
     const tokenDecoded = jwtDecode<JWTToken>(tokenString);
-  
+
     cookieStorage.set({
       name: 'userInfo',
       value: JSON.stringify(user),
@@ -24,7 +22,7 @@ export async function getUserInfo() {
       path: '/',
     });
   } catch (err) {
-    console.log(err?.request)
+    console.log(err?.request);
     throw err;
   }
 }

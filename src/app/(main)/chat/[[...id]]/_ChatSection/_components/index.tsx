@@ -1,9 +1,4 @@
-'use client';
-import React, { useMemo } from 'react';
-import { v4 } from 'uuid';
-import { Message } from '../types';
-
-function parseMensagem(texto: string): React.ReactNode[] {
+export function parseMensagem(texto: string): React.ReactNode[] {
   if (!texto) return [];
 
   // Divide o texto em partes mantendo as marcações
@@ -58,48 +53,4 @@ function parseMensagem(texto: string): React.ReactNode[] {
   });
 
   return elementos;
-}
-
-function SingleMessage({ message }: { message: Message }) {
-  const { fromMe, body } = message.data.message;
-
-  // --- 4. Otimização com useMemo ---
-  // Evita re-processar a mesma mensagem em cada renderização.
-  // A formatação só é recalculada se o 'body' da mensagem mudar.
-  const formattedContent = useMemo(() => parseMensagem(body), [body]);
-
-  const messageClass = fromMe
-    ? 'align-self-end bg-blue-500 text-white'
-    : 'align-self-start bg-gray-300 text-black';
-
-  return (
-    <div
-      className={`w-auto p-2 mb-2 border-round-lg max-w-xs ${messageClass}`}
-      style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-    >
-      {formattedContent}
-    </div>
-  );
-}
-
-export default function MessageItem({ messages }: { messages?: Message[] }) {
-  return (
-    <>
-      {messages?.map((msg) => {
-        if (msg?.dataType !== 'message_create') {
-          return null;
-        }
-
-        // --- 6. Chave (key) Estável e Única ---
-        // Usar o ID da mensagem é a melhor prática. `v4()` ou `index` são anti-padrões
-        // que causam re-renderizações desnecessárias.
-        return (
-          <SingleMessage
-            key={v4()}
-            message={msg}
-          />
-        );
-      })}
-    </>
-  );
 }

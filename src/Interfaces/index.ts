@@ -1,5 +1,15 @@
 import { AnySchema } from 'yup';
 
+import { ContactResponse } from './contact.interface';
+import { ClientResponse } from './client.interface';
+
+export * from './suport-chat.interface';
+export * from './chat-store.interface';
+export * from './channel.interface';
+export * from './contact.interface';
+export * from './client.interface';
+
+
 export enum Masks {
   DATEBR = '99/99/9999',
   CPF = '999.999.999-99',
@@ -48,26 +58,11 @@ export interface IUsuariosResponse {
   lastlogin_at?: string;
 }
 
-export interface IClientes {
-  id: number;
-  nome: string;
-  cnpj: string;
-  created_at: string;
-  status: number;
-}
-
-export interface IClientResponse extends IClientes {
+export interface IClientResponse extends ClientResponse {
   contacts?: ContactResponse[];
 }
 
-export type ContactResponse = {
-  id?: number;
-  clients_id: number;
-  name: string;
-  phone: string;
-  created_at: string;
-  status: number;
-}
+
 
 export type AtendimentosResponse = {
   id: number;
@@ -91,7 +86,8 @@ export type AtendimentosResponse = {
   status_descricao: string;
   valor_total: number;
   atendimentosServicos: AtendimentoServicos[];
-}
+};
+
 export interface AtendimentoServicos {
   id: number;
   atendimento_id: number;
@@ -113,39 +109,8 @@ export interface IAtendimentoStatus {
   descricao: string;
 }
 
-export type UserInfo = {
-  id: number;
-  name: string;
-  email: string;
-  valor_hora: string;
-  is_requestpassword: number;
-  created_at: string;
-  lastlogin_at: string;
-  role: string;
-  is_superuser: number;
-  status: number;
+export type UserInfo = IUsuariosResponse & {
   permissions: string[];
-};
-
-export type ChannelResponse = {
-  id: number;
-  name: string;
-  phone_number: string;
-  session_id: string;
-  channel_status_id: number;
-  qr_code: string | null;
-  is_connected: number;
-  connected_at: string | null;
-  disconnected_at: string | null;
-  created_at: string;
-  updated_at: string | null;
-  deleted_at: string | null;
-  channelStatus: ChannelStatus;
-};
-
-type ChannelStatus = {
-  id: number;
-  name: string;
 };
 
 type FieldsSignature = {
@@ -157,9 +122,9 @@ type FieldsSignature = {
   key: string;
   Policy: string;
   'X-Amz-Signature': string;
-}
+};
 
 export type SignatureResponse = {
   url: string;
   fields: FieldsSignature;
-}
+};

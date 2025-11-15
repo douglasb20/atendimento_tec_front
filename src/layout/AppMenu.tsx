@@ -5,7 +5,7 @@ import { PrimeIcons } from 'primereact/api';
 const AppMenu = () => {
   const model: MenuModel[] = [
     {
-      label: 'Dashboards',
+      label: 'Dashboard',
       icon: PrimeIcons.HOME,
       items: [
         {

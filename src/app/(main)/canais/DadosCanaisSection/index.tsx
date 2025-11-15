@@ -157,11 +157,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
 
   const onMessageChannelStatus = (data: { channel_id: number }) => {
     ReloadCanais(false);
-    console.log(data);
     if (activeChannelRef.current && data.channel_id === activeChannelRef.current.id) {
-      console.log(
-        `Canal ativo (${activeChannelRef.current.id}) corresponde ao evento. Buscando dados...`,
-      );
       BuscarCanal(data.channel_id, false);
     }
   };

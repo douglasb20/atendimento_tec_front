@@ -67,16 +67,20 @@ export default async function ApiService() {
       props = { endpoint: props, body: null, variables: vars };
     }
     const { endpoint, body, variables } = props;
+    try {
+      const newUrl = AjeitaUrl(ListUrl[endpoint].url, variables);
+      console.log('API Request:', ListUrl[endpoint].method, newUrl, body);
+      const { data } = await req({
+        url: newUrl,
+        method: ListUrl[endpoint].method,
+        data: ListUrl[endpoint].method === 'GET' ? null : body,
+      });
 
-    const newUrl = AjeitaUrl(ListUrl[endpoint].url, variables);
-
-    const { data } = await req({
-      url: newUrl,
-      method: ListUrl[endpoint].method,
-      data: ListUrl[endpoint].method === 'GET' ? null : body,
-    });
-
-    return data;
+      return data;
+    } catch (err) {
+      console.error('API Request Error:', err.request);
+      throw err;
+    }
   };
 
   return {

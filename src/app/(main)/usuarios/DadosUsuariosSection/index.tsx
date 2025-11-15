@@ -79,7 +79,7 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
   const ShowModalFormUser = (data?: IUsuariosResponse) => {
     setUsuarioSelecionado(data || null);
     setModalForm(true);
-  }
+  };
 
   const RemoverUsuario = async (data: IUsuariosResponse) => {
     try {

@@ -72,7 +72,7 @@ export default function DadosContatosSection({ data }: DadosContatosProps) {
     }
   };
 
-  const onOpenModalForm = (data?: ContactResponse) => { 
+  const onOpenModalForm = (data?: ContactResponse) => {
     setSelectedContact(data || null);
     setModalVisible(true);
   };

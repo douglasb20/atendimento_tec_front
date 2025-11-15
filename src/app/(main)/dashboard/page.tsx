@@ -1,14 +1,13 @@
-import { Fragment } from 'react';
 import { cookies } from 'next/headers';
-import { jwtDecode } from 'jwt-decode';
+import { Fragment } from 'react';
 
+import { UserInfo } from '@/Interfaces';
 import HeaderSection from './HeaderSection';
-import { JWTToken } from '@/Interfaces';
 
 export default async function DashboardPage() {
   const cookieStorage = await cookies();
-  const tokenString: string = cookieStorage.get('token')?.value;
-  const tokenDecoded = jwtDecode<JWTToken>(tokenString);
+  const userInfoString: string = cookieStorage.get('userInfo')?.value;
+  const userInfoDecoded = JSON.parse(userInfoString) as UserInfo;
 
   return (
     <Fragment>
@@ -18,8 +17,9 @@ export default async function DashboardPage() {
           style={{ maxWidth: 1400 }}
         >
           <HeaderSection
-            name={tokenDecoded.name}
-            lastLogin={tokenDecoded.lastlogin_at}
+            name={userInfoDecoded.name}
+            lastLogin={userInfoDecoded.lastlogin_at}
+            avatarUrl={userInfoDecoded.avatar_url}
           />
         </div>
       </div>

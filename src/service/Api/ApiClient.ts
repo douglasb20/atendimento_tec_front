@@ -45,10 +45,13 @@ export const ListUrl = {
   IniciarSessao: { url: '/channels/{{channel_id}}/start', method: 'GET' },
   FinalizarSessao: { url: '/channels/{{channel_id}}/terminate', method: 'GET' },
 
-  ListarServicos: { url: '/servicos', method: 'GET' },
+  ListarServicos: { url: '/services', method: 'GET' },
   UserInfo: { url: '/users/info', method: 'GET' },
 
-  SendMessage: { url: '/support-chat/send-message', method: 'POST' },
+  ListarAtendimentosSuporte: { url: '/support-chats', method: 'GET' },
+  ListarMensagensPorAtendimentoId: { url: '/support-chats/{{chat_id}}/messages', method: 'GET' },
+
+  SendMessage: { url: '/support-chats/send-message', method: 'POST' },
 
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
 };

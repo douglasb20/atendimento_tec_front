@@ -1,20 +1,23 @@
 import { ChangeEvent, useEffect, useState } from 'react';
+import Image from 'next/image';
+import { classNames } from 'primereact/utils';
+import { ProgressSpinner } from 'primereact/progressspinner';
 import { Button } from 'primereact/button';
 import { Dialog as Modal } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { parseCookies } from 'nookies';
 import * as yup from 'yup';
 
-import { IUsuariosResponse, Shape, SignatureResponse } from '@/Interfaces';
-import LabelPlus from '@/components/LabelPlus';
-import InputDecimal from '@/components/InputDecimal';
+import { getUserInfo } from '@/actions/userInfo';
+import { IUsuariosResponse, Shape, SignatureResponse, UserInfo } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
 import { AlertaCallback, CatchAlerta, getFormErrorMessage, msgRequired } from '@/service/Util';
 import ApiClient from '@/service/Api/ApiClient';
-import Image from 'next/image';
-import { classNames } from 'primereact/utils';
-import { ProgressSpinner } from 'primereact/progressspinner';
+
+import LabelPlus from '@/components/LabelPlus';
+import InputDecimal from '@/components/InputDecimal';
 
 type ModalProps = {
   visible: boolean;
@@ -132,6 +135,10 @@ const ModalFormUser = (props: ModalProps) => {
       setLoading(true);
       // Base: se já existe algo, normaliza para key (mesmo que venha como presigned)
       let avatarKey = avatarConfig.key ?? extractKeyFromAvatar(data?.avatar_url);
+      const cookies = parseCookies();
+      const userInfo: UserInfo | null = cookies['userInfo']
+        ? JSON.parse(cookies['userInfo'])
+        : null;
 
       // Se marcou para remover e não selecionou novo arquivo
       if (avatarConfig.removed && !avatarConfig.file) {
@@ -194,6 +201,10 @@ const ModalFormUser = (props: ModalProps) => {
         });
       }
 
+      if (data?.id === userInfo?.id) {
+        await getUserInfo();
+      }
+
       AlertaCallback('Usuário salvo com sucesso!', () => onConfirm && onConfirm(), 'success');
       onHide && onHide();
     } catch (err) {
@@ -247,6 +258,8 @@ const ModalFormUser = (props: ModalProps) => {
       removed: true,
     }));
   };
+
+  const showRemoveButton = !avatarConfig.isLoading && !avatarConfig.removed && pointerOver;
 
   useEffect(() => {
     if (visible) {
@@ -302,9 +315,8 @@ const ModalFormUser = (props: ModalProps) => {
                 <Button
                   className={classNames(
                     {
-                      'opacity-0 cursor-auto pointer-events-none':
-                        avatarConfig.removed || !pointerOver,
-                      'opacity-100': !avatarConfig.removed && pointerOver,
+                      'opacity-0 cursor-auto pointer-events-none': !showRemoveButton,
+                      'opacity-100': showRemoveButton,
                     },
                     'btnRemoveAvatar absolute top-0 left-0 w-full h-full text-2xl transition-all transition-duration-300 ',
                   )}

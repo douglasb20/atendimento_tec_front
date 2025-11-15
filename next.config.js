@@ -3,7 +3,12 @@ const nextConfig = {
   basePath: '',
   reactStrictMode: false,
   images: {
-    domains: ['s3.us-central-1.wasabisys.com'],
+    remotePatterns: [
+      {
+        hostname: 's3.us-central-1.wasabisys.com/**',
+        protocol: 'https',
+      },
+    ],
   },
   webpack: (config) => {
     config.resolve.alias.canvas = false;

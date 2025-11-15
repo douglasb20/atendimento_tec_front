@@ -1,12 +1,18 @@
 import { io } from 'socket.io-client';
 import type { StateCreator } from 'zustand';
-import { MessageSlice, SocketSlice } from '../../types';
 import { parseCookies } from 'nookies';
+import {
+  SocketSlice,
+  MessageSlice,
+  ChatSlice,
+} from '@/Interfaces';
 
-export const createSocketSlice: StateCreator<SocketSlice & MessageSlice, [], [], SocketSlice> = (
-  set,
-  get,
-) => ({
+export const createSocketSlice: StateCreator<
+  SocketSlice & MessageSlice & ChatSlice,
+  [],
+  [],
+  SocketSlice
+> = (set, get) => ({
   socket: null,
 
   connect: () => {
@@ -26,12 +32,6 @@ export const createSocketSlice: StateCreator<SocketSlice & MessageSlice, [], [],
 
     socket.on('connect', () => console.log('✅ Socket conectado'));
     socket.on('disconnect', () => console.log('❌ Socket desconectado'));
-
-    // Recebe mensagens do servidor e adiciona ao estado global
-    socket.on('whatsapp:messages', (msg) => {
-      console.log('📩 Mensagem recebida via socket:', msg);
-      get().addMessage(msg);
-    });
 
     set({ socket });
   },

@@ -85,7 +85,7 @@ export async function middleware(request: NextRequest) {
         }
         return NextResponse.redirect(new URL('/auth/logout', request.url));
       }
-      await getUserInfo();
+      // await getUserInfo();
     }
   } else {
     // Caso tiver ir para a tela de login e tiver autenticado

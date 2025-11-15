@@ -55,11 +55,8 @@ function ModalFormulario(props: ModalProps) {
 
   const onSubmitForm = (fields: ContactResponse) => {
     try {
-      
       onConfirm && onConfirm(fields);
-    } catch (error) { 
-
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {

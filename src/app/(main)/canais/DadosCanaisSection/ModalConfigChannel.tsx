@@ -50,8 +50,8 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
         resizable={false}
         header={`${value?.name} `}
         visible={visible}
-        className="w-11 md:w-12 lg:w-6 mt-8"
-        style={{ maxWidth: '30vw' }}
+        className="w-11 md:w-12 lg:w-6 mt-8 "
+        style={{ maxWidth: '40vw', minWidth: '40vw' }}
         onHide={onHide}
         blockScroll
         closeOnEscape={false}
