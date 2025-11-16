@@ -24,7 +24,7 @@ export default function SendMessageBox() {
   };
 
   return (
-    <div className="flex flex-row w-full p-fluid gap-2 py-2 items-end">
+    <div className="flex flex-row w-full p-fluid gap-2 py-1 items-end">
       <InputTextarea
         autoResize
         onKeyDown={(e) => {
@@ -38,7 +38,7 @@ export default function SendMessageBox() {
           // Se for Shift + Enter, o código dentro do 'if' não roda,
           // e o comportamento padrão (criar nova linha) acontece normalmente.
         }}
-        className="w-full max-h-15rem "
+        className="w-full max-h-10rem "
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Digite sua mensagem..."

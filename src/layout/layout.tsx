@@ -17,8 +17,16 @@ import AppTopbar from './AppTopbar';
 import { LayoutContext } from './context/layoutcontext';
 
 const Layout = (props: ChildContainerProps) => {
-  const { layoutConfig, layoutState, setLayoutState, isSlim, isSlimPlus, isHorizontal, isDesktop } =
-    useContext(LayoutContext);
+  const {
+    layoutConfig,
+    layoutState,
+    setLayoutState,
+    setLayoutConfig,
+    isSlim,
+    isSlimPlus,
+    isHorizontal,
+    isDesktop,
+  } = useContext(LayoutContext);
   const topbarRef = useRef<AppTopbarRef>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -107,6 +115,20 @@ const Layout = (props: ChildContainerProps) => {
     }
   };
 
+  const changeMenuStyle = () => {
+    if (pathname.includes('/chat') && layoutConfig.menuMode !== 'overlay') {
+      setLayoutConfig((prevLayoutConfig) => ({
+        ...prevLayoutConfig,
+        menuMode: 'overlay',
+      }));
+    } else if (!pathname.includes('/chat') && layoutConfig.menuMode !== 'drawer') {
+      setLayoutConfig((prevLayoutConfig) => ({
+        ...prevLayoutConfig,
+        menuMode: 'drawer',
+      }));
+    }
+  };
+
   useMountEffect(() => {
     PrimeReact.ripple = true;
   });
@@ -139,6 +161,7 @@ const Layout = (props: ChildContainerProps) => {
   useEffect(() => {
     const onRouteChange = () => {
       hideMenu();
+      changeMenuStyle();
     };
     onRouteChange();
   }, [pathname, searchParams]);

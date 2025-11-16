@@ -15,15 +15,20 @@ export type MessageSlice = {
   setSmoothScroll: (smooth: boolean) => void;
   updateMessage: (msg: SupportChatMessageResponse) => void;
   addMessages: (messages: SupportChatMessageResponse[]) => void;
+  resetMessageStore: () => void;
 };
 
 export type ChatSlice = {
   chats: SupportChatsResponse[];
-  activeChatId: string | null;
+  activeChat: SupportChatsResponse | null;
+  chatNotFound: boolean;
+
+  setChatNotFound: (notFound: boolean) => void;
   addChats: (newChats: SupportChatsResponse[]) => void;
   updateChat: (chat: SupportChatsResponse) => void;
   setUnreadCount: (chatId: string, count: number) => void;
-  setActiveChatId: (chatId: string | null) => void;
+  setActiveChat: (chat: SupportChatsResponse | null) => void;
+  resetChatStore: () => void;
 };
 
 export type ChatStore = SocketSlice & MessageSlice & ChatSlice;

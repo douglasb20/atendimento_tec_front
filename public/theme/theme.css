@@ -49,6 +49,7 @@
   --highlight-bg: #C5C8F6;
   --highlight-text-color: #00034C;
   color-scheme: light;
+  --transition-duration: 0.2s;
 }
 
 /* poppins-regular - latin */

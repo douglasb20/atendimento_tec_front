@@ -1,37 +1,41 @@
 'use client';
 import { useEffect } from 'react';
 
-import { SupportChatMessageResponse } from '@/Interfaces';
-import { useChatStore } from '../store/useChatStore';
+import { SupportChatsWithMessagesResponse } from '@/Interfaces';
+import { useChatStore } from '../../../../../../store/useChatStore';
 import Header from './Header';
+import LoadingChat from './LoadingChat';
 import Messages from './Messages';
-import SendMessageBox from './SendMessageBox';
 import NoChatActive from './NoChatActive';
-import { ProgressSpinner } from 'primereact/progressspinner';
+import NotFoundChat from './NotFoundChat';
+import SendMessageBox from './SendMessageBox';
 
 export default function MessageItem() {
-  const { socket, updateMessage, activeChatId, loadMessages } = useChatStore();
-
-  
+  const { socket, updateMessage, activeChat, loadMessages, chatNotFound } = useChatStore();
 
   useEffect(() => {
     if (socket == null) return;
 
     socket.off('whatsapp:messages');
-    socket.on('whatsapp:messages', (msg: SupportChatMessageResponse) => {
-      if(activeChatId !== String(msg.support_chat_id)) return;
-      updateMessage(msg);
-    });
+    socket.on(
+      'whatsapp:messages',
+      ({ supportChatMessages: msg, ...supportChats }: SupportChatsWithMessagesResponse) => {
+        if (activeChat?.id !== String(msg.support_chat_id)) return;
+        updateMessage(msg);
+      },
+    );
 
     return () => {
       socket.off('whatsapp:messages');
     };
   }, [socket]);
 
+  console.log(activeChat, loadMessages, chatNotFound);
+
   return (
     <>
       <div className="card flex flex-column shadow-1 h-full">
-        {activeChatId !== null && !loadMessages && (
+        {activeChat && !loadMessages && !chatNotFound && (
           <>
             <Header />
             <Messages />
@@ -39,16 +43,11 @@ export default function MessageItem() {
           </>
         )}
 
-        {activeChatId !== null && loadMessages && (
-          <div className="flex flex-column flex-1 justify-content-center align-items-center gap-2">
-            <ProgressSpinner />
-            <span className="text-center text-lg">Carregando conversa, por favor aguarde...</span>
-          </div>
-        )}
+        {chatNotFound && <NotFoundChat />}
 
-        {activeChatId === null && (
-          <NoChatActive />
-        )}
+        {loadMessages && <LoadingChat />}
+
+        {!activeChat && !loadMessages && !chatNotFound && <NoChatActive />}
       </div>
     </>
   );

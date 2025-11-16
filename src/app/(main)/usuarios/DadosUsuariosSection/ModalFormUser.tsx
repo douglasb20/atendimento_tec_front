@@ -142,7 +142,6 @@ const ModalFormUser = (props: ModalProps) => {
 
       // Se marcou para remover e não selecionou novo arquivo
       if (avatarConfig.removed && !avatarConfig.file) {
-        console.log('Veio aqui');
         avatarKey = null;
       }
 

@@ -5,4 +5,4 @@ export type ClientResponse = {
   created_at: string;
   updated_at: null;
   status: number;
-}
+};

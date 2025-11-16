@@ -1,11 +1,7 @@
 import { io } from 'socket.io-client';
 import type { StateCreator } from 'zustand';
 import { parseCookies } from 'nookies';
-import {
-  SocketSlice,
-  MessageSlice,
-  ChatSlice,
-} from '@/Interfaces';
+import { SocketSlice, MessageSlice, ChatSlice } from '@/Interfaces';
 
 export const createSocketSlice: StateCreator<
   SocketSlice & MessageSlice & ChatSlice,

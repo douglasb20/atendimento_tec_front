@@ -907,4 +907,5 @@ $imagePreviewActionIconBorderRadius: 50% !default;
 	--highlight-bg: #{$highlightBg};
 	--highlight-text-color: #{$highlightTextColor};
 	color-scheme: light;
+	--transition-duration: #{$transitionDuration};
 }

@@ -1,6 +1,6 @@
-import { ClientResponse } from "./client.interface";
+import { ClientResponse } from './client.interface';
 
-export type ContactResponse =  {
+export type ContactResponse = {
   id: number;
   client_id: null;
   name: string;
@@ -13,4 +13,4 @@ export type ContactResponse =  {
   updated_at: string;
   status: number;
   client: ClientResponse | null;
-}
+};

@@ -3,7 +3,14 @@ import type { StateCreator } from 'zustand';
 
 export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set) => ({
   chats: [],
-  activeChatId: null,
+  activeChat: null,
+  chatNotFound: false,
+
+  setChatNotFound: (notFound) => {
+    set(() => ({
+      chatNotFound: notFound,
+    }));
+  },
 
   updateChat: (chat) => {
     set(({ chats }) => ({
@@ -13,10 +20,7 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
 
   addChats: (newChats: SupportChatsResponse[]) =>
     set(({ chats }) => ({
-      chats: [
-        ...chats,
-        ...newChats.filter(nc => !chats.some(c => c.id === nc.id))
-      ]
+      chats: [...chats, ...newChats.filter((nc) => !chats.some((c) => c.id === nc.id))],
     })),
 
   setUnreadCount: (chatId, unread_count) => {
@@ -25,11 +29,17 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
     }));
   },
 
-  setActiveChatId: (chatId) => {
+  setActiveChat: (chat) => {
     set(() => ({
-      activeChatId: chatId,
+      activeChat: chat,
     }));
-  }
+  },
 
-
+  resetChatStore: () => {
+    set(() => ({
+      chats: [],
+      activeChat: null,
+      chatNotFound: false,
+    }));
+  },
 });

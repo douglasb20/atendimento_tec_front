@@ -9,7 +9,6 @@ export * from './channel.interface';
 export * from './contact.interface';
 export * from './client.interface';
 
-
 export enum Masks {
   DATEBR = '99/99/9999',
   CPF = '999.999.999-99',
@@ -61,8 +60,6 @@ export interface IUsuariosResponse {
 export interface IClientResponse extends ClientResponse {
   contacts?: ContactResponse[];
 }
-
-
 
 export type AtendimentosResponse = {
   id: number;

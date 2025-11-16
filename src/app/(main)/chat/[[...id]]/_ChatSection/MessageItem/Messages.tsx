@@ -1,9 +1,11 @@
-import React, { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useLayoutEffect, useMemo, useRef } from 'react';
 
+import Interweave from '@/components/Interweave';
 import { SupportChatMessageResponse } from '@/Interfaces';
-import { useChatStore } from '../store/useChatStore';
-import { parseMensagem } from '../_components';
+import { fixHeartEmoji } from '@/service/Util';
 import { classNames } from 'primereact/utils';
+import { useChatStore } from '../../../../../../store/useChatStore';
+import { Button } from 'primereact/button';
 
 function SingleMessage({
   message,
@@ -16,19 +18,23 @@ function SingleMessage({
 }) {
   const { from_me, content } = message;
 
-  // --- 4. Otimização com useMemo ---
-  // Evita re-processar a mesma mensagem em cada renderização.
-  // A formatação só é recalculada se o 'body' da mensagem mudar.
-  const formattedContent = useMemo(() => parseMensagem(content), [content]);
+  const InterpretedContent = useMemo(() => fixHeartEmoji(content), [content]);
+
+  const DivWithEmoji = () => (
+    <Interweave
+      style={{ overflowWrap: 'anywhere' }}
+      content={fixHeartEmoji(InterpretedContent)}
+    />
+  );
 
   const messageClass = from_me
-    ? 'align-self-end bg-blue-500 text-white'
-    : 'align-self-start bg-gray-300 text-black';
+    ? 'align-self-end border-primary-300 bg-primary-500 text-white'
+    : 'align-self-start border-gray-300 bg-gray-200 text-black';
 
   return (
     <div
       className={classNames(
-        ` animation-duration-200 w-auto p-2 mb-2 border-round-lg max-w-xs ${messageClass}`,
+        `relative animation-duration-200 w-auto border-1 p-2 mb-1 border-round-lg message-item-${from_me ? 'from-me' : 'from-them'} ${messageClass}`,
         {
           fadeinright: doAnimation && isLast && from_me,
           fadeinleft: doAnimation && isLast && !from_me,
@@ -36,7 +42,23 @@ function SingleMessage({
       )}
       style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
     >
-      <div className="flex flex-column">
+      <div
+        className={`
+          message-content 
+          hidden
+          absolute right-0 top-0 mr-1 mt-1 
+          `}
+      >
+        <Button
+          className={`bg-gray-300 border-${from_me ? 'gray' : 'primary'}-500 outline-none shadow-none`}
+          style={{ padding: '0.2rem', width: '1.8rem', height: '1.8rem' }}
+          text
+          rounded
+          outlined
+          icon="fa-regular fa-chevron-down"
+        />
+      </div>
+      <div className="flex flex-column text-lg ">
         {message.has_media && message.type === 'image' && (
           <>
             <img
@@ -44,9 +66,8 @@ function SingleMessage({
               alt="Media"
               className="mb-2 border-round shadow-2"
               style={{ maxWidth: '500px', height: '500px' }}
-
             />
-            {formattedContent}
+            {DivWithEmoji()}
           </>
         )}
         {message.has_media && message.type === 'ptt' && (
@@ -58,7 +79,7 @@ function SingleMessage({
             >
               <source
                 src={message.media_url}
-                type={ message.media_type}
+                type={message.media_type}
               />
               Seu navegador não suporta o elemento de áudio.
             </audio>
@@ -68,7 +89,7 @@ function SingleMessage({
           <>
             <video
               controls
-              className="mb-2 "
+              className="mb-2 inline-block"
               style={{ maxWidth: '40rem', height: '50rem', objectFit: 'contain' }}
             >
               <source
@@ -77,10 +98,10 @@ function SingleMessage({
               />
               Seu navegador não suporta o elemento de vídeo.
             </video>
-            {formattedContent}
+            {DivWithEmoji()}
           </>
         )}
-        {!message.has_media && formattedContent}
+        {!message.has_media && DivWithEmoji()}
       </div>
     </div>
   );
@@ -90,26 +111,45 @@ const Messages = () => {
   const { messages, doSmoothScroll, setSmoothScroll, loadMessages } = useChatStore();
   const bottomEl = useRef(null);
 
-  useEffect(() => {
-    if (!bottomEl.current) return;
+  const scrollHeightBeforeUpdate = useRef(0);
 
+  useLayoutEffect(() => {
+    const el = bottomEl.current;
+    if (!el) return;
+
+    // 1. Verifica se o usuário estava no final ANTES da nova mensagem chegar
+    const isAtBottomBefore =
+      scrollHeightBeforeUpdate.current - (el.scrollTop + el.clientHeight) < 80;
+
+    // 2. Se o scroll não deve ser suave (primeiro carregamento), vai para o final instantaneamente
     if (!doSmoothScroll && !loadMessages) {
-      bottomEl.current.scrollTop = bottomEl.current.scrollHeight;
+      el.scrollTop = el.scrollHeight;
       setSmoothScroll(true);
       return;
     }
 
-    // Nas próximas execuções: scroll suave
-    bottomEl.current.scrollTo({
-      top: bottomEl.current.scrollHeight,
-      behavior: 'smooth',
-    });
-  }, [messages]);
+    // 3. Se o usuário estava no final, rola para o novo final. Senão, não faz nada.
+    if (isAtBottomBefore) {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [messages]); // O efeito ainda depende das mensagens
+
+  // Este segundo useLayoutEffect captura o scrollHeight ANTES da próxima renderização
+  useLayoutEffect(() => {
+    const el = bottomEl.current;
+    if (el) {
+      scrollHeightBeforeUpdate.current = el.scrollHeight;
+    }
+  });
+
   return (
     <>
       <div
         ref={bottomEl}
-        className="flex flex-1 flex-column bg-gray-100 border-round p-3 overflow-y-auto overflow-x-hidden mb-3"
+        className="message-box border-1 border-primary-300 flex flex-1 flex-column bg-gray-50 border-round p-3 overflow-y-auto overflow-x-hidden "
       >
         {messages?.map((msg) => {
           const messageClass = msg.from_me ? 'align-self-end' : 'align-self-start';
@@ -119,8 +159,9 @@ const Messages = () => {
                 {
                   'mb-4': msg.has_reaction,
                 },
-                `relative ${messageClass}`,
+                `relative message-item ${messageClass} mb-1 `,
               )}
+              style={{ maxWidth: '70%', minWidth: '10%' }}
               key={msg.id}
             >
               <SingleMessage
@@ -131,12 +172,13 @@ const Messages = () => {
               {msg.has_reaction && (
                 <span
                   className={classNames(
-                    { 'bg-blue-300 border-blue-400 text-white right-0': msg.from_me },
-                    { 'bg-gray-300 border-gray-400 text-white left-0': !msg.from_me },
-                    'absolute bottom-0 p-1 text-lg border-circle rounded-full border-1 ',
+                    { 'bg-primary-300 border-primary-400 right-0': msg.from_me },
+                    { 'bg-gray-300 border-gray-400 left-0': !msg.from_me },
+                    'absolute bottom-0 text-lg border-circle rounded-full border-1 ',
                   )}
                   style={{
-                    transform: msg.from_me ? 'translate(25%, 25%)' : 'translate(-25%, 50%)',
+                    transform: msg.from_me ? 'translate(25%, 25%)' : 'translate(-25%, 60%)',
+                    padding: '0.07rem',
                   }}
                 >
                   {msg.reaction}
@@ -151,4 +193,3 @@ const Messages = () => {
 };
 
 export default memo(Messages);
-

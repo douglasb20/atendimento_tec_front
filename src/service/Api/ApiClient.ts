@@ -163,7 +163,6 @@ export default function ApiClient() {
               }
             }
           } else {
-            console.log('Aqui');
             window.location.href = '/auth/logout';
           }
         }

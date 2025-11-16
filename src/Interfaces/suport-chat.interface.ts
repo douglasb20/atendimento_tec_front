@@ -1,4 +1,4 @@
-import { ContactResponse } from "./contact.interface";
+import { ContactResponse } from './contact.interface';
 
 export interface SupportChatsResponse {
   id: string;
@@ -44,11 +44,15 @@ export interface SupportChatMessageResponse {
   updated_at: string;
 }
 
-export type SupportChatStatus ={
+export type SupportChatsWithMessagesResponse = SupportChatsResponse & {
+  supportChatMessages: SupportChatMessageResponse;
+};
+
+export type SupportChatStatus = {
   id: number;
   name: string;
   is_final: boolean;
-}
+};
 
 export type UnreadMessagesPayload = {
   chatId: string;

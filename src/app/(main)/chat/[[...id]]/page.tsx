@@ -11,14 +11,12 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const { FetchReq } = await ApiService();
-
-  console.log(Date.now());
-
   const dataSupportChats = await FetchReq<SupportChatsResponse[]>('ListarAtendimentosSuporte');
 
   return (
     <Fragment>
-      <div className="grid p-fluid "
+      <div
+        className="grid p-fluid "
         style={{ minHeight: '87vh', height: '87vh' }}
       >
         <ChatSection conversations={dataSupportChats} />
