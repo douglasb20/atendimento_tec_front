@@ -30,6 +30,14 @@
                 z-index: 999;
                 transform: translateX(-100%);
                 transition: transform var(--transition-duration);
+
+                .layout-menuitem-icon 
+                {
+                    &.fa{
+                        font-size: 1.20rem !important;
+                        padding-right: 0.60rem;
+                    }
+                }
             }
 
             &.layout-overlay-active {

@@ -1,8 +1,8 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
-import { SupportChatsWithMessagesResponse } from '@/Interfaces';
-import { useChatStore } from '../../../../../../store/useChatStore';
+import { SupportChatsWithMessagesResponse, SupportChatMessageResponse  } from '@/Interfaces';
+import { useChatStore } from '@/store/useChatStore';
 import Header from './Header';
 import LoadingChat from './LoadingChat';
 import Messages from './Messages';
@@ -12,6 +12,7 @@ import SendMessageBox from './SendMessageBox';
 
 export default function MessageItem() {
   const { socket, updateMessage, activeChat, loadMessages, chatNotFound } = useChatStore();
+  const activeChatRef = useRef(activeChat);
 
   useEffect(() => {
     if (socket == null) return;
@@ -20,8 +21,18 @@ export default function MessageItem() {
     socket.on(
       'whatsapp:messages',
       ({ supportChatMessages: msg, ...supportChats }: SupportChatsWithMessagesResponse) => {
-        if (activeChat?.id !== String(msg.support_chat_id)) return;
+        if (String(activeChatRef.current?.id) !== String(msg.support_chat_id)) return;
+
         updateMessage(msg);
+      },
+    );
+
+    socket.on(
+      'whatsapp:message_ack',
+      (message: SupportChatMessageResponse) => {
+        if (String(activeChatRef.current?.id) !== String(message.support_chat_id)) return;
+
+        updateMessage(message);
       },
     );
 
@@ -30,7 +41,9 @@ export default function MessageItem() {
     };
   }, [socket]);
 
-  console.log(activeChat, loadMessages, chatNotFound);
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
 
   return (
     <>

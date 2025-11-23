@@ -38,7 +38,7 @@ export default function SendMessageBox() {
           // Se for Shift + Enter, o código dentro do 'if' não roda,
           // e o comportamento padrão (criar nova linha) acontece normalmente.
         }}
-        className="w-full max-h-10rem "
+        className="w-full max-h-10rem shadow-none"
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Digite sua mensagem..."

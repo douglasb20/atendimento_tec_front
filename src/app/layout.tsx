@@ -49,7 +49,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         ></link>
         <link
           id="ftaw-link"
-          href={`/vendor/fontawesome/css/all.min.css`}
+          href={`/vendor/fontawesome/css/all.css`}
           rel="stylesheet"
         ></link>
       </head>

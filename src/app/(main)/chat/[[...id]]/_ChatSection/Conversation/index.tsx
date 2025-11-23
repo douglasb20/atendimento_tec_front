@@ -1,14 +1,14 @@
 'use client';
 import Interweave from '@/components/Interweave';
 import { SupportChatsResponse } from '@/Interfaces';
+import { useLayoutStore } from '@/layout/context/layoutcontext';
+import useApi from '@/service/Api/ApiClient';
+import { fixHeartEmoji } from '@/service/Util';
+import { useChatStore } from '@/store/useChatStore';
+import { Breadcrumb } from '@/types';
 import { Badge } from 'primereact/badge';
 import { classNames } from 'primereact/utils';
-import { useEffect } from 'react';
-import { useChatStore } from '@/store/useChatStore';
-import { fixHeartEmoji } from '@/service/Util';
-import useApi from '@/service/Api/ApiClient';
-import { useLayoutStore } from '@/layout/context/layoutcontext';
-import { Breadcrumb } from '@/types';
+import { useEffect, useRef } from 'react';
 
 export default function ConversationSection() {
   const {
@@ -22,9 +22,21 @@ export default function ConversationSection() {
     setLoadMessages,
     setChatNotFound,
     setActiveChat,
+    notificationSound,
   } = useChatStore();
   const { setBreadcrumbs } = useLayoutStore();
   const { FetchReq } = useApi();
+  const windowFocusedRef = useRef(true);
+  const activeChatRef = useRef(activeChat);
+
+  const onBlur = () => {
+    console.log('Window lost focus');
+    windowFocusedRef.current = false;
+  };
+  const onFocus = () => {
+    console.log('Window gained focus');
+    windowFocusedRef.current = true;
+  };
 
   const onChangeBreadcrumbs = (chatId: number) => {
     let breadcrumbs: Breadcrumb[] = [
@@ -74,18 +86,30 @@ export default function ConversationSection() {
     });
 
     socket.off('whatsapp:chat_state');
-    socket.on('whatsapp:chat_state', (payload: SupportChatsResponse) => {
-      console.log(
-        `🔵 Atualizando estado do chat ${payload?.id}: ${payload?.supportChatStatus?.name}`,
-        payload,
-      );
+    socket.on('whatsapp:chat_state', async (payload: SupportChatsResponse) => {
       updateChat(payload);
+      if (
+        activeChatRef.current &&
+        payload?.id === activeChatRef.current?.id &&
+        !windowFocusedRef.current
+      ) {
+        await notificationSound?.play();
+      }
     });
 
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('focus', onFocus);
     return () => {
       socket.off('whatsapp:unread_count');
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
     };
   }, [socket]);
+  
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
+
   return (
     <div className="card shadow-1 h-full px-2">
       <ul className="list-none m-0 p-0 overflow-auto h-full">

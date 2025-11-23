@@ -104,6 +104,11 @@
     position:relative;
 }
 
-.message-item:hover .message-content {
+.message-item:hover .message-chevron {
     display: block !important;
+}
+
+.no-scroll {
+    pointer-events: none;    
+    touch-action: none;
 }

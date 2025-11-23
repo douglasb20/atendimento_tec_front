@@ -5,6 +5,7 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
   chats: [],
   activeChat: null,
   chatNotFound: false,
+  notificationSound: null,
 
   setChatNotFound: (notFound) => {
     set(() => ({

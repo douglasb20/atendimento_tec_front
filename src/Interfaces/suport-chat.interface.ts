@@ -35,6 +35,7 @@ export interface SupportChatMessageResponse {
   media_size: null;
   from: string;
   to: string;
+  device_type: string;
   is_deleted: boolean;
   is_edited: boolean;
   is_gif: boolean;

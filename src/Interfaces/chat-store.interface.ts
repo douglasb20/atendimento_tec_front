@@ -22,6 +22,7 @@ export type ChatSlice = {
   chats: SupportChatsResponse[];
   activeChat: SupportChatsResponse | null;
   chatNotFound: boolean;
+  notificationSound: HTMLAudioElement | null;
 
   setChatNotFound: (notFound: boolean) => void;
   addChats: (newChats: SupportChatsResponse[]) => void;

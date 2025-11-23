@@ -22,6 +22,7 @@ export async function middleware(request: NextRequest) {
   const path = nextUrl.pathname;
   const autenticado = cookies.has('token');
   const refresh = cookies.get('refresh_token')?.value;
+  const userInfo: string = cookies.get('userInfo')?.value;
   const expires_at = cookies.get('expires_at')?.value;
   const now = Math.floor(new Date().getTime() / 1000.0);
 
@@ -85,7 +86,9 @@ export async function middleware(request: NextRequest) {
         }
         return NextResponse.redirect(new URL('/auth/logout', request.url));
       }
-      // await getUserInfo();
+      if (!userInfo) { 
+        await getUserInfo();
+      }
     }
   } else {
     // Caso tiver ir para a tela de login e tiver autenticado

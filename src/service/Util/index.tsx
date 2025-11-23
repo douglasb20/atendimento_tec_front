@@ -429,5 +429,5 @@ export const ThrowError = (error, title) => {
 };
 
 export const fixHeartEmoji = (text: string) => {
-  return text.replace(/❤/g, '❤️');
+  return text?.replace(/❤/g, '❤️');
 };
