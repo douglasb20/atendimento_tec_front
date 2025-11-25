@@ -33,6 +33,7 @@ export default function ConversationSection() {
     console.log('Window lost focus');
     windowFocusedRef.current = false;
   };
+  
   const onFocus = () => {
     console.log('Window gained focus');
     windowFocusedRef.current = true;

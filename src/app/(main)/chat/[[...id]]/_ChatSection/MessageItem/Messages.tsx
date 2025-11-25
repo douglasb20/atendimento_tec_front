@@ -173,7 +173,7 @@ function debounce(fn, delay) {
 }
 
 const Messages = () => {
-  const { messages, doSmoothScroll, setSmoothScroll, loadMessages } = useChatStore();
+  const { messages, doSmoothScroll, setSmoothScroll, loadMessages, activeChat } = useChatStore();
   const bottomEl = useRef(null);
   const scrollRef = useRef(0);
   const divRef = useRef<HTMLDivElement>(null);
@@ -188,8 +188,13 @@ const Messages = () => {
     },
     {
       label: 'Encaminhar',
-      icon: 'fa-regular fa-arrow-turn-right',
+      icon: 'fa-regular fa-download',
       visible: false,
+    },
+    {
+      label: 'Baixar Mídia',
+      icon: 'fa-regular fa-arrow-down-to-line',
+      visible: true,
     },
     {
       label: 'Editar',
@@ -290,10 +295,7 @@ const Messages = () => {
         ref={bottomEl}
         className="message-box relative border-1 border-primary-300 flex flex-1 flex-column bg-gray-50 border-round p-3 overflow-y-auto overflow-x-hidden"
       >
-        <div
-          id="teste-rol"
-          className="flex flex-column z-0"
-        >
+        <div className="flex flex-column z-0 w-full">
           {messages?.map((msg) => {
             const messageClass = msg.from_me ? 'align-self-end' : 'align-self-start';
             const newModel = menuModel.map((item, key) => {
@@ -317,75 +319,106 @@ const Messages = () => {
             });
             return (
               <div
-                className={classNames(
-                  {
-                    'mb-4': msg.has_reaction,
-                  },
-                  `relative message-item ${messageClass} mb-1 `,
-                )}
-                style={{ maxWidth: '70%', minWidth: '10%' }}
+                className="w-full flex-column flex"
                 key={msg.id}
               >
                 <div
-                  className={`
+                  className={classNames(
+                    {
+                      'mb-4': msg.has_reaction,
+                    },
+                    `relative message-item ${messageClass} mb-1 flex`,
+                  )}
+                  style={{ maxWidth: '70%', minWidth: '10%' }}
+                >
+                  {!msg.from_me && (
+                    <div className="mr-2 overflow-hidden flex flex-none justify-content-center align-items-center">
+                      <Image
+                        src={activeChat?.user?.avatar_url || '/images/avatar/avatar-noprofile.png'}
+                        alt="Avatar"
+                        imageClassName="w-4rem h-4rem border-circle"
+                        imageStyle={{ objectFit: 'cover' }}
+
+                      />
+                    </div>
+                  )}
+
+                  <div
+                    className={`
                     message-chevron 
                     hidden
                     absolute right-0 top-0 z-1 mt-2 mr-2
                     `}
-                >
-                  <Menu
-                    ref={(el) => {
-                      menuRef.current[msg.id] = el;
-                    }}
-                    model={newModel}
-                    popupAlignment={msg.from_me ? 'right' : 'left'}
-                    onShow={() => {
-                      bottomEl?.current?.classList.add('no-scroll');
-                    }}
-                    onHide={() => {
-                      bottomEl?.current?.classList.remove('no-scroll');
-                    }}
-                    popup
-                    style={{ width: '22rem', top: 'auto' }}
-                  />
-                  <Button
-                    className={`bg-gray-300 border-${msg.from_me ? 'gray' : 'primary'}-500 outline-none shadow-none p-0`}
-                    style={{ width: '1.5rem', height: '1.5rem' }}
-                    text
-                    rounded
-                    outlined
-                    onClick={(event) => menuRef.current[msg.id]?.toggle(event)}
-                    icon="fa-regular fa-chevron-down"
-                    pt={{
-                      label: {
-                        className: 'p-0 m-0',
-                      },
-                      icon: {
-                        className: 'p-0 m-0',
-                      },
-                    }}
-                  />
-                </div>
-                <SingleMessage
-                  message={msg}
-                  doAnimation={doSmoothScroll}
-                  isLast={messages[messages.length - 1].id === msg.id}
-                />
-                {msg.has_reaction && (
-                  <span
-                    className={classNames(
-                      { 'bg-primary-300 border-primary-400 right-0': msg.from_me },
-                      { 'bg-gray-300 border-gray-400 left-0': !msg.from_me },
-                      'absolute bottom-0 text-lg border-circle rounded-full border-1 ',
-                    )}
-                    style={{
-                      transform: msg.from_me ? 'translate(25%, 25%)' : 'translate(-25%, 60%)',
-                      padding: '0.07rem',
-                    }}
                   >
-                    {msg.reaction}
-                  </span>
-                )}
+                    <Menu
+                      ref={(el) => {
+                        menuRef.current[msg.id] = el;
+                      }}
+                      model={newModel}
+                      popupAlignment={msg.from_me ? 'right' : 'left'}
+                      onShow={() => {
+                        bottomEl?.current?.classList.add('no-scroll');
+                      }}
+                      onHide={() => {
+                        bottomEl?.current?.classList.remove('no-scroll');
+                      }}
+                      popup
+                      style={{ width: '22rem', top: 'auto' }}
+                    />
+                    <Button
+                      className={`bg-gray-300 border-${msg.from_me ? 'gray' : 'primary'}-500 outline-none shadow-none p-0`}
+                      style={{ width: '1.5rem', height: '1.5rem' }}
+                      text
+                      rounded
+                      outlined
+                      onClick={(event) => menuRef.current[msg.id]?.toggle(event)}
+                      icon="fa-regular fa-chevron-down"
+                      pt={{
+                        label: {
+                          className: 'p-0 m-0',
+                        },
+                        icon: {
+                          className: 'p-0 m-0',
+                        },
+                      }}
+                    />
+                  </div>
+
+                  <SingleMessage
+                    message={msg}
+                    doAnimation={doSmoothScroll}
+                    isLast={messages[messages.length - 1].id === msg.id}
+                  />
+
+                  {msg.from_me && (
+                    <div className="ml-2 overflow-hidden flex flex-none justify-content-center align-items-center">
+                      <Image
+                        src={activeChat?.user?.avatar_url || '/images/avatar/avatar-noprofile.png'}
+                        alt="Avatar"
+                        imageClassName="w-4rem h-4rem border-circle"
+                        imageStyle={{ objectFit: 'cover' }}
+                        
+                      />
+                    </div>
+                  )}
+
+                  {msg.has_reaction && (
+                    <span
+                      className={classNames(
+                        { 'bg-primary-300 border-primary-400 right-0': msg.from_me },
+                        { 'bg-gray-300 border-gray-400 left-0': !msg.from_me },
+                        'absolute bottom-0 text-lg border-circle rounded-full border-1 ',
+                      )}
+                      style={{
+                        transform: msg.from_me ? 'translate(25%, 25%)' : 'translate(-25%, 60%)',
+                        padding: '0.07rem',
+                      }}
+                    >
+                      {msg.reaction}
+                    </span>
+                  )}
+
+                </div>
               </div>
             );
           })}
@@ -406,7 +439,7 @@ const Messages = () => {
             rounded
             icon="fa-solid fa-chevron-down"
             className="shadow-none outline-none"
-            severity='success'
+            severity="success"
             aria-label="Scroll to bottom"
           />
         </div>

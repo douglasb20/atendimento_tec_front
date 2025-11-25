@@ -1,4 +1,5 @@
 import { ContactResponse } from './contact.interface';
+import { UserResponse } from './user.interface';
 
 export interface SupportChatsResponse {
   id: string;
@@ -17,6 +18,7 @@ export interface SupportChatsResponse {
   supportChatStatus: SupportChatStatus;
   contact: ContactResponse;
   supportChatMessages?: SupportChatMessageResponse[];
+  user?: UserResponse;
 }
 
 export interface SupportChatMessageResponse {
