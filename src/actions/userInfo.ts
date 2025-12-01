@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { jwtDecode } from 'jwt-decode';
 
 import { UserInfo, JWTToken } from '@/Interfaces';
-import ApiServer from 'service/Api/ApiServer';
+import ApiServer from '@/service/Api/ApiServer';
 
 export async function getUserInfo() {
   try {

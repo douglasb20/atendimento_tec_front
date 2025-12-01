@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { SelectItem } from 'primereact/selectitem';
 import { useFormContext, Controller } from 'react-hook-form';
 import { Dropdown } from 'primereact/dropdown';
+import { Calendar } from 'primereact/calendar';
+import { InputTextarea } from 'primereact/inputtextarea';
 
 import { AtendimentoFormType } from '.';
 import LabelPlus from '@/components/LabelPlus';
 import { useService } from '@/contexts/ServicesContext';
 import { CatchAlerta, getFormErrorMessage } from '@/service/Util';
 import ApiClient from '@/service/Api/ApiClient';
-import { IContactResponse, IServiceResponse } from '@/Interfaces';
-import { Calendar } from 'primereact/calendar';
-import { InputTextarea } from 'primereact/inputtextarea';
+import { ContactResponse, IServiceResponse } from '@/Interfaces';
 import ServicesSection from './Services';
 
 type FormSectionProps = {
@@ -55,8 +55,8 @@ export default function FormSection(props: FormSectionProps) {
       ];
 
       if (value !== -1) {
-        const data = await FetchReq<IContactResponse[]>('BuscarContatoClientId', [value]);
-        contactOpts.push(...data.map((e) => ({ label: e.nome_contato, value: e.id })));
+        const data = await FetchReq<ContactResponse[]>('BuscarContatoClientId', [value]);
+        contactOpts.push(...data.map((e) => ({ label: e.name, value: e.id })));
       }
 
       setContactOptions(contactOpts);

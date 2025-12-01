@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { PrimeIcons } from 'primereact/api';
 import { useRouter } from 'next/navigation';
+import { startOfMonth } from 'date-fns';
 
 import { AtendimentosResponse, IUsuariosResponse } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
@@ -11,7 +12,6 @@ import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta, ConfirmaAcao, DateToBR, sleep } from '@/service/Util';
 import DtAtendimento from './DtAtendimentos';
 import FiltrosDados from './FiltrosDados';
-import { startOfMonth } from 'date-fns';
 
 type DadosAtendimentoProps = {
   data: AtendimentosResponse[];

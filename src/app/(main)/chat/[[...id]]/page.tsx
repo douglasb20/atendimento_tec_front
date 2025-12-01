@@ -2,8 +2,8 @@ import { Fragment } from 'react';
 import { Metadata } from 'next';
 
 import ApiService from '@/service/Api/ApiServer';
-import ChatSection from './_ChatSection';
 import { SupportChatsResponse } from '@/Interfaces';
+import ChatSection from './_ChatSection';
 
 export const metadata: Metadata = {
   title: 'Chat de atendimento',

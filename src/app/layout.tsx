@@ -1,7 +1,7 @@
 import { Viewport, Metadata } from 'next';
-import { Providers } from 'providers';
+import { Providers } from '@/providers';
 
-import 'styles/layout/layout.scss';
+import '@/styles/layout/layout.scss';
 import 'animate.css';
 
 interface RootLayoutProps {

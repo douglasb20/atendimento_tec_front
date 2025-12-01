@@ -52,6 +52,7 @@ export const ListUrl = {
   ListarMensagensPorAtendimentoId: { url: '/support-chats/{{chat_id}}/messages', method: 'GET' },
 
   SendMessage: { url: '/support-chats/send-message', method: 'POST' },
+  SendReaction: { url: '/support-chats/{{chat_id}}/send-reaction', method: 'POST' },
 
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
 };

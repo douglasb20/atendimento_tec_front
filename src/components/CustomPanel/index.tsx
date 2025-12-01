@@ -1,6 +1,6 @@
 import { PropsWithChildren, ReactNode, memo, useState } from 'react';
 import { Panel, PanelProps } from 'primereact/panel';
-import CustomHeaderPanel from 'components/CustomHeaderPanel';
+import CustomHeaderPanel from '@/components/CustomHeaderPanel';
 
 interface IProps extends PropsWithChildren, PanelProps {
   header?: ReactNode;

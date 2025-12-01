@@ -8,11 +8,11 @@ import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
-import { useService } from 'contexts/ServicesContext';
-import { AlertaCallback, CatchAlerta, getFormErrorMessage, msgRequired } from 'service/Util';
-import LabelPlus from 'components/LabelPlus';
-import { Shape } from 'Interfaces';
-import ApiClient from 'service/Api/ApiClient';
+import { useService } from '@/contexts/ServicesContext';
+import { AlertaCallback, CatchAlerta, getFormErrorMessage, msgRequired } from '@/service/Util';
+import LabelPlus from '@/components/LabelPlus';
+import { Shape } from '@/Interfaces';
+import ApiClient from '@/service/Api/ApiClient';
 
 interface IForm {
   senhaAtual: string;

@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import dynamic from 'next/dynamic';
 // import Lottie from 'lottie-react';
@@ -8,6 +9,7 @@ import { useService } from '@/contexts/ServicesContext';
 const Lottie = dynamic(() => import('lottie-react'), {
   ssr: false,
 });
+
 export default function Loading() {
   const { isLoading } = useService();
 
@@ -15,7 +17,7 @@ export default function Loading() {
     <div className={`${styles.AreaLoading} ${!isLoading ? styles.hidden : ''}`}>
       <div className={styles.caixaLoading}>
         <Lottie
-          animationData={animationData}
+          animationData={JSON.parse(JSON.stringify(animationData))}
           height={400}
           width={400}
         />

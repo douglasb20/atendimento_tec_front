@@ -2,9 +2,9 @@
 
 import { PrimeReactProvider } from 'primereact/api';
 import { usePathname } from 'next/navigation';
-import Loading from 'components/Loading';
-import { ServiceProvider } from 'contexts/ServicesContext';
-import { LayoutProvider } from 'layout/context/layoutcontext';
+import Loading from '@/components/Loading';
+import { ServiceProvider } from '@/contexts/ServicesContext';
+import { LayoutProvider } from '@/layout/context/layoutcontext';
 
 const OthersProvider = ({ children }) => {
   return (

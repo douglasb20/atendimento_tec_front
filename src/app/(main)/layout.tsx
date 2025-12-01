@@ -1,5 +1,5 @@
-import ModalAlteraSenha from 'components/ModalAlteraSenha';
-import Layout from 'layout/layout';
+import ModalAlteraSenha from '@/components/ModalAlteraSenha';
+import Layout from '@/layout/layout';
 
 interface MainLayoutProps {
   children: React.ReactNode;

@@ -1,5 +1,5 @@
-import { Column } from 'primereact/column';
 import { memo } from 'react';
+import { Column } from 'primereact/column';
 
 import AcoesDataTable, { BodyCurrency, BodyDateAndTime } from '@/components/AcoesDataTable';
 import DataTableCustom from '@/components/DataTableCustom';

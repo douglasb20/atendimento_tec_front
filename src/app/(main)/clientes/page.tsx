@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import ApiService from '@/service/Api/ApiServer';
 
 import DadosClientesSection from './_DadosClientesSection';
-import { IClientes } from '@/Interfaces';
+import { ClientResponse } from '@/Interfaces';
 
 export const metadata: Metadata = {
   title: 'Clientes',
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function ClientesPage() {
   const { FetchReq } = await ApiService();
 
-  const dataClient = await FetchReq<IClientes[]>('ListarClientes');
+  const dataClient = await FetchReq<ClientResponse[]>('ListarClientes');
 
   return (
     <div className="grid">

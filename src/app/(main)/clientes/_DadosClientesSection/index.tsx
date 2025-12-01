@@ -4,14 +4,14 @@ import { useRouter } from 'next/navigation';
 
 import { useService } from '@/contexts/ServicesContext';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
-import { IClientes } from '@/Interfaces';
+import { ClientResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import DtClientes from './DtClientes';
 import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import { IActionTable } from '@/components/AcoesDataTable';
 
 type DadosClientesProps = {
-  data: IClientes[];
+  data: ClientResponse[];
 };
 
 export default function DadosClientesSection({ data }: DadosClientesProps) {
@@ -29,7 +29,7 @@ export default function DadosClientesSection({ data }: DadosClientesProps) {
     },
   ];
 
-  const acoesTable: IActionTable<IClientes>[] = [
+  const acoesTable: IActionTable<ClientResponse>[] = [
     {
       label: 'Editar cliente',
       tooltip: 'Editar cliente',
@@ -48,7 +48,7 @@ export default function DadosClientesSection({ data }: DadosClientesProps) {
   const GetClients = async () => {
     try {
       setLoading(true);
-      const data = await FetchReq<IClientes[]>('ListarClientes');
+      const data = await FetchReq<ClientResponse[]>('ListarClientes');
       setClients(data);
     } catch (err) {
       CatchAlerta(err, 'Erro ao consultar clientes');
@@ -57,7 +57,7 @@ export default function DadosClientesSection({ data }: DadosClientesProps) {
     }
   };
 
-  const RemoverCliente = async (data: IClientes) => {
+  const RemoverCliente = async (data: ClientResponse) => {
     try {
       setLoading();
       await FetchReq('RemoverCliente', [data.id]);

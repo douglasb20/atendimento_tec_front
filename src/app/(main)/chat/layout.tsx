@@ -22,8 +22,14 @@ export default function ChatLayout({ children }) {
   }, []);
   return (
     <>
-      <audio ref={audioRef} id="notification-sound">
-        <source src="/audio/notification.mp3" type="audio/mp3" />
+      <audio
+        ref={audioRef}
+        id="notification-sound"
+      >
+        <source
+          src="/audio/notification.mp3"
+          type="audio/mp3"
+        />
       </audio>
       {children}
     </>

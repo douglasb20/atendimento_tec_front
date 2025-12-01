@@ -12,7 +12,7 @@ export default function LoadingNoService() {
     <div className={`${styles.AreaLoading}`}>
       <div className={styles.caixaLoading}>
         <Lottie
-          animationData={animationData}
+          animationData={JSON.parse(JSON.stringify(animationData))}
           height={400}
           width={400}
         />

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 
-import { SupportChatsWithMessagesResponse, SupportChatMessageResponse  } from '@/Interfaces';
+import { SupportChatsWithMessagesResponse, SupportChatMessageResponse } from '@/Interfaces';
 import { useChatStore } from '@/store/useChatStore';
 import Header from './Header';
 import LoadingChat from './LoadingChat';
@@ -27,14 +27,11 @@ export default function MessageItem() {
       },
     );
 
-    socket.on(
-      'whatsapp:message_ack',
-      (message: SupportChatMessageResponse) => {
-        if (String(activeChatRef.current?.id) !== String(message.support_chat_id)) return;
+    socket.on('whatsapp:message_ack', (message: SupportChatMessageResponse) => {
+      if (String(activeChatRef.current?.id) !== String(message.support_chat_id)) return;
 
-        updateMessage(message);
-      },
-    );
+      updateMessage(message);
+    });
 
     return () => {
       socket.off('whatsapp:messages');

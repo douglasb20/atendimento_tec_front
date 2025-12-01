@@ -104,8 +104,12 @@
     position:relative;
 }
 
-.message-item:hover .message-chevron {
+.message-balloon:hover .message-chevron {
     display: block !important;
+}
+
+.message-content:hover .box-reaction {
+    display: flex !important;
 }
 
 .no-scroll {

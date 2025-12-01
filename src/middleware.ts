@@ -86,8 +86,16 @@ export async function middleware(request: NextRequest) {
         }
         return NextResponse.redirect(new URL('/auth/logout', request.url));
       }
-      if (!userInfo) { 
-        await getUserInfo();
+      if (!userInfo) {
+        try {
+          await getUserInfo();
+          // Redireciona para a mesma URL para que a nova requisição contenha o cookie 'userInfo'
+          return NextResponse.redirect(new URL(request.url));
+        } catch (err) {
+          // Se houver erro ao buscar userInfo, deslogar o usuário
+          console.error('Failed to get user info:', err);
+          return NextResponse.redirect(new URL('/auth/logout', request.url));
+        }
       }
     }
   } else {

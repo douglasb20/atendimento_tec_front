@@ -4,7 +4,7 @@ import { Button } from 'primereact/button';
 import { MenuItem } from 'primereact/menuitem';
 import { Menu } from 'primereact/menu';
 import { ColumnBodyOptions } from 'primereact/column';
-import { DateToBR, FormatCurrency, Mask } from 'service/Util';
+import { DateToBR, FormatCurrency, Mask } from '@/service/Util';
 
 export interface IActions<T = unknown> {
   label?: string;

@@ -1,10 +1,10 @@
 import { memo, useEffect } from 'react';
 import { Dialog as Modal } from 'primereact/dialog';
-
-import { ChannelResponse } from '@/Interfaces';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { useForm, Controller } from 'react-hook-form';
+
+import { ChannelResponse } from '@/Interfaces';
 import { getFormErrorMessage, msgRequired } from '@/service/Util';
 
 interface IProps<T> {

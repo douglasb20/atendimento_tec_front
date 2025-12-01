@@ -2,7 +2,7 @@
 import { memo, useEffect } from 'react';
 
 import { useService } from '@/contexts/ServicesContext';
-import { DateToBR, UcWords } from 'service/Util';
+import { DateToBR, UcWords } from '@/service/Util';
 import Image from 'next/image';
 
 type HeaderSectionProps = {

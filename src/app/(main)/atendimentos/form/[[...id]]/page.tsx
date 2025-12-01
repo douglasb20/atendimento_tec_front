@@ -1,6 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
 import { SelectItem } from 'primereact/selectitem';
+import { jwtDecode } from 'jwt-decode';
 
 import CardFormSection from './CardFormSection';
 import ApiService from '@/service/Api/ApiServer';
@@ -12,7 +13,6 @@ import {
   IUsuariosResponse,
   JWTToken,
 } from '@/Interfaces';
-import { jwtDecode } from 'jwt-decode';
 
 export const metadata: Metadata = {
   title: 'Cadastro de atendimento',

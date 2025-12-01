@@ -1,143 +1,16 @@
 'use client';
-import { Image } from 'primereact/image';
-import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useLayoutEffect, useRef } from 'react';
 import { Button } from 'primereact/button';
-import { classNames } from 'primereact/utils';
+import { Image } from 'primereact/image';
 import { Menu } from 'primereact/menu';
-import { addHours, addMinutes, isAfter, isEqual, parseISO, startOfDay } from 'date-fns';
 import { MenuItem } from 'primereact/menuitem';
+import { classNames } from 'primereact/utils';
+import { addHours, addMinutes, isAfter, parseISO } from 'date-fns';
 
-import Interweave from '@/components/Interweave';
 import { SupportChatMessageResponse } from '@/Interfaces';
-import { DateToBR, fixHeartEmoji } from '@/service/Util';
+import { debounce } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
-
-function SingleMessage({
-  message,
-  doAnimation,
-  isLast,
-}: {
-  message: SupportChatMessageResponse;
-  doAnimation: boolean;
-  isLast: boolean;
-}) {
-  const { from_me, content } = message;
-
-  const InterpretedContent = useMemo(() => fixHeartEmoji(content), [content]);
-
-  const DivWithEmoji = () => (
-    <Interweave
-      // style={{ overflowWrap: 'anywhere' }}
-      content={fixHeartEmoji(InterpretedContent)}
-    />
-  );
-
-  const messageClass = from_me
-    ? 'align-self-end border-primary-300 bg-primary-500 text-white'
-    : 'align-self-start border-gray-300 bg-gray-200 text-black';
-
-  return (
-    <div
-      className={classNames(
-        `relative animation-duration-200 w-auto border-1 p-2 mb-1 border-round-lg message-item-${from_me ? 'from-me' : 'from-them'} ${messageClass}`,
-        {
-          fadeinright: doAnimation && isLast && from_me,
-          fadeinleft: doAnimation && isLast && !from_me,
-        },
-      )}
-      style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-    >
-      <div className="flex flex-column text-base ">
-        {message.has_media && message.type === 'image' && (
-          <>
-            <Image
-              src={message.media_url}
-              alt="Media"
-              className="mb-2 border-round shadow-2"
-              imageStyle={{ maxWidth: '500px', height: '500px', objectFit: 'cover' }}
-              preview
-              downloadable
-            />
-            {DivWithEmoji()}
-          </>
-        )}
-        {message.has_media && message.type === 'ptt' && (
-          <>
-            <audio
-              controls
-              className="mb-2 "
-              style={{ width: '35rem' }}
-            >
-              <source
-                src={message.media_url}
-                type={message.media_type}
-              />
-              Seu navegador não suporta o elemento de áudio.
-            </audio>
-          </>
-        )}
-        {message.has_media && message.type === 'video' && (
-          <>
-            <video
-              controls={!message.is_gif}
-              className="mb-2 inline-block"
-              autoPlay={message.is_gif}
-              loop={message.is_gif}
-              muted={message.is_gif}
-              style={{
-                maxWidth: '40rem',
-                height: !message.is_gif ? '50rem' : 'auto',
-                objectFit: 'contain',
-              }}
-            >
-              <source
-                src={message.media_url}
-                type={message.media_type}
-              />
-              Seu navegador não suporta o elemento de vídeo.
-            </video>
-            {DivWithEmoji()}
-          </>
-        )}
-        {!message.has_media && DivWithEmoji()}
-      </div>
-      <div className="w-full text-right flex align-items-end justify-content-end gap-1 ">
-        <span className="text-xs">{ArrumaData(message.datetime)}</span>
-        {message.from_me && (
-          <span>
-            <i className={`fa ${ProccessAck(message.ack)} text-xs`}></i>
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const ArrumaData = (data: string) => {
-  const hoje = startOfDay(new Date());
-  const dataMsg = startOfDay(parseISO(data));
-
-  if (isEqual(hoje, dataMsg)) {
-    return DateToBR(data, 'HH:mm');
-  } else {
-    return DateToBR(data, 'dd/MM/yyyy HH:mm');
-  }
-};
-
-const ProccessAck = (ack: number) => {
-  switch (ack) {
-    case 0:
-      return 'fa-clock';
-    case 1:
-      return 'fa-check';
-    case 2:
-      return 'fa-check-double';
-    case 3:
-      return 'fa-check-double text-blue-500';
-    default:
-      return 'fa-clock';
-  }
-};
+import { ShowReactionComponent, SingleMessage } from '../_components';
 
 const isAfter15min = (input: string) => {
   const date = parseISO(input);
@@ -162,16 +35,6 @@ const isAfter60Hour = (input: string) => {
   return passou60horas;
 };
 
-function debounce(fn, delay) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      fn(...args);
-    }, delay);
-  };
-}
-
 const Messages = () => {
   const { messages, doSmoothScroll, setSmoothScroll, loadMessages, activeChat } = useChatStore();
   const bottomEl = useRef(null);
@@ -183,28 +46,34 @@ const Messages = () => {
 
   const menuModel: MenuItem[] = [
     {
+      id: 'reply',
       label: 'Responder',
       icon: 'fa-regular fa-arrow-turn-left',
     },
     {
+      id: 'forward',
       label: 'Encaminhar',
       icon: 'fa-regular fa-download',
       visible: false,
     },
     {
+      id: 'download',
       label: 'Baixar Mídia',
       icon: 'fa-regular fa-arrow-down-to-line',
       visible: true,
     },
     {
+      id: 'edit',
       label: 'Editar',
       icon: 'fa-regular fa-pen-to-square',
     },
     {
+      id: 'delete',
       label: 'Apagar',
       icon: 'fa-regular fa-trash-can',
     },
     {
+      id: 'option2',
       label: 'Opção 2',
       icon: 'fa-regular fa-fw fa-minus',
       command: ({ item: { data } }) => {
@@ -297,29 +166,41 @@ const Messages = () => {
       >
         <div className="flex flex-column z-0 w-full">
           {messages?.map((msg) => {
-            const messageClass = msg.from_me ? 'align-self-end' : 'align-self-start';
+            const messageClass = msg.from_me ? 'align-items-end' : 'align-items-start';
+            let avatarUrl = '/images/avatar/avatar-noprofile.png';
             const newModel = menuModel.map((item, key) => {
               const newItem: MenuItem = { ...item };
               newItem.data = msg;
-              if (newItem.label === 'Editar') {
-                newItem.visible =
-                  !isAfter15min(msg.datetime) && msg.from_me && msg.device_type === 'web';
-              }
-              if (newItem.label === 'Apagar') {
-                newItem.visible =
-                  !isAfter60Hour(msg.datetime) && msg.from_me && msg.device_type === 'web';
-              }
-              if (key === menuModel.length - 1) {
-                newItem.template = (item, options) => {
-                  return <>Teste</>;
-                };
+
+              switch (newItem.id) {
+                case 'edit':
+                  newItem.visible =
+                    !isAfter15min(msg.datetime) && msg.from_me && msg.device_type === 'web';
+                  break;
+                case 'delete':
+                  newItem.visible =
+                    !isAfter60Hour(msg.datetime) && msg.from_me && msg.device_type === 'web';
+                  break;
+                case 'download':
+                  newItem.visible = msg.has_media;
+                  break;
+                case 'option2':
+                  newItem.template = (item, options) => {
+                    return <>Teste </>;
+                  };
+                  break;
               }
 
               return newItem;
             });
+            if (msg.from_me && activeChat?.user?.avatar_url) {
+              avatarUrl = activeChat.user.avatar_url;
+            } else if (!msg.from_me && activeChat?.contact?.avatar_url) {
+              avatarUrl = activeChat.contact.avatar_url;
+            }
             return (
               <div
-                className="w-full flex-column flex"
+                className={`w-full message-content flex-column flex ${messageClass}`}
                 key={msg.id}
               >
                 <div
@@ -327,97 +208,85 @@ const Messages = () => {
                     {
                       'mb-4': msg.has_reaction,
                     },
-                    `relative message-item ${messageClass} mb-1 flex`,
+                    `relative flex message-item ${msg.from_me ? 'flex-row-reverse' : 'flex-row'} mb-1`,
                   )}
                   style={{ maxWidth: '70%', minWidth: '10%' }}
                 >
-                  {!msg.from_me && (
-                    <div className="mr-2 overflow-hidden flex flex-none justify-content-center align-items-center">
-                      <Image
-                        src={activeChat?.user?.avatar_url || '/images/avatar/avatar-noprofile.png'}
-                        alt="Avatar"
-                        imageClassName="w-4rem h-4rem border-circle"
-                        imageStyle={{ objectFit: 'cover' }}
-
-                      />
-                    </div>
-                  )}
-
-                  <div
-                    className={`
-                    message-chevron 
-                    hidden
-                    absolute right-0 top-0 z-1 mt-2 mr-2
-                    `}
-                  >
-                    <Menu
-                      ref={(el) => {
-                        menuRef.current[msg.id] = el;
-                      }}
-                      model={newModel}
-                      popupAlignment={msg.from_me ? 'right' : 'left'}
-                      onShow={() => {
-                        bottomEl?.current?.classList.add('no-scroll');
-                      }}
-                      onHide={() => {
-                        bottomEl?.current?.classList.remove('no-scroll');
-                      }}
-                      popup
-                      style={{ width: '22rem', top: 'auto' }}
-                    />
-                    <Button
-                      className={`bg-gray-300 border-${msg.from_me ? 'gray' : 'primary'}-500 outline-none shadow-none p-0`}
-                      style={{ width: '1.5rem', height: '1.5rem' }}
-                      text
-                      rounded
-                      outlined
-                      onClick={(event) => menuRef.current[msg.id]?.toggle(event)}
-                      icon="fa-regular fa-chevron-down"
-                      pt={{
-                        label: {
-                          className: 'p-0 m-0',
-                        },
-                        icon: {
-                          className: 'p-0 m-0',
-                        },
-                      }}
+                  <div className="mx-2 overflow-hidden flex flex-none justify-content-center align-items-center">
+                    <Image
+                      src={avatarUrl}
+                      alt="Avatar"
+                      imageClassName="w-4rem h-4rem border-circle"
+                      imageStyle={{ objectFit: 'cover' }}
                     />
                   </div>
 
-                  <SingleMessage
-                    message={msg}
-                    doAnimation={doSmoothScroll}
-                    isLast={messages[messages.length - 1].id === msg.id}
-                  />
-
-                  {msg.from_me && (
-                    <div className="ml-2 overflow-hidden flex flex-none justify-content-center align-items-center">
-                      <Image
-                        src={activeChat?.user?.avatar_url || '/images/avatar/avatar-noprofile.png'}
-                        alt="Avatar"
-                        imageClassName="w-4rem h-4rem border-circle"
-                        imageStyle={{ objectFit: 'cover' }}
-                        
+                  <div className="relative message-balloon">
+                    <div
+                      className={`
+                        message-chevron 
+                        hidden
+                        absolute right-0 top-0 z-1 mt-2 mr-2
+                        `}
+                    >
+                      <Menu
+                        ref={(el) => {
+                          menuRef.current[msg.id] = el;
+                        }}
+                        model={newModel}
+                        popupAlignment={msg.from_me ? 'right' : 'left'}
+                        onShow={() => {
+                          bottomEl?.current?.classList.add('no-scroll');
+                        }}
+                        onHide={() => {
+                          bottomEl?.current?.classList.remove('no-scroll');
+                        }}
+                        popup
+                      />
+                      <Button
+                        className={`bg-gray-300 border-${msg.from_me ? 'gray' : 'primary'}-500 outline-none shadow-none p-0`}
+                        style={{ width: '1.5rem', height: '1.5rem' }}
+                        text
+                        rounded
+                        outlined
+                        onClick={(event) => menuRef.current[msg.id]?.toggle(event)}
+                        icon="fa-regular fa-chevron-down"
+                        pt={{
+                          label: {
+                            className: 'p-0 m-0',
+                          },
+                          icon: {
+                            className: 'p-0 m-0',
+                          },
+                        }}
                       />
                     </div>
-                  )}
-
-                  {msg.has_reaction && (
-                    <span
-                      className={classNames(
-                        { 'bg-primary-300 border-primary-400 right-0': msg.from_me },
-                        { 'bg-gray-300 border-gray-400 left-0': !msg.from_me },
-                        'absolute bottom-0 text-lg border-circle rounded-full border-1 ',
-                      )}
-                      style={{
-                        transform: msg.from_me ? 'translate(25%, 25%)' : 'translate(-25%, 60%)',
-                        padding: '0.07rem',
-                      }}
-                    >
-                      {msg.reaction}
-                    </span>
-                  )}
-
+                    <SingleMessage
+                      message={msg}
+                      doAnimation={doSmoothScroll}
+                      isLast={messages[messages.length - 1].id === msg.id}
+                    />
+                    {msg.has_reaction && (
+                      <span
+                        className={classNames(
+                          { 'bg-primary-300 border-primary-400 right-0': msg.from_me },
+                          { 'bg-gray-300 border-gray-400 left-0': !msg.from_me },
+                          'absolute bottom-0 text-lg border-circle rounded-full border-1 ',
+                        )}
+                        style={{
+                          transform: msg.from_me ? 'translate(25%, 25%)' : 'translate(-25%, 60%)',
+                          padding: '0.07rem',
+                        }}
+                      >
+                        {msg.reaction}
+                      </span>
+                    )}
+                  </div>
+                  <ShowReactionComponent
+                    position={msg.from_me ? 'right' : 'left'}
+                    message={msg}
+                    activeChat={activeChat || null}
+                  />
                 </div>
               </div>
             );

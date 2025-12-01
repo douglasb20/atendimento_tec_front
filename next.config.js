@@ -10,13 +10,13 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config) => {
-    config.resolve.alias.canvas = false;
-
-    return config;
+  sassOptions: {
+    silenceDeprecations: ['legacy-js-api', 'import'], // Add the IDs of warnings to silence
   },
-  publicRuntimeConfig: {
-    contextPath: '',
+  turbopack: {
+    resolveAlias: {
+      '@/': './src/',
+    },
   },
   env: {
     URL_ENDPOINT: process.env.URL_ENDPOINT,

@@ -1,10 +1,10 @@
 import { Metadata } from 'next';
 import { jwtDecode } from 'jwt-decode';
+import { startOfMonth } from 'date-fns';
 
 import { AtendimentosResponse, IUsuariosResponse, JWTToken } from '@/Interfaces';
 import ApiService from '@/service/Api/ApiServer';
 import DadosAtendimentoSection from './DadosAtendimentosSection';
-import { startOfMonth } from 'date-fns';
 import { DateToBR } from '@/service/Util';
 
 export const metadata: Metadata = {

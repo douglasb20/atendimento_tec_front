@@ -1,7 +1,7 @@
 'use client';
-import { getUserInfo } from '@/actions/userInfo';
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { getUserInfo } from '@/actions/userInfo';
 
 const ValidateLoginPage = () => {
   const router = useRouter();
