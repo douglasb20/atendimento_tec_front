@@ -7,7 +7,13 @@ export const createMessageSlice: StateCreator<MessageSlice & ChatSlice, [], [], 
   messages: [],
   loadMessages: false,
   doSmoothScroll: false,
+  reactionState: {
+    open: false,
+    anchorEl: null,
+    message: null,
+  },
 
+  setReactionState: (state) => set({ reactionState: state }),
   setLoadMessages: (load) => set({ loadMessages: load }),
   setSmoothScroll: (smooth) => set({ doSmoothScroll: smooth }),
 

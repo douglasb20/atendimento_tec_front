@@ -11,6 +11,16 @@ export type MessageSlice = {
   messages: SupportChatMessageResponse[];
   loadMessages: boolean;
   doSmoothScroll: boolean;
+  reactionState: {
+    open: boolean;
+    anchorEl: HTMLElement | null;
+    message: SupportChatMessageResponse | null;
+  };
+  setReactionState: (state: {
+    open: boolean;
+    anchorEl: HTMLElement | null;
+    message: SupportChatMessageResponse | null;
+  }) => void;
   setLoadMessages: (load: boolean) => void;
   setSmoothScroll: (smooth: boolean) => void;
   updateMessage: (msg: SupportChatMessageResponse) => void;

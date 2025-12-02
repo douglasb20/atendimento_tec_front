@@ -10,7 +10,7 @@ import { addHours, addMinutes, isAfter, parseISO } from 'date-fns';
 import { SupportChatMessageResponse } from '@/Interfaces';
 import { debounce } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
-import { ShowReactionComponent, SingleMessage } from '../_components';
+import { ReactionPicker, ShowReactionComponent, SingleMessage } from '../_components';
 
 const isAfter15min = (input: string) => {
   const date = parseISO(input);
@@ -36,7 +36,8 @@ const isAfter60Hour = (input: string) => {
 };
 
 const Messages = () => {
-  const { messages, doSmoothScroll, setSmoothScroll, loadMessages, activeChat } = useChatStore();
+  const { messages, doSmoothScroll, setSmoothScroll, loadMessages, activeChat, reactionState } =
+    useChatStore();
   const bottomEl = useRef(null);
   const scrollRef = useRef(0);
   const divRef = useRef<HTMLDivElement>(null);
@@ -129,7 +130,7 @@ const Messages = () => {
     if (el) {
       scrollHeightBeforeUpdate.current = el.scrollHeight;
     }
-  });
+  }, []);
 
   useEffect(() => {
     const el = bottomEl.current;
@@ -282,11 +283,7 @@ const Messages = () => {
                       </span>
                     )}
                   </div>
-                  <ShowReactionComponent
-                    position={msg.from_me ? 'right' : 'left'}
-                    message={msg}
-                    activeChat={activeChat || null}
-                  />
+                  <ShowReactionComponent message={msg} />
                 </div>
               </div>
             );
@@ -313,6 +310,9 @@ const Messages = () => {
           />
         </div>
       </div>
+      {reactionState.anchorEl && reactionState.message && (
+        <ReactionPicker activeChat={activeChat} />
+      )}
     </>
   );
 };

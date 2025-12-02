@@ -1,11 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { classNames } from 'primereact/utils';
-import { Image } from 'primereact/image';
+import { autoUpdate, flip, offset, shift, useFloating } from '@floating-ui/react';
 import { isEqual, parseISO, startOfDay } from 'date-fns';
-import { EmojiClickData, EmojiStyle, SkinTonePickerLocation, Theme } from 'emoji-picker-react';
-import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/react';
+import {
+  Categories,
+  EmojiClickData,
+  EmojiStyle,
+  SkinTonePickerLocation,
+  SuggestionMode,
+  Theme,
+} from 'emoji-picker-react';
+import dynamic from 'next/dynamic';
+import { Image } from 'primereact/image';
+import { classNames } from 'primereact/utils';
+import { useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
+import { v4 as uuidV4 } from 'uuid';
+
+import { sendReactionMessage } from '@/actions/sendReactionMessage';
+import Interweave from '@/components/Interweave';
+import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
+import { DateToBR, fixHeartEmoji } from '@/service/Util';
+import { useChatStore } from '@/store/useChatStore';
 
 const EmojiPicker = dynamic(
   () => {
@@ -14,10 +28,9 @@ const EmojiPicker = dynamic(
   { ssr: false },
 );
 
-import Interweave from '@/components/Interweave';
-import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
-import { DateToBR, fixHeartEmoji } from '@/service/Util';
-import { sendReactionMessage } from '@/actions/sendReactionMessage';
+interface ReactionPickerProps {
+  activeChat: SupportChatsResponse;
+}
 
 export function parseMensagem(texto: string): React.ReactNode[] {
   if (!texto) return [];
@@ -32,24 +45,24 @@ export function parseMensagem(texto: string): React.ReactNode[] {
     // 🟢 Negrito
     if (token.startsWith('*') && token.endsWith('*')) {
       const conteudo = token.slice(1, -1);
-      elementos.push(<strong key={i}>{parseMensagem(conteudo)}</strong>);
+      elementos.push(<strong key={uuidV4()}>{parseMensagem(conteudo)}</strong>);
     }
     // 🟣 Itálico
     else if (token.startsWith('_') && token.endsWith('_')) {
       const conteudo = token.slice(1, -1);
-      elementos.push(<em key={i}>{parseMensagem(conteudo)}</em>);
+      elementos.push(<em key={uuidV4()}>{parseMensagem(conteudo)}</em>);
     }
     // 🔴 Riscado
     else if (token.startsWith('~') && token.endsWith('~')) {
       const conteudo = token.slice(1, -1);
-      elementos.push(<s key={i}>{parseMensagem(conteudo)}</s>);
+      elementos.push(<s key={uuidV4()}>{parseMensagem(conteudo)}</s>);
     }
     // 🟠 Código
     else if (token.startsWith('`') && token.endsWith('`')) {
       const conteudo = token.slice(1, -1);
       elementos.push(
         <code
-          key={i}
+          key={uuidV4()}
           className="bg-gray-200 px-1 rounded font-mono"
         >
           {conteudo}
@@ -68,7 +81,7 @@ export function parseMensagem(texto: string): React.ReactNode[] {
         });
       } else {
         // Envolver texto normal em span para preservar espaços
-        elementos.push(<span key={i}>{token}</span>);
+        elementos.push(<span key={uuidV4()}>{token}</span>);
       }
     }
   });
@@ -177,34 +190,69 @@ export function SingleMessage({
   );
 }
 
-export const ShowReactionComponent = ({
-  position,
-  message,
-  activeChat,
-}: {
-  position: 'left' | 'right';
-  message: SupportChatMessageResponse;
-  activeChat: SupportChatsResponse;
-}) => {
-  const [statusReaction, setStatusReaction] = useState(false);
-  // Floating UI para posicionamento
+export const ShowReactionComponent = ({ message }) => {
+  const { setReactionState, reactionState } = useChatStore();
+
+  const handleReactionState = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (reactionState.anchorEl !== null && reactionState.anchorEl === event.currentTarget) {
+      reactionState.anchorEl = null;
+      setReactionState({
+        open: false,
+        message: null,
+        anchorEl: null,
+      });
+    } else {
+      reactionState.anchorEl = event.currentTarget as HTMLButtonElement;
+      setReactionState({
+        open: true,
+        message: message,
+        anchorEl: reactionState.anchorEl,
+      });
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={handleReactionState}
+        className={classNames(
+          'box-reaction relative w-2rem h-2rem justify-content-center align-items-center border-1 align-self-center mx-1 bg-bluegray-400 border-bluegray-300 p-1 border-round-lg',
+        )}
+      >
+        <i className="fa-regular text-lg fa-face-smile text-white"></i>
+      </button>
+    </>
+  );
+};
+
+export const ReactionPicker = ({ activeChat }: ReactionPickerProps) => {
+  const { setReactionState, reactionState } = useChatStore();
+
+  const reactions = ['1f44d', '2764-fe0f', '1f602', '1f62f', '1f622', '1f64f'];
+
+  const hideReactionPicker = () => {
+    setReactionState({ ...reactionState, open: false });
+  };
+
   const { refs, floatingStyles } = useFloating({
-    open: statusReaction,
-    onOpenChange: setStatusReaction,
-    placement: position === 'right' ? 'left-start' : 'right-start',
+    open: reactionState.open,
+    placement: reactionState.message.from_me ? 'left-start' : 'right-start',
     middleware: [offset(8), flip(), shift({ padding: 10 })],
     whileElementsMounted: autoUpdate,
   });
 
-  const handleReactionClick = async (emoji: EmojiClickData, api = null) => {
-    try {
-      setStatusReaction(false);
+  const handleReactionClick = async (emoji: EmojiClickData) => {
+    if (!reactionState.message || !activeChat) return;
 
-      const reaction = message.reaction === emoji.emoji ? '' : emoji.emoji;
+    console.log('Reação selecionada:', emoji);
+
+    try {
+      hideReactionPicker(); // Fecha o picker
+      const reaction = reactionState.message.reaction === emoji.emoji ? '' : emoji.emoji;
       await sendReactionMessage(
         activeChat.id,
         reaction,
-        message.message_id,
+        reactionState.message.message_id,
         activeChat.contact.remote_jid,
       );
     } catch (err) {
@@ -212,74 +260,107 @@ export const ShowReactionComponent = ({
     }
   };
 
-  // Clique fora do picker
+  useEffect(() => {
+    if (reactionState.anchorEl instanceof HTMLElement) {
+      refs.setReference(reactionState.anchorEl);
+    }
+  }, [reactionState.anchorEl]);
+
+  // Lógica para fechar ao clicar fora
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      const refEl = refs.reference.current;
       const floatEl = refs.floating.current;
       if (
-        statusReaction &&
-        refEl instanceof HTMLElement &&
-        floatEl instanceof HTMLElement &&
-        !refEl.contains(e.target as Node) &&
-        !floatEl.contains(e.target as Node)
+        reactionState.open &&
+        floatEl &&
+        !floatEl.contains(e.target as Node) &&
+        reactionState.anchorEl &&
+        !reactionState.anchorEl.contains(e.target as Node)
       ) {
-        setStatusReaction(false);
+        hideReactionPicker();
       }
     }
 
-    if (statusReaction) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
+    if (reactionState.open) {
+      const btn = document.querySelector('.epr-btn[title="Show all Emojis"]');
+      if (btn) {
+        btn.setAttribute('title', 'Mostrar todos emojis');
+      }
     }
 
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [statusReaction]);
-  return (
-    <>
-      <button
-        ref={refs.setReference}
-        onClick={() => setStatusReaction(!statusReaction)}
-        className={classNames(
+  }, [reactionState.open, refs, reactionState.anchorEl]);
+
+  if (!reactionState.open) return null;
+
+  return ReactDOM.createPortal(
+    <div
+      ref={refs.setFloating}
+      style={{
+        ...floatingStyles,
+        zIndex: 99999,
+      }}
+    >
+      <EmojiPicker
+        reactionsDefaultOpen={true}
+        open={true}
+        emojiStyle={EmojiStyle.APPLE}
+        suggestedEmojisMode={SuggestionMode.RECENT}
+        reactions={reactions}
+        theme={Theme.DARK}
+        skinTonePickerLocation={SkinTonePickerLocation.PREVIEW}
+        emojiVersion="5.0"
+        previewConfig={{ showPreview: false }}
+        searchPlaceHolder="Pesquisar reação"
+        onReactionClick={handleReactionClick}
+        onEmojiClick={handleReactionClick}
+        searchClearButtonLabel="Limpar"
+        skinTonesDisabled
+        lazyLoadEmojis
+        categories={[
           {
-            hidden: statusReaction === false,
+            category: Categories.SUGGESTED,
+            name: 'Recentes',
           },
-          'box-reaction relative w-2rem h-2rem justify-content-center align-items-center border-1 align-self-center mx-1 bg-bluegray-400 border-bluegray-300 p-1 border-round-lg',
-        )}
-      >
-        <i className="fa-regular text-lg fa-face-smile text-white"></i>
-      </button>
-      {/* PICKER - Renderizado via Portal (não é cortado no overflow!) */}
-      {statusReaction &&
-        ReactDOM.createPortal(
-          <div
-            ref={refs.setFloating}
-            style={{
-              ...floatingStyles,
-              position: 'fixed',
-              zIndex: 99999,
-            }}
-          >
-            <EmojiPicker
-              reactionsDefaultOpen={true}
-              open={true}
-              emojiStyle={EmojiStyle.APPLE}
-              theme={Theme.DARK}
-              skinTonePickerLocation={SkinTonePickerLocation.PREVIEW}
-              emojiVersion="5.0"
-              previewConfig={{ showPreview: false }}
-              searchPlaceHolder="Pesquisar reação"
-              onReactionClick={(emoji) => handleReactionClick(emoji)}
-              onEmojiClick={(emoji, _, api) => handleReactionClick(emoji, api)}
-              searchClearButtonLabel="Limpar"
-            />
-          </div>,
-          document.body,
-        )}
-    </>
+          {
+            category: Categories.SMILEYS_PEOPLE,
+            name: 'Smileys & Pessoas',
+          },
+          {
+            category: Categories.ANIMALS_NATURE,
+            name: 'Animais & Natureza',
+          },
+          {
+            category: Categories.FOOD_DRINK,
+            name: 'Comida & Bebida',
+          },
+          {
+            category: Categories.TRAVEL_PLACES,
+            name: 'Viagens & Lugares',
+          },
+          {
+            category: Categories.ACTIVITIES,
+            name: 'Atividades',
+          },
+          {
+            category: Categories.OBJECTS,
+            name: 'Objetos',
+          },
+          {
+            category: Categories.SYMBOLS,
+            name: 'Simbolos',
+          },
+          {
+            category: Categories.FLAGS,
+            name: 'Bandeiras',
+          },
+        ]}
+      />
+    </div>,
+    document.body,
   );
 };
 
