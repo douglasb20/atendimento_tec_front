@@ -1,47 +1,27 @@
 'use client';
 import { memo, useEffect, useLayoutEffect, useRef } from 'react';
 import { Button } from 'primereact/button';
-import { Image } from 'primereact/image';
-import { Menu } from 'primereact/menu';
 import { MenuItem } from 'primereact/menuitem';
 import { classNames } from 'primereact/utils';
-import { addHours, addMinutes, isAfter, parseISO } from 'date-fns';
 
 import { SupportChatMessageResponse } from '@/Interfaces';
 import { debounce } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
-import { ReactionPicker, ShowReactionComponent, SingleMessage } from '../_components';
-
-const isAfter15min = (input: string) => {
-  const date = parseISO(input);
-
-  // Data + 15 minutos
-  const limite = addMinutes(date, 15);
-
-  // Agora > data + 15?
-  const passou15min = isAfter(new Date(), limite);
-
-  return passou15min;
-};
-
-const isAfter60Hour = (input: string) => {
-  const date = parseISO(input);
-
-  // Data + 60 horas
-  const limite = addHours(date, 60);
-  // Agora > data + 15?
-  const passou60horas = isAfter(new Date(), limite);
-
-  return passou60horas;
-};
+import {
+  MenuMessageComponent,
+  ReactionPickerComponent,
+  ShowAvatarComponent,
+  ShowReactionMessageComponent,
+  ShowReactionPickerComponent,
+  SingleMessageComponent,
+} from '../_components';
 
 const Messages = () => {
   const { messages, doSmoothScroll, setSmoothScroll, loadMessages, activeChat, reactionState } =
     useChatStore();
-  const bottomEl = useRef(null);
+  const bottomEl = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(0);
   const divRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<{ [key: string]: Menu | null }>({});
 
   const scrollHeightBeforeUpdate = useRef(0);
 
@@ -50,6 +30,10 @@ const Messages = () => {
       id: 'reply',
       label: 'Responder',
       icon: 'fa-regular fa-arrow-turn-left',
+      command: ({ item: { data } }) => {
+        const message = data as SupportChatMessageResponse;
+        console.log(message.message_id);
+      },
     },
     {
       id: 'forward',
@@ -168,37 +152,7 @@ const Messages = () => {
         <div className="flex flex-column z-0 w-full">
           {messages?.map((msg) => {
             const messageClass = msg.from_me ? 'align-items-end' : 'align-items-start';
-            let avatarUrl = '/images/avatar/avatar-noprofile.png';
-            const newModel = menuModel.map((item, key) => {
-              const newItem: MenuItem = { ...item };
-              newItem.data = msg;
 
-              switch (newItem.id) {
-                case 'edit':
-                  newItem.visible =
-                    !isAfter15min(msg.datetime) && msg.from_me && msg.device_type === 'web';
-                  break;
-                case 'delete':
-                  newItem.visible =
-                    !isAfter60Hour(msg.datetime) && msg.from_me && msg.device_type === 'web';
-                  break;
-                case 'download':
-                  newItem.visible = msg.has_media;
-                  break;
-                case 'option2':
-                  newItem.template = (item, options) => {
-                    return <>Teste </>;
-                  };
-                  break;
-              }
-
-              return newItem;
-            });
-            if (msg.from_me && activeChat?.user?.avatar_url) {
-              avatarUrl = activeChat.user.avatar_url;
-            } else if (!msg.from_me && activeChat?.contact?.avatar_url) {
-              avatarUrl = activeChat.contact.avatar_url;
-            }
             return (
               <div
                 className={`w-full message-content flex-column flex ${messageClass}`}
@@ -213,77 +167,27 @@ const Messages = () => {
                   )}
                   style={{ maxWidth: '70%', minWidth: '10%' }}
                 >
-                  <div className="mx-2 overflow-hidden flex flex-none justify-content-center align-items-center">
-                    <Image
-                      src={avatarUrl}
-                      alt="Avatar"
-                      imageClassName="w-4rem h-4rem border-circle"
-                      imageStyle={{ objectFit: 'cover' }}
-                    />
-                  </div>
-
+                  <ShowAvatarComponent
+                    message={msg}
+                    activeChat={activeChat}
+                  />
                   <div className="relative message-balloon">
-                    <div
-                      className={`
-                        message-chevron 
-                        hidden
-                        absolute right-0 top-0 z-1 mt-2 mr-2
-                        `}
-                    >
-                      <Menu
-                        ref={(el) => {
-                          menuRef.current[msg.id] = el;
-                        }}
-                        model={newModel}
-                        popupAlignment={msg.from_me ? 'right' : 'left'}
-                        onShow={() => {
-                          bottomEl?.current?.classList.add('no-scroll');
-                        }}
-                        onHide={() => {
-                          bottomEl?.current?.classList.remove('no-scroll');
-                        }}
-                        popup
-                      />
-                      <Button
-                        className={`bg-gray-300 border-${msg.from_me ? 'gray' : 'primary'}-500 outline-none shadow-none p-0`}
-                        style={{ width: '1.5rem', height: '1.5rem' }}
-                        text
-                        rounded
-                        outlined
-                        onClick={(event) => menuRef.current[msg.id]?.toggle(event)}
-                        icon="fa-regular fa-chevron-down"
-                        pt={{
-                          label: {
-                            className: 'p-0 m-0',
-                          },
-                          icon: {
-                            className: 'p-0 m-0',
-                          },
-                        }}
-                      />
-                    </div>
-                    <SingleMessage
+                    <MenuMessageComponent
+                      menuModel={menuModel}
+                      message={msg}
+                      bottomEl={bottomEl.current}
+                    />
+                    <SingleMessageComponent
                       message={msg}
                       doAnimation={doSmoothScroll}
                       isLast={messages[messages.length - 1].id === msg.id}
                     />
-                    {msg.has_reaction && (
-                      <span
-                        className={classNames(
-                          { 'bg-primary-300 border-primary-400 right-0': msg.from_me },
-                          { 'bg-gray-300 border-gray-400 left-0': !msg.from_me },
-                          'absolute bottom-0 text-lg border-circle rounded-full border-1 ',
-                        )}
-                        style={{
-                          transform: msg.from_me ? 'translate(25%, 25%)' : 'translate(-25%, 60%)',
-                          padding: '0.07rem',
-                        }}
-                      >
-                        {msg.reaction}
-                      </span>
-                    )}
+                    <ShowReactionMessageComponent message={msg} />
                   </div>
-                  <ShowReactionComponent message={msg} />
+                  <ShowReactionPickerComponent
+                    message={msg}
+                    bottomEl={bottomEl?.current}
+                  />
                 </div>
               </div>
             );
@@ -311,7 +215,10 @@ const Messages = () => {
         </div>
       </div>
       {reactionState.anchorEl && reactionState.message && (
-        <ReactionPicker activeChat={activeChat} />
+        <ReactionPickerComponent
+          activeChat={activeChat}
+          bottomEl={bottomEl?.current}
+        />
       )}
     </>
   );
