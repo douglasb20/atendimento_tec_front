@@ -45,6 +45,29 @@ const ProccessAck = (ack: number) => {
   }
 };
 
+/** Ícone por extensão — dá ao anexo a mesma pista visual do explorador. */
+const iconeDocumento = (fileName?: string) => {
+  const ext = fileName?.split('.').pop()?.toLowerCase() ?? '';
+
+  if (ext === 'pdf') return 'fa-regular fa-file-pdf';
+  if (['doc', 'docx', 'odt', 'rtf'].includes(ext)) return 'fa-regular fa-file-word';
+  if (['xls', 'xlsx', 'ods', 'csv'].includes(ext)) return 'fa-regular fa-file-excel';
+  if (['ppt', 'pptx', 'odp'].includes(ext)) return 'fa-regular fa-file-powerpoint';
+  if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'fa-regular fa-file-zipper';
+  if (['txt', 'log', 'md'].includes(ext)) return 'fa-regular fa-file-lines';
+  if (['json', 'xml', 'html', 'ts', 'js', 'sql'].includes(ext)) return 'fa-regular fa-file-code';
+
+  return 'fa-regular fa-file';
+};
+
+/** Tamanho legível; `null` é comum em mensagem que o provider não informou. */
+const formataTamanhoArquivo = (bytes?: number | null) => {
+  if (!bytes) return 'Documento';
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+  if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+};
+
 /**
  * Cobre a mídia com o progresso enquanto o arquivo sobe.
  *
@@ -168,11 +191,46 @@ const SingleMessageComponent = ({
                 <span>{message.file_name ?? 'Arquivo'}</span>
               </div>
             )}
+            {exibeMidia && message.type === 'document' && (
+              <ComProgresso progresso={message.progresso}>
+                <a
+                  href={message.media_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  download={message.file_name ?? undefined}
+                  className={classNames(
+                    from_me ? 'bg-primary-600 text-white' : 'surface-200 text-color',
+                    'flex align-items-center gap-3 border-round p-3 mb-2 no-underline',
+                  )}
+                  style={{ maxWidth: 250 }}
+                >
+                  <i className={classNames(iconeDocumento(message.file_name), 'text-3xl')} />
+                  <div className="flex flex-column overflow-hidden">
+                    <span
+                      className="text-sm font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis"
+                      title={message.file_name ?? 'Documento'}
+                    >
+                      {message.file_name ?? 'Documento'}
+                    </span>
+                    <span className="text-xs opacity-80">
+                      {formataTamanhoArquivo(message.media_size)}
+                    </span>
+                  </div>
+                </a>
+              </ComProgresso>
+            )}
+            {exibeMidia && message.type === 'document' && DivWithEmoji()}
             {exibeMidia && message.type === 'image' && (
               <ComProgresso progresso={message.progresso}>
                 <Image
+                  // A `key` amarrada à URL é necessária: o `Image` guarda o src
+                  // em estado interno para o modo `preview`, e ao trocar a
+                  // prévia local (`blob:`) pela URL do storage o React
+                  // reaproveita a instância — que segue apontando para um blob
+                  // já revogado, exibindo o ícone de imagem quebrada.
+                  key={message.media_url}
                   src={message.media_url}
-                  alt="Media"
+                  alt={message.file_name ?? 'Imagem'}
                   className="mb-2 border-round shadow-2"
                   imageStyle={{ maxWidth: '250px', height: '250px', objectFit: 'cover' }}
                   preview
@@ -181,21 +239,41 @@ const SingleMessageComponent = ({
               </ComProgresso>
             )}
             {exibeMidia && message.type === 'image' && DivWithEmoji()}
-            {exibeMidia && message.type === 'ptt' && (
-              <>
-                <audio
-                  controls
-                  className="mb-2 "
-                  style={{ width: '35rem' }}
-                >
-                  <source
-                    src={message.media_url}
-                    type={message.media_type}
-                  />
-                  Seu navegador não suporta o elemento de áudio.
-                </audio>
-              </>
+            {/* Voz gravada (`ptt`) e arquivo de áudio anexado (`audio`) tocam do
+                mesmo jeito; o que muda é a origem, e o nome só existe no
+                segundo caso. */}
+            {exibeMidia && (message.type === 'ptt' || message.type === 'audio') && (
+              <ComProgresso progresso={message.progresso}>
+                <div className="mb-2 flex flex-column gap-1">
+                  {message.type === 'audio' && message.file_name && (
+                    <span
+                      className="text-sm font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis"
+                      title={message.file_name}
+                    >
+                      <i className="fa-regular fa-music mr-2" />
+                      {message.file_name}
+                    </span>
+                  )}
+                  <audio
+                    // Sem a `key`, trocar a prévia local pela URL do storage
+                    // manteria o elemento preso ao blob já revogado.
+                    key={message.media_url}
+                    controls
+                    // Largura fixa: com `100%` o player se ajustava à bolha, e
+                    // num áudio curto sem legenda ela é estreita — os controles
+                    // colapsavam num oval sem barra de progresso.
+                    style={{ width: 350, maxWidth: '100%' }}
+                  >
+                    <source
+                      src={message.media_url}
+                      type={message.media_type}
+                    />
+                    Seu navegador não suporta o elemento de áudio.
+                  </audio>
+                </div>
+              </ComProgresso>
             )}
+            {exibeMidia && message.type === 'audio' && DivWithEmoji()}
             {exibeMidia && message.type === 'video' && (
               <ComProgresso progresso={message.progresso}>
                 <div
@@ -203,6 +281,10 @@ const SingleMessageComponent = ({
                   style={{ maxWidth: 250, maxHeight: 370, borderRadius: 8, overflow: 'hidden' }}
                 >
                   <video
+                    // Mesmo motivo do `Image`: trocar o src de um <source> não
+                    // recarrega o vídeo (exigiria `load()`), então a instância
+                    // seguiria presa ao blob revogado da prévia local.
+                    key={message.media_url}
                     controls={false}
                     className="w-full h-full pointer-events-none "
                     autoPlay={message.is_gif}

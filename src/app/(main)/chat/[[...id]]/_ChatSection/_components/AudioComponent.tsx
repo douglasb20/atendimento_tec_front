@@ -1,4 +1,6 @@
-import { classNames } from "primereact/utils";
+import { classNames } from 'primereact/utils';
+
+import OndaGravacao from './OndaGravacao';
 
 export default function AudioComponent({
   onSendAudio,
@@ -7,6 +9,7 @@ export default function AudioComponent({
   onResume,
   onCancel,
   statusRecording,
+  stream,
 }: {
   onSendAudio: () => void;
   duration: number;
@@ -14,15 +17,24 @@ export default function AudioComponent({
   onResume: () => void;
   onCancel: () => void;
   statusRecording: 'idle' | 'recording' | 'paused' | 'stopped' | 'sending';
+  /** Stream do microfone, para desenhar a onda enquanto grava. */
+  stream: MediaStream | null;
 }) {
   return (
     <div className="flex flex-row w-full p-fluid gap-2 py-1">
-      <div className="w-full max-h-10rem shadow-none border-none flex align-items-center select-none pl-2">
-        <span className="text-gray-500">
+      <div className="w-full max-h-10rem shadow-none border-none flex align-items-center gap-3 select-none pl-2">
+        <span className="text-gray-500 flex-shrink-0">
           {statusRecording === 'recording' && 'Gravando mensagem...'}
           {statusRecording === 'paused' && 'Pausado'}
           {statusRecording === 'sending' && 'Enviando mensagem...'}
         </span>
+        {/* Some ao enviar: aí não há mais microfone aberto para medir. */}
+        {statusRecording !== 'sending' && (
+          <OndaGravacao
+            stream={stream}
+            pausado={statusRecording === 'paused'}
+          />
+        )}
       </div>
       {statusRecording !== 'sending' && (
         <>
@@ -60,14 +72,12 @@ export default function AudioComponent({
       )}
 
       <button
-        className={
-          classNames(
-            {
-              "pointer-events-none opacity-50": statusRecording === "sending",
-            },
-            "flex bg-primary-500 cursor-pointer hover:bg-primary-800 justify-content-center align-items-center w-3rem h-3rem align-self-end border-circle border-none"
-          )
-        }
+        className={classNames(
+          {
+            'pointer-events-none opacity-50': statusRecording === 'sending',
+          },
+          'flex bg-primary-500 cursor-pointer hover:bg-primary-800 justify-content-center align-items-center w-3rem h-3rem align-self-end border-circle border-none',
+        )}
         onClick={onSendAudio}
         title="Enviar mensagem de áudio"
         disabled={statusRecording === 'sending'}
@@ -81,4 +91,3 @@ export default function AudioComponent({
     </div>
   );
 }
-

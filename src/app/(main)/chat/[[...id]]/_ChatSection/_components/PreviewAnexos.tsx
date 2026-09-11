@@ -18,7 +18,8 @@ type PreviewAnexosProps = {
   onRemover: (id: string) => void;
   onAdicionar: () => void;
   onCancelar: () => void;
-  onEnviar: (legenda: string) => void;
+  /** Legendas por anexo, indexadas pelo id — cada arquivo leva a sua. */
+  onEnviar: (legendas: Record<string, string>) => void;
 };
 
 const formataTamanho = (bytes: number) => {
@@ -29,7 +30,8 @@ const formataTamanho = (bytes: number) => {
 
 /**
  * Revisão dos arquivos antes do envio, no formato do WhatsApp Web: um em
- * destaque, os demais em miniaturas, e a legenda aplicada ao conjunto.
+ * destaque, os demais em miniaturas, e uma legenda própria para cada um —
+ * como no WhatsApp Web, onde trocar de arquivo troca a legenda editada.
  *
  * A tela existe para dar chance de conferir e desistir — selecionar um arquivo
  * não deve disparar o envio, que é irreversível assim que chega ao provider.
@@ -43,7 +45,7 @@ const PreviewAnexos = ({
   onEnviar,
 }: PreviewAnexosProps) => {
   const [ativo, setAtivo] = useState(0);
-  const [legenda, setLegenda] = useState('');
+  const [legendas, setLegendas] = useState<Record<string, string>>({});
   const legendaRef = useRef<HTMLInputElement>(null);
 
   // Remover o último da lista deixaria o índice fora da faixa.
@@ -51,9 +53,11 @@ const PreviewAnexos = ({
     if (ativo > anexos.length - 1) setAtivo(Math.max(0, anexos.length - 1));
   }, [anexos.length, ativo]);
 
+  // Refoca a cada troca de arquivo: com uma legenda por anexo, o atendente
+  // navega e digita em sequência, sem precisar clicar no campo toda vez.
   useEffect(() => {
     legendaRef.current?.focus();
-  }, []);
+  }, [ativo]);
 
   const emDestaque = anexos[ativo];
   if (!emDestaque) return null;
@@ -121,7 +125,10 @@ const PreviewAnexos = ({
         {renderizaDestaque()}
       </div>
 
-      <div className="flex align-items-center gap-2 overflow-x-auto px-3 pb-2">
+      {/* O padding superior dá o espaço que o botão de remover ocupa acima da
+          miniatura: `overflow-x-auto` recorta na vertical, então sem essa
+          folga o "x" apareceria cortado pela borda da faixa. */}
+      <div className="flex align-items-center gap-2 overflow-x-auto px-3 pb-2 pt-2">
         {anexos.map((anexo, indice) => (
           <div
             key={anexo.id}
@@ -158,12 +165,30 @@ const PreviewAnexos = ({
             >
               {formataTamanho(anexo.arquivo.size)}
             </span>
+            {/* Com uma legenda por arquivo, o atendente precisa enxergar quais
+                já escreveu sem ter que abrir um a um. */}
+            {legendas[anexo.id]?.trim() && (
+              <i
+                className="fa-solid fa-comment absolute text-white"
+                title="Este arquivo tem legenda"
+                style={{ top: '0.15rem', left: '0.25rem', fontSize: '0.6rem' }}
+              />
+            )}
             <button
               type="button"
               aria-label={`Remover ${anexo.arquivo.name}`}
               onClick={() => onRemover(anexo.id)}
-              className="absolute flex cursor-pointer justify-content-center align-items-center w-1rem h-1rem border-circle border-none bg-red-500 text-white"
-              style={{ top: '-0.25rem', right: '-0.25rem', fontSize: '0.6rem' }}
+              className="absolute flex cursor-pointer justify-content-center align-items-center border-circle border-none bg-red-500 text-white p-0"
+              style={{
+                top: '-0.4rem',
+                right: '-0.4rem',
+                width: '1.15rem',
+                height: '1.15rem',
+                fontSize: '0.65rem',
+                // Separa o botão da miniatura: sobre uma foto escura, o
+                // vermelho sozinho se perde na imagem.
+                boxShadow: '0 0 0 2px var(--surface-0)',
+              }}
             >
               <i className="fa-regular fa-xmark" />
             </button>
@@ -181,23 +206,31 @@ const PreviewAnexos = ({
       </div>
 
       <div className="flex align-items-center gap-2 p-3 border-top-1 surface-border">
-        <InputText
-          ref={legendaRef}
-          value={legenda}
-          onChange={(e) => setLegenda(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              onEnviar(legenda);
+        {/* Áudio não leva legenda: o WhatsApp não a exibe em mensagem de áudio,
+            e o campo aqui só prometeria algo que não chega ao destinatário. */}
+        {tipo !== 'audio' && (
+          <InputText
+            ref={legendaRef}
+            value={legendas[emDestaque.id] ?? ''}
+            onChange={(e) =>
+              setLegendas((atuais) => ({ ...atuais, [emDestaque.id]: e.target.value }))
             }
-          }}
-          placeholder="Adicione uma legenda..."
-          className="w-full shadow-none"
-        />
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onEnviar(legendas);
+              }
+            }}
+            placeholder={
+              anexos.length > 1 ? 'Legenda para este arquivo...' : 'Adicione uma legenda...'
+            }
+            className="w-full shadow-none"
+          />
+        )}
         <button
           type="button"
           aria-label="Enviar"
-          onClick={() => onEnviar(legenda)}
+          onClick={() => onEnviar(legendas)}
           className="flex cursor-pointer justify-content-center align-items-center w-3rem h-3rem border-circle border-none bg-primary-500 hover:bg-primary-600 flex-shrink-0"
         >
           <i className="fa-regular fa-send text-white text-xl" />

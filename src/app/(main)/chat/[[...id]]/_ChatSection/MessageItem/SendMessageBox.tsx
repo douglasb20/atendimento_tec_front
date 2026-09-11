@@ -19,11 +19,30 @@ import PreviewAnexos, { AnexoSelecionado } from '../_components/PreviewAnexos';
 import AudioComponent from '../_components/AudioComponent';
 import { classNames } from 'primereact/utils';
 
+/**
+ * Nome do atendente para a bolha provisória, lido do cookie `userInfo`.
+ *
+ * Devolve string vazia quando o cookie não existe, está expirado ou veio sem o
+ * campo — casos reais, já que ele é re-hidratado pelo middleware. Quem usa não
+ * pode montar o prefixo `*Nome:*` sem checar, sob pena de exibir um ":" solto.
+ */
+const nomeDoAtendente = (): string => {
+  try {
+    const cru = parseCookies()['userInfo'];
+    return cru ? ((JSON.parse(cru) as UserInfo).name ?? '') : '';
+  } catch {
+    return '';
+  }
+};
+
 /** Tipos de anexo aceitos, no mesmo vocabulário que o backend espera. */
 type TipoAnexo = 'document' | 'image' | 'video' | 'audio';
 
 const ACCEPT_POR_TIPO: Record<TipoAnexo, string> = {
-  document: '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip',
+  // Sem restrição: o WhatsApp aceita qualquer arquivo como documento, e num
+  // atendimento técnico aparece de tudo — .dwg, .log, .apk, .rar. Limitar a
+  // uma lista de escritório só atrapalharia.
+  document: '*/*',
   image: 'image/*',
   video: 'video/*',
   audio: 'audio/*',
@@ -73,8 +92,7 @@ export default function SendMessageBox() {
 
     // O backend prefixa o texto com o nome do atendente; repetir aqui evita que
     // a bolha mude de conteúdo quando a mensagem definitiva chegar.
-    const cookies = parseCookies();
-    const autor = cookies['userInfo'] ? (JSON.parse(cookies['userInfo']) as UserInfo).name : '';
+    const autor = nomeDoAtendente();
 
     const item = {
       id: `envio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -200,8 +218,7 @@ export default function SendMessageBox() {
 
     const arquivo = new File([audioBlob], 'audio_message.ogg', { type: 'audio/ogg' });
     const ehResposta = Boolean(quoted?.message && quoted.mode === ModeQuoted.REPLY);
-    const cookies = parseCookies();
-    const autor = cookies['userInfo'] ? (JSON.parse(cookies['userInfo']) as UserInfo).name : '';
+    const autor = nomeDoAtendente();
 
     const item = {
       id: `envio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -282,14 +299,13 @@ export default function SendMessageBox() {
   };
 
   /** Confirmada a revisão, cada arquivo vira um item da fila de envio. */
-  const onEnviarAnexos = (legenda: string) => {
+  const onEnviarAnexos = (legendas: Record<string, string>) => {
     const tipo = tipoAnexoRef.current;
     const ehResposta = Boolean(quoted?.message && quoted.mode === ModeQuoted.REPLY);
-    const cookies = parseCookies();
-    const autor = cookies['userInfo'] ? (JSON.parse(cookies['userInfo']) as UserInfo).name : '';
+    const autor = nomeDoAtendente();
     const agora = Date.now();
 
-    anexos.forEach(({ arquivo }, indice) => {
+    anexos.forEach(({ id: idAnexo, arquivo }, indice) => {
       const item = {
         id: `envio-${agora}-${indice}-${Math.random().toString(36).slice(2, 8)}`,
         supportChatId: String(activeChat?.id),
@@ -299,8 +315,8 @@ export default function SendMessageBox() {
         // ordenação ficaria indefinida.
         enviadoEm: new Date(agora + indice).toISOString(),
         tipo: 'midia' as const,
-        // A legenda acompanha só o primeiro, como no WhatsApp.
-        conteudo: indice === 0 ? legenda.trim() : '',
+        // Cada arquivo leva a legenda que foi escrita para ele na revisão.
+        conteudo: (legendas[idAnexo] ?? '').trim(),
         autor,
         mediaType: tipo,
         mimetype: arquivo.type,
@@ -379,6 +395,7 @@ export default function SendMessageBox() {
             onResume={() => mediaRecorderRef?.current?.resume()}
             onCancel={() => onCancel()}
             statusRecording={statusRecording}
+            stream={streamRef.current}
           />
         )}
         {statusRecording === 'idle' && anexos.length === 0 && (

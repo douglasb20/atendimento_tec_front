@@ -57,7 +57,9 @@ const Messages = () => {
             from_me: true,
             type:
               i.tipo === 'voz' ? 'ptt' : i.tipo === 'texto' ? 'chat' : (i.mediaType ?? 'document'),
-            content: i.conteudo ? `*${i.autor}:*\n${i.conteudo}` : '',
+            // Sem autor não se monta o prefixo: `*:*` renderizaria como um
+            // ":" solto acima do texto, que foi o que apareceu na bolha.
+            content: i.conteudo ? (i.autor ? `*${i.autor}:*\n${i.conteudo}` : i.conteudo) : '',
             has_media: i.tipo !== 'texto',
             media_url: i.previewUrl ?? '',
             // O player precisa do mimetype (`video/mp4`), não do tipo do menu.
@@ -92,7 +94,16 @@ const Messages = () => {
     [mensagensNaTela],
   );
 
-  const scrollHeightBeforeUpdate = useRef(0);
+  /**
+   * Se o usuário estava no fim da conversa imediatamente antes da última
+   * atualização da lista.
+   *
+   * Guarda a *resposta*, não a altura: comparar alturas exigiria capturá-las
+   * antes de cada render, e a distância até o fim (`scrollHeight - scrollTop -
+   * clientHeight`) já responde a pergunta sozinha, sem precisar do valor
+   * anterior. O evento de scroll a mantém atualizada.
+   */
+  const estavaNoFim = useRef(true);
 
   /**
    * Marca se a primeira rolagem ao fim já aconteceu nesta conversa.
@@ -123,12 +134,11 @@ const Messages = () => {
       visible: true,
       command: ({ item: { data } }) => {
         const message = data as SupportChatMessageResponse;
-        const mediaDownload = {
+        onDownload({
           source: message.media_url,
           mime_type: message.media_type,
-        };
-
-        onDownload(mediaDownload);
+          file_name: message.file_name,
+        });
       },
     },
     {
@@ -178,13 +188,34 @@ const Messages = () => {
     }
   };
 
-  const onDownload = async ({ source, mime_type }) => {
-    const link = document.createElement('a');
-    link.href = source;
-    link.download = `${uuidV4()}.` + (mime_type?.split('/')[1] || 'mp4');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  /**
+   * Baixa o arquivo em vez de navegar até ele.
+   *
+   * O atributo `download` de um link só vale na mesma origem: apontando para o
+   * storage, o navegador o ignora e abre a mídia na aba. Buscar os bytes e
+   * gerar um `blob:` local devolve a origem para nós, e aí o atributo passa a
+   * valer — inclusive o nome do arquivo.
+   */
+  const onDownload = async ({ source, mime_type, file_name }) => {
+    try {
+      const resposta = await fetch(source);
+      if (!resposta.ok) throw new Error(`Falha ao baixar (HTTP ${resposta.status})`);
+
+      const blob = await resposta.blob();
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file_name || `${uuidV4()}.${mime_type?.split('/')[1] || 'bin'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Sem revogar, o blob fica retido na memória da aba até recarregar.
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      CatchAlerta(error, 'Não foi possível baixar o arquivo');
+    }
   };
 
   const onScrollToBottom = () => {
@@ -206,29 +237,33 @@ const Messages = () => {
     const el = bottomEl.current;
     if (!el) return;
 
-    // 1. Verifica se o usuário estava no final ANTES da nova mensagem chegar
-    const isAtBottomBefore =
-      scrollHeightBeforeUpdate.current - (el.scrollTop + el.clientHeight) < 80;
-
-    // 2. Primeira carga da conversa: vai direto ao fim, sem animação.
+    // Primeira carga da conversa: salto seco, sem animação — animar aqui faria
+    // o histórico inteiro desfilar na frente do atendente.
     if (!jaRolouAoFim.current && !loadMessages) {
       el.scrollTop = el.scrollHeight;
       jaRolouAoFim.current = true;
       return;
     }
 
-    // 3. Se o usuário estava no final, rola para o novo final. Senão, não faz nada.
-    if (isAtBottomBefore) {
-      el.scrollTo({
-        top: el.scrollHeight,
-        behavior: 'smooth',
-      });
+    // Nas demais, acompanha só quem já estava no fim: arrastar de volta quem
+    // está lendo o histórico é pior do que não rolar.
+    //
+    // A leitura da ref vem primeiro de propósito: quando este efeito roda, a
+    // lista já cresceu e medir agora acusaria "longe do fim" mesmo para quem
+    // estava lá. A ref guarda o estado de antes, mantido pelo evento de
+    // scroll; o `|| ` cobre a conversa que ainda não gerou scroll nenhum.
+    const podeAcompanhar = estavaNoFim.current || el.scrollHeight <= el.clientHeight;
+
+    if (podeAcompanhar) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     }
   };
 
-  // Nova conversa recomeça o ciclo: a primeira rolagem dela também é seca.
+  // Nova conversa recomeça o ciclo: a primeira rolagem dela também é seca, e
+  // ela nasce "no fim" — é onde a carga inicial vai posicionar a tela.
   useLayoutEffect(() => {
     jaRolouAoFim.current = false;
+    estavaNoFim.current = true;
   }, [activeChat?.id]);
 
   useLayoutEffect(() => {
@@ -237,20 +272,17 @@ const Messages = () => {
     // precisa trazer a conversa para o fim do mesmo jeito.
   }, [mensagensNaTela]);
 
-  // Este segundo useLayoutEffect captura o scrollHeight ANTES da próxima renderização
-  useLayoutEffect(() => {
-    const el = bottomEl.current;
-    console.log('Capturando scrollHeight antes da atualização');
-    if (el) {
-      scrollHeightBeforeUpdate.current = el.scrollHeight;
-    }
-  }, []);
-
   useEffect(() => {
     const el = bottomEl.current;
 
     const handleScroll = debounce(() => {
-      const isFarFromBottom = el.scrollHeight - (el.scrollTop + el.clientHeight) > 250;
+      const distanciaDoFim = el.scrollHeight - (el.scrollTop + el.clientHeight);
+
+      // Margem de 80px: com o teclado virtual ou meia linha visível, o usuário
+      // se considera "no fim" sem estar exatamente em scrollTop máximo.
+      estavaNoFim.current = distanciaDoFim < 80;
+
+      const isFarFromBottom = distanciaDoFim > 250;
 
       if (isFarFromBottom) {
         divRef?.current.classList.remove('hidden', 'fadeout', 'animation-duration-150');
