@@ -3,7 +3,7 @@ import { memo, useEffect } from 'react';
 
 import { useService } from '@/contexts/ServicesContext';
 import { DateToBR, UcWords } from '@/service/Util';
-import Image from 'next/image';
+import Avatar from '@/components/Avatar';
 
 type HeaderSectionProps = {
   name: string;
@@ -32,9 +32,8 @@ const HeaderSection = ({ name, lastLogin, avatarUrl }: HeaderSectionProps) => {
             className="relative border-circle overflow-hidden flex-shrink-0 surface-border"
             style={{ width: '4rem', height: '4rem' }}
           >
-            <Image
-              alt="avatar"
-              src={avatarUrl || '/images/avatar/avatar-noprofile.png'}
+            <Avatar
+              src={avatarUrl}
               className="flex-shrink-0 inside-shadow"
               fill
               sizes="200"

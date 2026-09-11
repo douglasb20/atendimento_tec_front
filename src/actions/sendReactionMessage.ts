@@ -23,7 +23,11 @@ export async function sendReactionMessage(
       variables: [support_chat_id],
     });
   } catch (err) {
-    console.log(err?.request);
-    throw err;
+    if(err?.response?.data && typeof err?.response?.data === 'object') {
+      return err.response.data;
+    } else {
+      return { error: true, message: 'Erro desconhecido ao enviar reação.', statusCode: err.response?.status };
+    }
+    
   }
 }

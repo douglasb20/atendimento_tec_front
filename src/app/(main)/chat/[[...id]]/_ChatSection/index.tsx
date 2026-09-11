@@ -16,14 +16,11 @@ type ChatSectionProps = {
 
 export default function ChatSection(props: ChatSectionProps) {
   const { conversations } = props;
-  const {
-    addChats,
-    setActiveChat,
-    setLoadMessages,
-    addMessages,
-    setSmoothScroll,
-    setChatNotFound,
-  } = useChatStore();
+  const addChats = useChatStore((s) => s.addChats);
+  const setActiveChat = useChatStore((s) => s.setActiveChat);
+  const setLoadMessages = useChatStore((s) => s.setLoadMessages);
+  const addMessages = useChatStore((s) => s.addMessages);
+  const setChatNotFound = useChatStore((s) => s.setChatNotFound);
   const { FetchReq } = useApi();
   const [rendered, setRendered] = useState(false);
   const { setBreadcrumbs } = useLayoutStore();
@@ -32,7 +29,6 @@ export default function ChatSection(props: ChatSectionProps) {
 
   const getChatMessages = async (chatId: number) => {
     try {
-      setSmoothScroll(false);
       const data = await FetchReq<SupportChatsResponse>('ListarMensagensPorAtendimentoId', [
         chatId,
       ]);

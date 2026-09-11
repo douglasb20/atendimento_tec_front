@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { SupportChatMessageResponse } from '@/Interfaces';
 import { classNames } from 'primereact/utils';
 
@@ -22,4 +23,5 @@ const ShowReactionMessageComponent = ({ message }: { message: SupportChatMessage
   );
 };
 
-export default ShowReactionMessageComponent;
+/** Memoizado: é renderizado uma vez por mensagem da conversa. */
+export default memo(ShowReactionMessageComponent);

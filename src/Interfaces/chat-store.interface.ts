@@ -7,6 +7,11 @@ export type SocketSlice = {
   disconnect: () => void;
 };
 
+export enum ModeQuoted {
+  REPLY = 'reply',
+  EDIT = 'edit',
+}
+
 export type MessageSlice = {
   messages: SupportChatMessageResponse[];
   loadMessages: boolean;
@@ -16,6 +21,16 @@ export type MessageSlice = {
     anchorEl: HTMLElement | null;
     message: SupportChatMessageResponse | null;
   };
+  quoted: {
+    mode: ModeQuoted | null;
+    message: SupportChatMessageResponse | null;
+  };
+  videoPreview: {
+    source: string;
+    mime_type?: string;
+  },
+  setVideoPreview: (source: string, mime_type?: string) => void;
+  setQuotedMessage: (mode: ModeQuoted, message: SupportChatMessageResponse | null) => void;
   setReactionState: (state: {
     open: boolean;
     anchorEl: HTMLElement | null;

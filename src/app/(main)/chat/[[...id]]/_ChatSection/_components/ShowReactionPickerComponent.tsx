@@ -9,7 +9,8 @@ type ShowReactionComponentProps = {
 };
 
 const ShowReactionPickerComponent = ({ message, bottomEl }: ShowReactionComponentProps) => {
-  const { setReactionState, reactionState } = useChatStore();
+  const setReactionState = useChatStore((s) => s.setReactionState);
+  const reactionState = useChatStore((s) => s.reactionState);
 
   const handleReactionState = (event: React.MouseEvent<HTMLButtonElement>) => {
     const isSameButton = reactionState.anchorEl === event.currentTarget;
@@ -31,6 +32,9 @@ const ShowReactionPickerComponent = ({ message, bottomEl }: ShowReactionComponen
     }
   };
 
+  // Revogada não tem a que reagir, e pendente ainda não existe no WhatsApp.
+  if (message.is_deleted || message.pending) return null;
+
   return (
     <>
       <button
@@ -41,8 +45,9 @@ const ShowReactionPickerComponent = ({ message, bottomEl }: ShowReactionComponen
               !reactionState.open ||
               (reactionState.message && reactionState.message.id !== message.id),
           },
-          'box-reaction relative w-2rem h-2rem justify-content-center align-items-center border-1 align-self-center mx-1 bg-bluegray-400 border-bluegray-300 p-1 border-round-lg',
+          'box-reaction absolute w-2rem h-2rem justify-content-center align-items-center border-1 align-self-center mx-1 bg-bluegray-400 border-bluegray-300 p-1 border-round-lg',
         )}
+        style={message.from_me ? { left: '-2.5rem' } : { right: '-2.5rem' }}
       >
         <i className="fa-regular text-lg fa-face-smile text-white"></i>
       </button>

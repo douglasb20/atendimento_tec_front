@@ -2,9 +2,13 @@
 import { useEffect, useRef } from 'react';
 
 import { useChatStore } from '@/store/useChatStore';
+import VideoPreview from '@/components/VideoPreview';
 
 export default function ChatLayout({ children }) {
-  const { connect, disconnect, resetChatStore, resetMessageStore } = useChatStore();
+  const connect = useChatStore((s) => s.connect);
+  const disconnect = useChatStore((s) => s.disconnect);
+  const resetChatStore = useChatStore((s) => s.resetChatStore);
+  const resetMessageStore = useChatStore((s) => s.resetMessageStore);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -32,6 +36,7 @@ export default function ChatLayout({ children }) {
         />
       </audio>
       {children}
+      <VideoPreview />
     </>
   );
 }

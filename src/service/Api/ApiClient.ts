@@ -49,10 +49,14 @@ export const ListUrl = {
   UserInfo: { url: '/users/info', method: 'GET' },
 
   ListarAtendimentosSuporte: { url: '/support-chats', method: 'GET' },
-  ListarMensagensPorAtendimentoId: { url: '/support-chats/{{chat_id}}/messages', method: 'GET' },
+  ListarMensagensPorAtendimentoId: { url: '/support-chats/{{support_chat_id}}/messages', method: 'GET' },
 
-  SendMessage: { url: '/support-chats/send-message', method: 'POST' },
-  SendReaction: { url: '/support-chats/{{chat_id}}/send-reaction', method: 'POST' },
+  SendMessage: { url: '/support-chats/{{support_chat_id}}/send-message', method: 'POST' },
+  SendReaction: { url: '/support-chats/{{support_chat_id}}/send-reaction', method: 'POST' },
+  SendReply: { url: '/support-chats/{{support_chat_id}}/send-reply', method: 'POST' },
+  AssinarMediaUpload: { url: '/support-chats/sign-media-post', method: 'POST' },
+  SendMedia: { url: '/support-chats/{{support_chat_id}}/send-media', method: 'POST' },
+  DeleteMessage: { url: '/support-chats/{{support_chat_id}}/delete-message', method: 'POST' },
 
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
 };

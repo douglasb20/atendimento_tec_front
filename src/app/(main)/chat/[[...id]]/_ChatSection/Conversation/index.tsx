@@ -1,4 +1,5 @@
 'use client';
+import React, { useEffect, useRef } from 'react';
 import Interweave from '@/components/Interweave';
 import { SupportChatsResponse } from '@/Interfaces';
 import { useLayoutStore } from '@/layout/context/layoutcontext';
@@ -8,36 +9,27 @@ import { useChatStore } from '@/store/useChatStore';
 import { Breadcrumb } from '@/types';
 import { Badge } from 'primereact/badge';
 import { classNames } from 'primereact/utils';
-import { useEffect, useRef } from 'react';
 
-export default function ConversationSection() {
-  const {
-    chats,
-    socket,
-    setUnreadCount,
-    updateChat,
-    activeChat,
-    setSmoothScroll,
-    addMessages,
-    setLoadMessages,
-    setChatNotFound,
-    setActiveChat,
-    notificationSound,
-  } = useChatStore();
+const ConversationSection = () => {
+  const chats = useChatStore((s) => s.chats);
+  const socket = useChatStore((s) => s.socket);
+  const activeChat = useChatStore((s) => s.activeChat);
+  const notificationSound = useChatStore((s) => s.notificationSound);
+  const updateChat = useChatStore((s) => s.updateChat);
+  const addMessages = useChatStore((s) => s.addMessages);
+  const setUnreadCount = useChatStore((s) => s.setUnreadCount);
+  const setLoadMessages = useChatStore((s) => s.setLoadMessages);
+  const setChatNotFound = useChatStore((s) => s.setChatNotFound);
+  const setActiveChat = useChatStore((s) => s.setActiveChat);
+  const setQuotedMessage = useChatStore((s) => s.setQuotedMessage);
   const { setBreadcrumbs } = useLayoutStore();
   const { FetchReq } = useApi();
   const windowFocusedRef = useRef(true);
   const activeChatRef = useRef(activeChat);
 
-  const onBlur = () => {
-    console.log('Window lost focus');
-    windowFocusedRef.current = false;
-  };
-
-  const onFocus = () => {
-    console.log('Window gained focus');
-    windowFocusedRef.current = true;
-  };
+  const changeWindowFocus = (focused: boolean) => {
+    windowFocusedRef.current = focused;
+  }
 
   const onChangeBreadcrumbs = (chatId: number) => {
     let breadcrumbs: Breadcrumb[] = [
@@ -48,7 +40,6 @@ export default function ConversationSection() {
 
   const getChatMessages = async (chatId: number) => {
     try {
-      setSmoothScroll(false);
       const data = await FetchReq<SupportChatsResponse>('ListarMensagensPorAtendimentoId', [
         chatId,
       ]);
@@ -59,13 +50,16 @@ export default function ConversationSection() {
     }
   };
 
-  const loadConversationMessage = async (chatId: number) => {
+  const loadConversationMessage = async (supportChatId: number) => {
+    if (String(activeChatRef.current?.id) === String(supportChatId)) return;
+    
     try {
       setLoadMessages(true);
-      const chatData = await getChatMessages(chatId);
+      setQuotedMessage(null, null);
+      const chatData = await getChatMessages(supportChatId);
       setActiveChat(chatData);
-      window.history.replaceState(null, '', `/chat/${chatId}`);
-      onChangeBreadcrumbs(chatId);
+      window.history.replaceState(null, '', `/chat/${supportChatId}`);
+      onChangeBreadcrumbs(supportChatId);
     } catch (err) {
       if (err.response && err.response.status === 404) {
         setActiveChat(null);
@@ -78,7 +72,7 @@ export default function ConversationSection() {
   };
 
   useEffect(() => {
-    if (socket == null) return;
+    if (socket === null) return;
 
     socket.off('whatsapp:unread_count');
     socket.on('whatsapp:unread_count', (payload) => {
@@ -89,21 +83,17 @@ export default function ConversationSection() {
     socket.off('whatsapp:chat_state');
     socket.on('whatsapp:chat_state', async (payload: SupportChatsResponse) => {
       updateChat(payload);
-      if (
-        activeChatRef.current &&
-        payload?.id === activeChatRef.current?.id &&
-        !windowFocusedRef.current
-      ) {
+      if (!windowFocusedRef.current) {
         await notificationSound?.play();
       }
     });
 
-    window.addEventListener('blur', onBlur);
-    window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', () => changeWindowFocus(false));
+    window.addEventListener('focus', () => changeWindowFocus(true));
     return () => {
       socket.off('whatsapp:unread_count');
-      window.removeEventListener('blur', onBlur);
-      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', () => changeWindowFocus(false));
+      window.removeEventListener('focus', () => changeWindowFocus(true));
     };
   }, [socket]);
 
@@ -128,12 +118,11 @@ export default function ConversationSection() {
             )}
             onClick={() => {
               loadConversationMessage(Number(conversation?.id));
-              // router.replace(`/chat/${conversation?.id}`);
             }}
           >
             <div className="flex flex-none justify-content-center align-items-center mr-1">
               <img
-                src={conversation?.contact?.avatar_url}
+                src={conversation?.contact?.avatar_url || '/images/avatar/avatar-noprofile.png'}
                 width={55}
                 height={55}
                 alt={conversation?.contact?.name}
@@ -148,9 +137,16 @@ export default function ConversationSection() {
                 {conversation?.contact?.name}
               </p>
               <div className="text-overflow-ellipsis white-space-nowrap overflow-hidden lastMessagePreview">
-                <Interweave
-                  content={fixHeartEmoji(conversation?.last_message?.replace(/\n/g, ' '))}
-                />
+                {conversation?.last_message_type === 'revoked' ? (
+                  <span className="font-italic text-600">
+                    <i className="fa-regular fa-ban mr-1" />
+                    Mensagem apagada
+                  </span>
+                ) : (
+                  <Interweave
+                    content={fixHeartEmoji(conversation?.last_message?.replace(/\n/g, ' '))}
+                  />
+                )}
               </div>
             </div>
             <div
@@ -170,3 +166,6 @@ export default function ConversationSection() {
     </div>
   );
 }
+
+
+export default React.memo(ConversationSection);

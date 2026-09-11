@@ -78,7 +78,6 @@ export default async function ApiService() {
 
       return data;
     } catch (err) {
-      console.error('API Request Error:', err.request);
       throw err;
     }
   };

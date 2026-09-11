@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { Fragment } from 'react';
 
 import { UserInfo } from '@/Interfaces';
-import HeaderSection from './HeaderSection';
+import HeaderSection from './_HeaderSection';
 
 export default async function DashboardPage() {
   const cookieStorage = await cookies();

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
 import { Image } from 'primereact/image';
 
@@ -26,4 +27,5 @@ const ShowAvatarComponent = ({ message, activeChat }: ShowAvatarComponentProps) 
   );
 };
 
-export default ShowAvatarComponent;
+/** Memoizado: é renderizado uma vez por mensagem da conversa. */
+export default memo(ShowAvatarComponent);

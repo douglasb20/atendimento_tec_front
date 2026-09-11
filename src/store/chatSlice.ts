@@ -14,9 +14,15 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
   },
 
   updateChat: (chat) => {
-    set(({ chats }) => ({
-      chats: chats.map((c) => (c.id === chat.id ? { ...c, ...chat } : c)),
-    }));
+    set(({ chats }) => {
+      const exists = chats.some((c) => c.id === chat.id);
+
+      return {
+        chats: exists
+          ? chats.map((c) => (c.id === chat.id ? { ...c, ...chat } : c))
+          : [...chats, chat],
+      };
+    });
   },
 
   addChats: (newChats: SupportChatsResponse[]) =>

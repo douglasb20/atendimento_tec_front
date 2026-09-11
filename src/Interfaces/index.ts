@@ -110,18 +110,18 @@ export type UserInfo = IUsuariosResponse & {
   permissions: string[];
 };
 
-type FieldsSignature = {
-  acl: string;
-  bucket: string;
-  'X-Amz-Algorithm': string;
-  'X-Amz-Credential': string;
-  'X-Amz-Date': string;
-  key: string;
-  Policy: string;
-  'X-Amz-Signature': string;
-};
-
+/**
+ * Retorno da assinatura de upload.
+ *
+ * O Backblaze B2 não implementa o POST-policy do S3 (responde 501), então o
+ * envio é por PUT: o arquivo vai cru no corpo, sem FormData. O `key` é a chave
+ * a gravar no banco — as colunas guardam a key, não a URL. `fields` sobrou por
+ * compatibilidade com o formato de POST e vem vazio.
+ */
 export type SignatureResponse = {
   url: string;
-  fields: FieldsSignature;
+  key: string;
+  method: 'PUT';
+  headers: Record<string, string>;
+  fields: Record<string, string>;
 };

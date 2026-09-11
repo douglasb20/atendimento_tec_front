@@ -29,7 +29,8 @@ type ReactionPickerProps = {
 };
 
 const ReactionPickerComponent = ({ activeChat, bottomEl }: ReactionPickerProps) => {
-  const { setReactionState, reactionState } = useChatStore();
+  const setReactionState = useChatStore((s) => s.setReactionState);
+  const reactionState = useChatStore((s) => s.reactionState);
 
   const reactions = ['1f44d', '2764-fe0f', '1f602', '1f62f', '1f622', '1f64f'];
 
@@ -43,6 +44,9 @@ const ReactionPickerComponent = ({ activeChat, bottomEl }: ReactionPickerProps) 
   };
 
   const { refs, floatingStyles } = useFloating({
+    elements: {
+      reference: reactionState.anchorEl as HTMLElement,
+    },
     open: reactionState.open,
     placement: reactionState.message.from_me ? 'left-start' : 'right-start',
     middleware: [offset(8), flip(), shift({ padding: 10 })],
@@ -55,22 +59,20 @@ const ReactionPickerComponent = ({ activeChat, bottomEl }: ReactionPickerProps) 
     try {
       hideReactionPicker(); // Fecha o picker
       const reaction = reactionState.message.reaction === emoji.emoji ? '' : emoji.emoji;
-      await sendReactionMessage(
+      const resp = await sendReactionMessage(
         activeChat.id,
         reaction,
         reactionState.message.message_id,
         activeChat.contact.remote_jid,
       );
+
+      if (resp?.error) {
+        console.log('Erro ao enviar reação:', resp.message);
+      }
     } catch (err) {
-      console.log(err);
+      // console.log(err);
     }
   };
-
-  useEffect(() => {
-    if (reactionState.anchorEl instanceof HTMLElement) {
-      refs.setReference(reactionState.anchorEl);
-    }
-  }, [reactionState.anchorEl]);
 
   // Lógica para fechar ao clicar fora
   useEffect(() => {
@@ -83,7 +85,6 @@ const ReactionPickerComponent = ({ activeChat, bottomEl }: ReactionPickerProps) 
         reactionState.anchorEl &&
         !reactionState.anchorEl.contains(e.target as Node)
       ) {
-        console.log('Teste');
         hideReactionPicker();
       }
     }

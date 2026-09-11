@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import Image from 'next/image';
+import Avatar from '@/components/Avatar';
 import { classNames } from 'primereact/utils';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Button } from 'primereact/button';
@@ -133,6 +133,7 @@ const ModalFormUser = (props: ModalProps) => {
   const onSubmitForm = async (fields: UsuarioForm) => {
     try {
       setLoading(true);
+      let changed_avatar = false;
       // Base: se já existe algo, normaliza para key (mesmo que venha como presigned)
       let avatarKey = avatarConfig.key ?? extractKeyFromAvatar(data?.avatar_url);
       const cookies = parseCookies();
@@ -143,6 +144,7 @@ const ModalFormUser = (props: ModalProps) => {
       // Se marcou para remover e não selecionou novo arquivo
       if (avatarConfig.removed && !avatarConfig.file) {
         avatarKey = null;
+        changed_avatar = true;
       }
 
       if (avatarConfig.isChanged && avatarConfig.file) {
@@ -157,23 +159,19 @@ const ModalFormUser = (props: ModalProps) => {
           body: dataPostStorage,
         });
 
-        const formData = new FormData();
-        Object.entries(signedUrl.fields).forEach(([key, value]) => {
-          formData.append(key, value);
-        });
-        formData.append('Content-Type', avatarConfig.file.type);
-        formData.append('file', avatarConfig.file);
-
+        // PUT com o arquivo cru: o B2 não aceita o POST-policy do S3.
         const uploadResponse = await fetch(signedUrl.url, {
-          method: 'POST',
-          body: formData,
+          method: 'PUT',
+          headers: signedUrl.headers,
+          body: avatarConfig.file,
         });
 
         if (!uploadResponse.ok) {
           throw new Error(uploadResponse.statusText || 'Erro ao fazer upload do avatar');
         }
 
-        avatarKey = signedUrl.fields.key;
+        avatarKey = signedUrl.key;
+        changed_avatar = true;
       }
 
       const dataBody = {
@@ -181,6 +179,7 @@ const ModalFormUser = (props: ModalProps) => {
         email: fields.email,
         valor_hora: Number(fields.valor_hora).toFixed(2),
         avatar_url: avatarKey,
+        changed_avatar
       };
 
       if (!data?.id) {
@@ -295,13 +294,14 @@ const ModalFormUser = (props: ModalProps) => {
                 onMouseOver={() => setPointerOver(true)}
                 onMouseOut={() => setPointerOver(false)}
               >
-                <Image
-                  src={avatarConfig.displayUrl || '/images/avatar/avatar-noprofile.png'}
+                <Avatar
+                  src={avatarConfig.displayUrl}
                   alt="Imagem de usuário"
                   fill
                   style={{ objectFit: 'cover' }}
                   sizes="200"
                   onLoad={() => setAvatarConfig((prev) => ({ ...prev, isLoading: false }))}
+                  onError={() => setAvatarConfig((prev) => ({ ...prev, isLoading: false }))}
                 />
                 <ProgressSpinner
                   className={classNames(

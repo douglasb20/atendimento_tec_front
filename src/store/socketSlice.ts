@@ -15,7 +15,7 @@ export const createSocketSlice: StateCreator<
     console.log('🔌 Conectando socket...');
     const cookiesStore = parseCookies(null);
     const token = cookiesStore['token'];
-    const socket = io('http://localhost:3001', {
+    const socket = io(process.env.WEBSOCKET_HOST || '', {
       autoConnect: false, // Impede a conexão automática na inicialização
       auth: {
         token,

@@ -38,31 +38,40 @@ const isAfter60Hour = (input: string) => {
 const MenuMessageComponent = ({ menuModel, message, bottomEl }: MenuMessageProps) => {
   const menuRef = useRef<{ [key: string]: Menu | null }>({});
 
-  const newModel = menuModel.map((item, key) => {
+  // Revogada não tem conteúdo para responder, citar ou baixar; pendente ainda
+  // não existe no WhatsApp, então nenhuma ação de lá se aplica.
+  const semAcoes = message.is_deleted || message.pending;
+
+  const newModel = menuModel.map((item) => {
     const newItem: MenuItem = { ...item };
     newItem.data = message;
 
     switch (newItem.id) {
+      case 'reply':
+        newItem.visible = !semAcoes;
+        break;
       case 'edit':
         newItem.visible =
-          !isAfter15min(message.datetime) && message.from_me && message.device_type === 'web';
+          !semAcoes &&
+          !isAfter15min(message.datetime) &&
+          message.from_me &&
+          message.message_id.length === 22;
         break;
       case 'delete':
-        newItem.visible =
-          !isAfter60Hour(message.datetime) && message.from_me && message.device_type === 'web';
+        newItem.visible = !semAcoes && !isAfter60Hour(message.datetime) && message.from_me;
         break;
       case 'download':
-        newItem.visible = message.has_media;
-        break;
-      case 'option2':
-        newItem.template = (item, options) => {
-          return <>Teste </>;
-        };
+        // Mídia expirada pela retenção não tem arquivo no storage para baixar.
+        newItem.visible = !semAcoes && message.has_media && !message.media_expired;
         break;
     }
 
     return newItem;
   });
+
+  // Sem nenhuma ação disponível, o botão abriria um menu vazio.
+  if (!newModel.some((item) => item.visible !== false)) return null;
+
   return (
     <div
       className={`

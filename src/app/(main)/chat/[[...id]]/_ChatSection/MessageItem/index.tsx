@@ -11,7 +11,11 @@ import NotFoundChat from './NotFoundChat';
 import SendMessageBox from './SendMessageBox';
 
 export default function MessageItem() {
-  const { socket, updateMessage, activeChat, loadMessages, chatNotFound } = useChatStore();
+  const socket = useChatStore((s) => s.socket);
+  const updateMessage = useChatStore((s) => s.updateMessage);
+  const activeChat = useChatStore((s) => s.activeChat);
+  const loadMessages = useChatStore((s) => s.loadMessages);
+  const chatNotFound = useChatStore((s) => s.chatNotFound);
   const activeChatRef = useRef(activeChat);
 
   useEffect(() => {
@@ -44,7 +48,8 @@ export default function MessageItem() {
 
   return (
     <>
-      <div className="card flex flex-column shadow-1 h-full">
+      {/* `relative` ancora a revisão de anexos, que cobre o painel inteiro. */}
+      <div className="card relative flex flex-column shadow-1 h-full">
         {activeChat && !loadMessages && !chatNotFound && (
           <>
             <Header />
