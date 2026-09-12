@@ -6,7 +6,7 @@ import { SignatureResponse } from '@/Interfaces';
  *
  * Uma cadeia de promessas por conversa garante ordem: dois vídeos no mesmo chat
  * sobem um após o outro, enquanto conversas distintas seguem em paralelo. É o
- * mesmo motivo do `concurrency: 1` no BullMQ do backend — preservar a ordem
+ * mesmo motivo do `concurrency: 1` no BullMQ do backend - preservar a ordem
  * dentro da conversa.
  */
 
@@ -31,7 +31,7 @@ export function registrarArquivo(itemId: string, arquivo: File) {
 /**
  * Cancela o envio: aborta o upload em curso e tira o item da fila.
  *
- * O que já chegou ao provider não volta atrás — daí a checagem de `enviando`
+ * O que já chegou ao provider não volta atrás - daí a checagem de `enviando`
  * ser feita por quem chama, liberando o cancelamento apenas enquanto o arquivo
  * ainda está subindo.
  */
@@ -43,7 +43,7 @@ export function cancelarItem(itemId: string) {
 }
 
 /**
- * Coloca o item na corrente da sua conversa. Retorna imediatamente — quem chama
+ * Coloca o item na corrente da sua conversa. Retorna imediatamente - quem chama
  * não espera o envio, que é justamente o ponto de existir uma fila.
  *
  * O upload começa **fora** da corrente, em paralelo com os demais: só o envio
@@ -98,7 +98,7 @@ async function subirArquivo(item: ItemFila, fetchReq: Requisicao): Promise<ItemF
 /**
  * PUT com acompanhamento de progresso.
  *
- * Usa `XMLHttpRequest` porque o `fetch` não expõe progresso de upload — só de
+ * Usa `XMLHttpRequest` porque o `fetch` não expõe progresso de upload - só de
  * download. Para um vídeo de centenas de MB, ver a barra avançar é a diferença
  * entre "está travado" e "está subindo".
  */
@@ -179,7 +179,7 @@ async function executar(item: ItemFila, fetchReq: Requisicao): Promise<void> {
     arquivos.delete(item.id);
 
     // Sai da fila assim que o backend confirma: a mensagem já está gravada lá e
-    // chega à tela pelo webhook. Manter o item aqui exibiria duas bolhas — a
+    // chega à tela pelo webhook. Manter o item aqui exibiria duas bolhas - a
     // real e a pendente, esta sem mídia utilizável.
     remover(item.id);
   } catch (erro) {
@@ -194,7 +194,7 @@ async function executar(item: ItemFila, fetchReq: Requisicao): Promise<void> {
       // Espera crescente: falha momentânea de rede costuma passar sozinha.
       await new Promise((r) => setTimeout(r, 1500 * tentativas));
 
-      // Refaz o upload quando foi ele que falhou — com a key já preenchida,
+      // Refaz o upload quando foi ele que falhou - com a key já preenchida,
       // `subirArquivo` devolve o item na hora.
       const pronto =
         item.tipo === 'texto' ? item : await subirArquivo({ ...item, tentativas }, fetchReq);
@@ -202,7 +202,7 @@ async function executar(item: ItemFila, fetchReq: Requisicao): Promise<void> {
       return executar({ ...pronto, tentativas }, fetchReq);
     }
 
-    // Esgotadas as tentativas, o item permanece visível com opção de repetir —
+    // Esgotadas as tentativas, o item permanece visível com opção de repetir -
     // sumir com ele faria o atendente perder o que escreveu.
     atualizar(item.id, { tentativas, status: 'falhou', erro: mensagem });
   }
@@ -219,7 +219,7 @@ export function reenviar(itemId: string, fetchReq: Requisicao) {
   if (item.tipo !== 'texto' && !item.mediaKey && !arquivos.has(item.id)) {
     atualizar(itemId, {
       status: 'falhou',
-      erro: 'O arquivo não está mais disponível — selecione-o novamente.',
+      erro: 'O arquivo não está mais disponível - selecione-o novamente.',
     });
     return;
   }

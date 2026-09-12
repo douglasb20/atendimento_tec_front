@@ -441,3 +441,38 @@ export function debounce(fn, delay) {
     }, delay);
   };
 }
+
+/**
+ * Como um contato é identificado na tela: "Cliente - Contato".
+ *
+ * Sem cliente associado, só o nome do contato - é o caso de quem chamou pela
+ * primeira vez e ainda não foi cadastrado. Compartilhado entre o header do
+ * chat e a lista de conversas, que antes duplicavam o ternário.
+ */
+export const nomeExibicao = (contato?: {
+  name?: string;
+  client?: { nome?: string } | null;
+}): string => {
+  const contatoNome = contato?.name?.trim() || 'Contato';
+  const clienteNome = contato?.client?.nome?.trim();
+
+  return clienteNome ? `${clienteNome} - ${contatoNome}` : contatoNome;
+};
+
+/**
+ * Duração legível a partir de segundos: `MM:SS` até uma hora, `HH:MM:SS` daí
+ * em diante. Acompanha o formato usado no backend (`toMMSS`).
+ */
+export const formatDuracao = (totalSegundos: number): string => {
+  const seguro = Math.max(0, Math.floor(totalSegundos || 0));
+
+  const horas = Math.floor(seguro / 3600);
+  const minutos = Math.floor((seguro % 3600) / 60);
+  const segundos = seguro % 60;
+
+  const doisDigitos = (n: number) => String(n).padStart(2, '0');
+
+  return horas > 0
+    ? `${doisDigitos(horas)}:${doisDigitos(minutos)}:${doisDigitos(segundos)}`
+    : `${doisDigitos(minutos)}:${doisDigitos(segundos)}`;
+};

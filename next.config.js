@@ -10,6 +10,12 @@ const nextConfig = {
         hostname: 's3.eu-central-003.backblazeb2.com',
         protocol: 'https',
       },
+      // Avatares de contato vêm do WhatsApp. A URL é assinada e expira, mas
+      // declarar o host evita que o next/image lance durante o render.
+      {
+        hostname: 'pps.whatsapp.net',
+        protocol: 'https',
+      },
     ],
   },
   sassOptions: {

@@ -11,7 +11,7 @@ import useApi from '@/service/Api/ApiClient';
 import { useChatStore } from '@/store/useChatStore';
 import { useOutboxStore } from '@/store/useOutboxStore';
 import { processarItem, registrarArquivo } from '@/service/Outbox';
-import { ModeQuoted, UserInfo } from '@/Interfaces';
+import { ehAtendimentoFinalizado, ModeQuoted, SupportChatStatusId, UserInfo } from '@/Interfaces';
 import { Alerta } from '@/service/Util';
 
 import QuotedMessage from '../_components/QuotedMessage';
@@ -23,7 +23,7 @@ import { classNames } from 'primereact/utils';
  * Nome do atendente para a bolha provisória, lido do cookie `userInfo`.
  *
  * Devolve string vazia quando o cookie não existe, está expirado ou veio sem o
- * campo — casos reais, já que ele é re-hidratado pelo middleware. Quem usa não
+ * campo - casos reais, já que ele é re-hidratado pelo middleware. Quem usa não
  * pode montar o prefixo `*Nome:*` sem checar, sob pena de exibir um ":" solto.
  */
 const nomeDoAtendente = (): string => {
@@ -40,7 +40,7 @@ type TipoAnexo = 'document' | 'image' | 'video' | 'audio';
 
 const ACCEPT_POR_TIPO: Record<TipoAnexo, string> = {
   // Sem restrição: o WhatsApp aceita qualquer arquivo como documento, e num
-  // atendimento técnico aparece de tudo — .dwg, .log, .apk, .rar. Limitar a
+  // atendimento técnico aparece de tudo - .dwg, .log, .apk, .rar. Limitar a
   // uma lista de escritório só atrapalharia.
   document: '*/*',
   image: 'image/*',
@@ -50,7 +50,7 @@ const ACCEPT_POR_TIPO: Record<TipoAnexo, string> = {
 
 /**
  * Teto do protocolo do WhatsApp, não o do WhatsApp Web: o Baileys fala o
- * protocolo direto, sem o limite de 16MB que o navegador impõe — foi um dos
+ * protocolo direto, sem o limite de 16MB que o navegador impõe - foi um dos
  * motivos de trocar de engine. Um envio de 187MB já foi validado aqui; o valor
  * serve para barrar antes de subir ao storage, não para espelhar a interface
  * oficial.
@@ -265,7 +265,7 @@ export default function SendMessageBox() {
 
     if (excedentes.length) {
       Alerta(
-        `${excedentes.map((a) => a.name).join(', ')} — acima do limite de ${LIMITE_MB}MB.`,
+        `${excedentes.map((a) => a.name).join(', ')} - acima do limite de ${LIMITE_MB}MB.`,
         excedentes.length > 1 ? 'Arquivos muito grandes' : 'Arquivo muito grande',
       );
     }
@@ -282,7 +282,7 @@ export default function SendMessageBox() {
     ]);
   };
 
-  /** Libera os blobs da revisão — sem isto ficam retidos na memória da aba. */
+  /** Libera os blobs da revisão - sem isto ficam retidos na memória da aba. */
   const descartarAnexos = (lista: AnexoSelecionado[]) =>
     lista.forEach((a) => URL.revokeObjectURL(a.previewUrl));
 
@@ -358,6 +358,28 @@ export default function SendMessageBox() {
       command: () => abrirSeletor('audio'),
     },
   ];
+
+  const finalizado = ehAtendimentoFinalizado(activeChat?.support_chat_status_id);
+  const naoAssumido =
+    !finalizado &&
+    (activeChat?.support_chat_status_id === SupportChatStatusId.AGUARDANDO ||
+      activeChat?.support_chat_status_id === SupportChatStatusId.EM_FILA);
+
+  // Sem alguém responsável não há o que registrar: o `answered_at` nasce do
+  // botão Iniciar, e responder antes disso deixaria o atendimento sem dono e
+  // sem tempo contado.
+  if (naoAssumido || finalizado) {
+    return (
+      <div className="flex align-items-center justify-content-center gap-2 border-1 border-300 surface-100 border-round-lg p-3 mt-2 text-600">
+        <i className={`fa-regular ${finalizado ? 'fa-circle-check' : 'fa-lock'}`} />
+        <span className="text-sm">
+          {finalizado
+            ? 'Atendimento finalizado - este histórico é somente leitura.'
+            : 'Inicie o atendimento para responder.'}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <>

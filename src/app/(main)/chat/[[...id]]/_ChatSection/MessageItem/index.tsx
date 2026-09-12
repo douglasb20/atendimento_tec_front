@@ -49,7 +49,7 @@ export default function MessageItem() {
   return (
     <>
       {/* `relative` ancora a revisão de anexos, que cobre o painel inteiro. */}
-      <div className="card relative flex flex-column shadow-1 h-full">
+      <div className="card relative flex flex-column shadow-1 h-full p-2">
         {activeChat && !loadMessages && !chatNotFound && (
           <>
             <Header />

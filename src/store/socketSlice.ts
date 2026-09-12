@@ -25,7 +25,7 @@ export const createSocketSlice: StateCreator<
       auth: { token },
       // Vai direto a WebSocket em vez de começar em long-polling e migrar.
       // O padrão do Socket.IO é `['polling', 'websocket']`, e o polling mantém
-      // um ciclo de requisições HTTP abertas — visível no Network como várias
+      // um ciclo de requisições HTTP abertas - visível no Network como várias
       // chamadas `?transport=polling` com o mesmo `sid`. O servidor aceita
       // WebSocket (responde 101), então não há motivo para o intermediário.
       transports: ['websocket'],

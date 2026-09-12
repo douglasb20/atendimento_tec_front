@@ -6,7 +6,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
  *
  * O envio não pode viver no componente: trocar de chat desmonta o
  * `SendMessageBox` e levaria junto o upload de um vídeo grande. Aqui ele
- * sobrevive à navegação — a tela apenas observa a fila.
+ * sobrevive à navegação - a tela apenas observa a fila.
  *
  * Também não pode viver na store de chat, que é zerada a cada troca de
  * conversa (`resetMessageStore`). Por isso é uma store própria.
@@ -19,7 +19,7 @@ export type ItemFila = {
   id: string;
   supportChatId: string;
   chatId: string;
-  /** Instante do envio — define a posição na conversa, não o momento da confirmação. */
+  /** Instante do envio - define a posição na conversa, não o momento da confirmação. */
   enviadoEm: string;
   status: ItemFilaStatus;
   tentativas: number;
@@ -31,7 +31,7 @@ export type ItemFila = {
   /** Mídia: chave no storage, preenchida quando o upload conclui. */
   mediaKey?: string;
   mediaType?: string;
-  /** Nome original do arquivo — o WhatsApp o exibe em documentos. */
+  /** Nome original do arquivo - o WhatsApp o exibe em documentos. */
   fileName?: string;
   /** Mimetype real do arquivo (`video/mp4`), distinto do tipo do menu. */
   mimetype?: string;
@@ -39,7 +39,7 @@ export type ItemFila = {
   progresso?: number;
   /**
    * URL local (`blob:`) para tocar/exibir enquanto o arquivo não está no
-   * storage. Não sobrevive a recarregar a página — o blob morre com a sessão.
+   * storage. Não sobrevive a recarregar a página - o blob morre com a sessão.
    */
   previewUrl?: string;
   /** Mensagem de erro da última tentativa, mostrada junto do botão de repetir. */
@@ -97,7 +97,7 @@ export const useOutboxStore = create<OutboxStore>()(
       /**
        * Nenhum envio sobrevive ao recarregar da página: o processador vive em
        * memória e o `File` nem chega a ser serializado. Um item que ficou como
-       * `enviando` volta, portanto, como falha — em vez de exibir um spinner
+       * `enviando` volta, portanto, como falha - em vez de exibir um spinner
        * eterno para algo que ninguém está enviando.
        */
       onRehydrateStorage: () => (estado) => {

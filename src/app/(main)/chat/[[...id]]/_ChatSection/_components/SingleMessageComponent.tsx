@@ -15,7 +15,7 @@ type SingleMessageComponentProps = {
   doAnimation: boolean;
   isLast: boolean;
   activeChat: SupportChatsResponse;
-  /** Mensagem citada, já resolvida pela lista — evita buscá-la aqui. */
+  /** Mensagem citada, já resolvida pela lista - evita buscá-la aqui. */
   quotedMessage?: SupportChatMessageResponse;
 };
 
@@ -45,7 +45,7 @@ const ProccessAck = (ack: number) => {
   }
 };
 
-/** Ícone por extensão — dá ao anexo a mesma pista visual do explorador. */
+/** Ícone por extensão - dá ao anexo a mesma pista visual do explorador. */
 const iconeDocumento = (fileName?: string) => {
   const ext = fileName?.split('.').pop()?.toLowerCase() ?? '';
 
@@ -72,7 +72,7 @@ const formataTamanhoArquivo = (bytes?: number | null) => {
  * Cobre a mídia com o progresso enquanto o arquivo sobe.
  *
  * Declarado fora do componente de propósito: definido dentro, o React o trata
- * como um tipo novo a cada render e desmonta a árvore — o vídeo piscava e o
+ * como um tipo novo a cada render e desmonta a árvore - o vídeo piscava e o
  * quadro reajustava a cada porcentagem.
  */
 const ComProgresso = ({
@@ -151,7 +151,7 @@ const SingleMessageComponent = ({
     >
       {message.is_deleted ? (
         // Revogada pelo autor: o conteúdo não existe mais, então nada do corpo
-        // original é exibido — só o aviso, como no WhatsApp.
+        // original é exibido - só o aviso, como no WhatsApp.
         <div className="flex align-items-center gap-2 font-italic opacity-80">
           <i className="fa-regular fa-ban" />
           <span>Mensagem apagada</span>
@@ -226,7 +226,7 @@ const SingleMessageComponent = ({
                   // A `key` amarrada à URL é necessária: o `Image` guarda o src
                   // em estado interno para o modo `preview`, e ao trocar a
                   // prévia local (`blob:`) pela URL do storage o React
-                  // reaproveita a instância — que segue apontando para um blob
+                  // reaproveita a instância - que segue apontando para um blob
                   // já revogado, exibindo o ícone de imagem quebrada.
                   key={message.media_url}
                   src={message.media_url}
@@ -260,7 +260,7 @@ const SingleMessageComponent = ({
                     key={message.media_url}
                     controls
                     // Largura fixa: com `100%` o player se ajustava à bolha, e
-                    // num áudio curto sem legenda ela é estreita — os controles
+                    // num áudio curto sem legenda ela é estreita - os controles
                     // colapsavam num oval sem barra de progresso.
                     style={{ width: 350, maxWidth: '100%' }}
                   >

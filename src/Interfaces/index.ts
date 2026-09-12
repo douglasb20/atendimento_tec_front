@@ -115,7 +115,7 @@ export type UserInfo = IUsuariosResponse & {
  *
  * O Backblaze B2 não implementa o POST-policy do S3 (responde 501), então o
  * envio é por PUT: o arquivo vai cru no corpo, sem FormData. O `key` é a chave
- * a gravar no banco — as colunas guardam a key, não a URL. `fields` sobrou por
+ * a gravar no banco - as colunas guardam a key, não a URL. `fields` sobrou por
  * compatibilidade com o formato de POST e vem vazio.
  */
 export type SignatureResponse = {

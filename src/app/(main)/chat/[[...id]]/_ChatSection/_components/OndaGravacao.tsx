@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 /**
  * Onda sonora da gravação em curso, como a do WhatsApp Web.
  *
- * Desenha em `<canvas>` — não em elementos do DOM — porque a barra é redesenhada
+ * Desenha em `<canvas>` - não em elementos do DOM - porque a barra é redesenhada
  * ~60x por segundo: um nó por barra faria o React reconciliar centenas de
  * elementos a cada quadro, e a gravação inteira competiria com a UI.
  *
@@ -39,7 +39,7 @@ const OndaGravacao = ({ stream, pausado }: OndaGravacaoProps) => {
 
     const contexto = new AudioContext();
     const analisador = contexto.createAnalyser();
-    // 256 dá 128 amostras por quadro — resolução de sobra para medir volume,
+    // 256 dá 128 amostras por quadro - resolução de sobra para medir volume,
     // e barato o suficiente para rodar a cada frame.
     analisador.fftSize = 256;
 
@@ -69,7 +69,7 @@ const OndaGravacao = ({ stream, pausado }: OndaGravacaoProps) => {
       if (!pausadoRef.current) {
         analisador.getByteTimeDomainData(amostras);
 
-        // Desvio médio em relação ao silêncio (128) — mede o quanto o sinal se
+        // Desvio médio em relação ao silêncio (128) - mede o quanto o sinal se
         // afasta do repouso, que é o que se percebe como "volume".
         let soma = 0;
         for (let i = 0; i < amostras.length; i++) soma += Math.abs(amostras[i] - 128);
@@ -116,7 +116,7 @@ const OndaGravacao = ({ stream, pausado }: OndaGravacaoProps) => {
     return () => {
       cancelAnimationFrame(animacao);
       origem.disconnect();
-      // Sem fechar, cada gravação deixaria um AudioContext vivo — o navegador
+      // Sem fechar, cada gravação deixaria um AudioContext vivo - o navegador
       // limita quantos podem existir por página.
       contexto.close().catch(() => undefined);
     };

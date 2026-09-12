@@ -18,7 +18,7 @@ type PreviewAnexosProps = {
   onRemover: (id: string) => void;
   onAdicionar: () => void;
   onCancelar: () => void;
-  /** Legendas por anexo, indexadas pelo id — cada arquivo leva a sua. */
+  /** Legendas por anexo, indexadas pelo id - cada arquivo leva a sua. */
   onEnviar: (legendas: Record<string, string>) => void;
 };
 
@@ -30,10 +30,10 @@ const formataTamanho = (bytes: number) => {
 
 /**
  * Revisão dos arquivos antes do envio, no formato do WhatsApp Web: um em
- * destaque, os demais em miniaturas, e uma legenda própria para cada um —
+ * destaque, os demais em miniaturas, e uma legenda própria para cada um -
  * como no WhatsApp Web, onde trocar de arquivo troca a legenda editada.
  *
- * A tela existe para dar chance de conferir e desistir — selecionar um arquivo
+ * A tela existe para dar chance de conferir e desistir - selecionar um arquivo
  * não deve disparar o envio, que é irreversível assim que chega ao provider.
  */
 const PreviewAnexos = ({

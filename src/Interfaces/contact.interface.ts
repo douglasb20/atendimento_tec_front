@@ -2,11 +2,11 @@ import { ClientResponse } from './client.interface';
 
 export type ContactResponse = {
   id: number;
-  client_id: null;
+  client_id: number | null;
   name: string;
   avatar_url: string;
   is_avatar_external: number;
-  tags: null;
+  tags: string | null;
   phone: string;
   remote_jid: string;
   created_at: string;

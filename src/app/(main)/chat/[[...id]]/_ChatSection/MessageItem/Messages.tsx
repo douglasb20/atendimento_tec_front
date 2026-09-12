@@ -39,7 +39,7 @@ const Messages = () => {
    *
    * Os itens da fila viram mensagens do mesmo formato, para reaproveitar toda a
    * renderização. A ordenação usa o instante do envio (`datetime`), e não o da
-   * confirmação — é o que impede um vídeo grande de pular para o fim da
+   * confirmação - é o que impede um vídeo grande de pular para o fim da
    * conversa quando o webhook dele finalmente chega.
    */
   const mensagensNaTela = useMemo(() => {
@@ -86,7 +86,7 @@ const Messages = () => {
   /**
    * Índice por `message_id` para resolver mensagens citadas.
    *
-   * Antes cada bolha assinava a lista inteira e fazia um `find` linear nela —
+   * Antes cada bolha assinava a lista inteira e fazia um `find` linear nela -
    * com 200 mensagens, eram 200 varreduras de 200 itens a cada evento.
    */
   const indicePorId = useMemo(
@@ -109,7 +109,7 @@ const Messages = () => {
    * Marca se a primeira rolagem ao fim já aconteceu nesta conversa.
    *
    * Era estado da store, o que fazia cada carga de mensagem propagar um
-   * re-render para todos os componentes que a assinam — e, por descer como
+   * re-render para todos os componentes que a assinam - e, por descer como
    * prop até cada bolha, invalidava qualquer memoização. Como só este
    * componente precisa do valor, um ref basta e não dispara renderização.
    */
@@ -161,7 +161,7 @@ const Messages = () => {
 
         // Revogar é irreversível, daí a confirmação.
         // O `ConfirmaAcao` repassa o terceiro argumento tal como recebe, então
-        // vai a mensagem em si — não um array com ela dentro.
+        // vai a mensagem em si - não um array com ela dentro.
         ConfirmaAcao(
           'A mensagem será apagada para todos na conversa.',
           onApagarMensagem,
@@ -194,7 +194,7 @@ const Messages = () => {
    * O atributo `download` de um link só vale na mesma origem: apontando para o
    * storage, o navegador o ignora e abre a mídia na aba. Buscar os bytes e
    * gerar um `blob:` local devolve a origem para nós, e aí o atributo passa a
-   * valer — inclusive o nome do arquivo.
+   * valer - inclusive o nome do arquivo.
    */
   const onDownload = async ({ source, mime_type, file_name }) => {
     try {
@@ -237,7 +237,7 @@ const Messages = () => {
     const el = bottomEl.current;
     if (!el) return;
 
-    // Primeira carga da conversa: salto seco, sem animação — animar aqui faria
+    // Primeira carga da conversa: salto seco, sem animação - animar aqui faria
     // o histórico inteiro desfilar na frente do atendente.
     if (!jaRolouAoFim.current && !loadMessages) {
       el.scrollTop = el.scrollHeight;
@@ -260,7 +260,7 @@ const Messages = () => {
   };
 
   // Nova conversa recomeça o ciclo: a primeira rolagem dela também é seca, e
-  // ela nasce "no fim" — é onde a carga inicial vai posicionar a tela.
+  // ela nasce "no fim" - é onde a carga inicial vai posicionar a tela.
   useLayoutEffect(() => {
     jaRolouAoFim.current = false;
     estavaNoFim.current = true;
@@ -309,7 +309,7 @@ const Messages = () => {
     <>
       <div
         ref={bottomEl}
-        className="message-box relative border-1 border-primary-300 flex flex-1 flex-column bg-gray-50 border-round p-3 overflow-y-auto overflow-x-hidden"
+        className="message-box relative border-right-1 border-left-1 border-noround-top border-bottom-1 border-primary-300 flex flex-1 flex-column bg-gray-50 border-round p-3 overflow-y-auto overflow-x-hidden"
       >
         <div className="flex flex-column z-0 w-full">
           {mensagensNaTela?.map((msg) => {

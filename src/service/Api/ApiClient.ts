@@ -15,8 +15,8 @@ export const ListUrl = {
 
   ListarContatos: { url: '/contacts', method: 'GET' },
   AdicionarContato: { url: '/contacts', method: 'POST' },
-  AtualizarContato: { url: '/contacts/{{contact_id}}', method: 'PATCH' },
-  RemoverContato: { url: '/contacts/{{contact_id}}', method: 'DELETE' },
+  AtualizarContato: { url: '/contacts/contact/{{contact_id}}', method: 'PATCH' },
+  RemoverContato: { url: '/contacts/contact/{{contact_id}}', method: 'DELETE' },
 
   ListarUsuarios: { url: '/users', method: 'GET' },
   BuscarUsuarioPorId: { url: '/users/{{user_id}}', method: 'GET' },
@@ -53,6 +53,11 @@ export const ListUrl = {
 
   SendMessage: { url: '/support-chats/{{support_chat_id}}/send-message', method: 'POST' },
   SendReaction: { url: '/support-chats/{{support_chat_id}}/send-reaction', method: 'POST' },
+  IniciarAtendimentoChat: { url: '/support-chats/{{support_chat_id}}/iniciar', method: 'POST' },
+  FinalizarAtendimentoChat: {
+    url: '/support-chats/{{support_chat_id}}/finalizar',
+    method: 'POST',
+  },
   SendReply: { url: '/support-chats/{{support_chat_id}}/send-reply', method: 'POST' },
   AssinarMediaUpload: { url: '/support-chats/sign-media-post', method: 'POST' },
   SendMedia: { url: '/support-chats/{{support_chat_id}}/send-media', method: 'POST' },
