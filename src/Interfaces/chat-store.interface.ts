@@ -56,6 +56,8 @@ export type ChatSlice = {
   setActiveChat: (chat: SupportChatsResponse | null) => void;
   /** Aplica um patch na conversa aberta, sem esperar o eco do socket. */
   patchActiveChat: (patch: Partial<SupportChatsResponse>) => void;
+  /** Volta à tela sem conversa selecionada, limpando mensagens e URL. */
+  fecharConversa: () => void;
   resetChatStore: () => void;
 };
 

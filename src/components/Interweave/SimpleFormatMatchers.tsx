@@ -13,7 +13,15 @@ export class SimpleFormatMatcher extends Matcher {
 
   replaceWith(children, props) {
     const size = Math.min(props.start.length, props.end.length);
-    return React.createElement(this.element(), { key: props.key }, this.trim(children, size));
+
+    // O Interweave devolve um array de nós, e cada elemento criado aqui é um
+    // item dessa lista. O `props.key` nem sempre vem preenchido — e sem ele o
+    // React avisa a cada mensagem formatada, que no chat é praticamente toda
+    // uma, já que o texto começa com `*Nome:*`. O índice do match serve como
+    // identidade estável dentro da mesma string.
+    const chave = props.key ?? `fmt-${this.element()}-${props.index ?? 0}`;
+
+    return React.createElement(this.element(), { key: chave }, this.trim(children, size));
   }
 
   asTag() {

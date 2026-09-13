@@ -52,7 +52,13 @@ const AppSubMenu = (props: MenuProps) => {
               key={item.label}
             />
           ) : (
-            <li className="menu-separator"></li>
+            // O separador é irmão do item na mesma lista e precisa de `key`
+            // como qualquer outro; sem ela o React avisa em toda página que
+            // renderiza o menu.
+            <li
+              key={`separator-${i}`}
+              className="menu-separator"
+            ></li>
           );
         })}
       </ul>

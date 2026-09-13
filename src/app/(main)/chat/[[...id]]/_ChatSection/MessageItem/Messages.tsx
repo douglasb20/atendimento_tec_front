@@ -1,11 +1,12 @@
 'use client';
-import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import { MenuItem } from 'primereact/menuitem';
 import { classNames } from 'primereact/utils';
 import { v4 as uuidV4 } from 'uuid';
 
 import { ModeQuoted, SupportChatMessageResponse } from '@/Interfaces';
+import ModalEditarMensagem from '../_components/ModalEditarMensagem';
 import { CatchAlerta, ConfirmaAcao, debounce } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import { useOutboxStore } from '@/store/useOutboxStore';
@@ -115,6 +116,8 @@ const Messages = () => {
    */
   const jaRolouAoFim = useRef(false);
 
+  const [mensagemEditando, setMensagemEditando] = useState<SupportChatMessageResponse | null>(null);
+
   const menuModel: MenuItem[] = [
     {
       id: 'reply',
@@ -146,10 +149,7 @@ const Messages = () => {
       label: 'Editar',
       icon: 'fa-regular fa-pen-to-square',
       command: ({ item: { data } }) => {
-        const message = data as SupportChatMessageResponse;
-        setQuotedMessage(ModeQuoted.EDIT, message);
-        SetScrollBottom();
-        console.log(message);
+        setMensagemEditando(data as SupportChatMessageResponse);
       },
     },
     {
@@ -435,6 +435,13 @@ const Messages = () => {
           bottomEl={bottomEl?.current}
         />
       )}
+
+      <ModalEditarMensagem
+        visible={Boolean(mensagemEditando)}
+        onHide={() => setMensagemEditando(null)}
+        mensagem={mensagemEditando}
+        supportChatId={String(activeChat?.id)}
+      />
     </>
   );
 };

@@ -54,6 +54,10 @@ export const ListUrl = {
   SendMessage: { url: '/support-chats/{{support_chat_id}}/send-message', method: 'POST' },
   SendReaction: { url: '/support-chats/{{support_chat_id}}/send-reaction', method: 'POST' },
   IniciarAtendimentoChat: { url: '/support-chats/{{support_chat_id}}/iniciar', method: 'POST' },
+  MarcarConversaLida: {
+    url: '/support-chats/{{support_chat_id}}/marcar-lida',
+    method: 'POST',
+  },
   FinalizarAtendimentoChat: {
     url: '/support-chats/{{support_chat_id}}/finalizar',
     method: 'POST',
@@ -62,6 +66,7 @@ export const ListUrl = {
   AssinarMediaUpload: { url: '/support-chats/sign-media-post', method: 'POST' },
   SendMedia: { url: '/support-chats/{{support_chat_id}}/send-media', method: 'POST' },
   DeleteMessage: { url: '/support-chats/{{support_chat_id}}/delete-message', method: 'POST' },
+  EditarMensagem: { url: '/support-chats/{{support_chat_id}}/edit-message', method: 'POST' },
 
   ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
 };

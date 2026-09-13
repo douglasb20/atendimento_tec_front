@@ -31,6 +31,7 @@ const Header = () => {
   const { FetchReq } = useApi();
   const activeChat = useChatStore((s) => s.activeChat);
   const patchActiveChat = useChatStore((s) => s.patchActiveChat);
+  const fecharConversa = useChatStore((s) => s.fecharConversa);
 
   const [modalAberto, setModalAberto] = useState<ModalAberto>(null);
   const [iniciando, setIniciando] = useState(false);
@@ -104,7 +105,10 @@ const Header = () => {
         visible={modalAberto === 'finalizar'}
         onHide={() => setModalAberto(null)}
         chat={activeChat}
-        onFinalizado={(chat) => patchActiveChat(chat)}
+        // Encerrado o atendimento, o painel volta ao estado inicial: manter o
+        // histórico aberto em somente leitura sugere que ainda há o que fazer
+        // ali. A conversa continua acessível pela URL, se precisar consultar.
+        onFinalizado={fecharConversa}
         onContatoAtualizado={aoSalvarContato}
       />
 

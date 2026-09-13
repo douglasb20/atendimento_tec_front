@@ -31,12 +31,22 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
       const encerrado = ehAtendimentoFinalizado(chat.support_chat_status_id);
       const existe = chats.some((c) => mesmoId(c.id, chat.id));
 
+      // O contador tem evento próprio (`whatsapp:unread_count`) e não deve vir
+      // daqui: os handlers de edição e revogação emitem a conversa como a
+      // carregaram, com o valor anterior ao incremento — e uma mensagem nova
+      // dispara os dois eventos, com o `chat_state` chegando por último e
+      // zerando o que o outro acabou de somar.
+      const mesclar = (atual: SupportChatsResponse) => {
+        const { unread_count: _ignorado, ...semContador } = chat;
+        return { ...atual, ...semContador };
+      };
+
       const novosChats = encerrado
         ? // Finalizada sai da lista, como já acontece ao recarregar: a
           // listagem do backend filtra por `is_final = false`.
           chats.filter((c) => !mesmoId(c.id, chat.id))
         : existe
-          ? chats.map((c) => (mesmoId(c.id, chat.id) ? { ...c, ...chat } : c))
+          ? chats.map((c) => (mesmoId(c.id, chat.id) ? mesclar(c) : c))
           : [...chats, chat];
 
       const ehAConversaAberta = activeChat && mesmoId(activeChat.id, chat.id);
@@ -47,8 +57,7 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
         // está na tela, e o header precisa mostrar o estado final.
         activeChat: ehAConversaAberta
           ? {
-              ...activeChat,
-              ...chat,
+              ...mesclar(activeChat),
               contact: chat.contact ?? activeChat.contact,
               supportChatStatus: chat.supportChatStatus ?? activeChat.supportChatStatus,
               // O webhook às vezes traz uma mensagem só neste campo.
@@ -94,6 +103,29 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
     set(() => ({
       activeChat: chat,
     }));
+  },
+
+  /**
+   * Volta à tela sem conversa selecionada.
+   *
+   * Desfaz o que a seleção fez: a conversa ativa, as mensagens e a URL — que é
+   * trocada por `replaceState` ao abrir, e volta pela mesma via para não encher
+   * o histórico do navegador. Vive no store porque tanto o Esc quanto a
+   * finalização do atendimento precisam dela.
+   */
+  fecharConversa: () => {
+    set(() => ({
+      activeChat: null,
+      chatNotFound: false,
+      messages: [],
+      loadMessages: false,
+      doSmoothScroll: false,
+      quoted: { message: null, mode: null },
+    }));
+
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', '/chat');
+    }
   },
 
   resetChatStore: () => {
