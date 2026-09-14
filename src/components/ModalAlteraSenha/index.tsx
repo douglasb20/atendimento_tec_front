@@ -43,7 +43,7 @@ const ModalAlteraSenha = () => {
     resolver: yupResolver<any>(schema),
   });
   const { modalPasswordVisible, setModalPasswordVisible, setLoading } = useService();
-  const { req, ...Api } = ApiClient();
+  const { req } = ApiClient();
 
   const modalSenhaFooter = () => {
     return (
@@ -61,7 +61,11 @@ const ModalAlteraSenha = () => {
   const onComplete = async (data: IForm) => {
     try {
       setLoading(true);
-      await req.put(Api.ChangePassword, { ...data });
+      // TODO: a rota de troca de senha não existe — nem no `ListUrl` do front,
+      // nem no backend. O modal chama algo que nunca foi implementado, e o
+      // caminho falha aqui com 404. Mantido explícito para não passar por
+      // funcionalidade pronta.
+      await req.put('/users/change-password', { ...data });
       AlertaCallback('Senha alterada com sucesso', () => setModalPasswordVisible(false), 'success');
     } catch (error) {
       CatchAlerta(error, 'Erro ao alterar senha');

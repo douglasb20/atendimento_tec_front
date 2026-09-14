@@ -27,7 +27,6 @@ export default async function FormAtendimentoPage({
   const { FetchReq, token } = await ApiService();
   const tokenDecoded = jwtDecode<JWTToken>(token);
 
-  let dataForm = null;
   let data = null;
   if (id?.length > 0) {
     data = await FetchReq<AtendimentosResponse>('BuscarAtendimento', [id[0]]);
@@ -56,9 +55,6 @@ export default async function FormAtendimentoPage({
     },
   ];
 
-  dataForm = {
-    ...data,
-  };
   return (
     <div className="grid">
       <div className="card col-10 col-offset-1 shadow-1 flex flex-column justify-content-center">

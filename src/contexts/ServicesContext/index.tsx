@@ -1,5 +1,5 @@
 'use client';
-import { Reducer, createContext, useContext, useEffect, useReducer } from 'react';
+import { createContext, useContext, useEffect, useReducer } from 'react';
 import { addLocale, locale } from 'primereact/api';
 
 import ptBR from '@/constants/pt-br.json';
@@ -21,7 +21,9 @@ interface IPDFPreview {
 }
 
 export function ServiceProvider({ children }: { children: React.ReactNode }) {
-  const [contexts, setContexts] = useReducer<Reducer<IServiceContext, IServiceContext>>(
+  // O React 19 mudou a assinatura: `useReducer` passou a inferir os tipos do
+  // próprio redutor, e o genérico antigo (`Reducer<S, A>`) deixou de encaixar.
+  const [contexts, setContexts] = useReducer(
     (state: IServiceContext, newState: IServiceContext): IServiceContext => ({
       ...state,
       ...newState,

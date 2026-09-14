@@ -6,12 +6,9 @@ import { LayoutContext } from './context/layoutcontext';
 import { PrimeIcons } from 'primereact/api';
 
 const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
-  const { onMenuToggle, showProfileSidebar, showConfigSidebar } = useContext(LayoutContext);
+  const { onMenuToggle, showProfileSidebar } = useContext(LayoutContext);
   const menubuttonRef = useRef(null);
 
-  const onConfigButtonClick = () => {
-    showConfigSidebar();
-  };
 
   useImperativeHandle(ref, () => ({
     menubutton: menubuttonRef.current,

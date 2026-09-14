@@ -1,5 +1,4 @@
 import { useContext } from 'react';
-import { Badge } from 'primereact/badge';
 import { Sidebar } from 'primereact/sidebar';
 import Link from 'next/link';
 import { LayoutContext } from './context/layoutcontext';

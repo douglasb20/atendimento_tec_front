@@ -10,8 +10,9 @@ function PDFPreview() {
   const { setPdfPreview, pdfPreview } = useService();
   const [numPages, setNumPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
-  // eslint-disable-next-line
-  const [formValues, setFormValues] = useState({});
+  // Só o setter é usado: o valor alimenta o callback de mudança de página, não
+  // a renderização.
+  const [, setFormValues] = useState({});
   const [mouseUpPdf, setMouseUpPdf] = useState(false);
   const [hidden, setHidden] = useState(true);
   const [widthPDF, setWidthPDF] = useState(1);

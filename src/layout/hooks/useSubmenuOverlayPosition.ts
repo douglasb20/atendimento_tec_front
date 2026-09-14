@@ -27,7 +27,9 @@ export const useSubmenuOverlayPosition = ({
 
   const [bindScrollListener, unbindScrollListener] = useEventListener({
     type: 'scroll',
-    target: container as React.Ref<HTMLElement>,
+    // O hook aceita o elemento direto; o cast para `Ref` não se sustenta porque
+    // os tipos não se sobrepõem, e o TypeScript passou a recusá-lo.
+    target: container as never,
     listener: handleScroll,
   });
 
