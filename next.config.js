@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Gera `.next/standalone` com um servidor Node e apenas os módulos que o
+  // build realmente usa. Sem isso, a imagem de produção precisa carregar o
+  // `node_modules` inteiro — 1.7GB contra algo em torno de 200MB.
+  output: 'standalone',
   basePath: '',
   reactStrictMode: false,
   images: {

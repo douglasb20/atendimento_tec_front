@@ -34,14 +34,20 @@ WORKDIR /app
 RUN apk add --no-cache tzdata
 ENV TZ=America/Sao_Paulo
 
-COPY package*.json .npmrc ./
-RUN npm ci --omit=dev && npm cache clean --force
-
-COPY --from=build /app/.next ./.next
+# Com `output: 'standalone'` o build já resolve as dependências: a pasta
+# `.next/standalone` traz um servidor Node e só os módulos alcançados pelo
+# código. Não há `npm ci` aqui — é o que derruba a imagem de ~1.7GB para
+# algumas centenas de MB.
+COPY --from=build /app/.next/standalone ./
+# O standalone não inclui os assets estáticos nem o `public`: o servidor espera
+# encontrá-los nesses caminhos.
+COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
-COPY --from=build /app/next.config.js ./
 
 ENV NODE_ENV=production
+# Sem isso o servidor escuta apenas em localhost e o proxy não o alcança.
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
 EXPOSE 3000
 
-CMD ["npx", "next", "start"]
+CMD ["node", "server.js"]
