@@ -31,7 +31,7 @@ FROM node:22-alpine AS producao
 
 WORKDIR /app
 
-RUN apk add --no-cache tzdata
+RUN apk add --no-cache tzdata curl
 ENV TZ=America/Sao_Paulo
 
 # Com `output: 'standalone'` o build já resolve as dependências: a pasta
