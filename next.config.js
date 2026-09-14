@@ -5,6 +5,13 @@ const nextConfig = {
   // `node_modules` inteiro — 1.7GB contra algo em torno de 200MB.
   output: 'standalone',
   basePath: '',
+  // O `.eslintrc.js` (formato legado) com ESLint 9 + eslint-config-next 16
+  // gera "Converting circular structure to JSON" a cada build. O aviso não
+  // impede a compilação, mas polui o log; o lint continua disponível por
+  // `npm run lint`, que é onde ele importa.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   reactStrictMode: false,
   images: {
     remotePatterns: [

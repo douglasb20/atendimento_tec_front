@@ -191,7 +191,10 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   useEffect(() => {
     const cookiesStore = parseCookies(null);
     const token = cookiesStore['token'];
-    const socket = io('http://localhost:3001', {
+    // Mesma origem do `socketSlice`: cravar a URL aqui funcionava só em
+    // desenvolvimento — em produção o QR nunca chegaria, porque é por este
+    // socket que vem o `whatsapp:channel_status`.
+    const socket = io(process.env.WEBSOCKET_HOST || '', {
       autoConnect: false, // Impede a conexão automática na inicialização
       auth: {
         token,
