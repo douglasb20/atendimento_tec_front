@@ -58,7 +58,11 @@ const ReactionPickerComponent = ({ activeChat, bottomEl }: ReactionPickerProps) 
 
     try {
       hideReactionPicker(); // Fecha o picker
-      const reaction = reactionState.message.reaction === emoji.emoji ? '' : emoji.emoji;
+      // Clicar no emoji que já está na mensagem desfaz a reação. O mapa é
+      // indexado pelo jid de quem reagiu, e o front não conhece o do canal —
+      // comparar com os emojis presentes cobre o caso de uso.
+      const jaReagiu = Object.values(reactionState.message.reaction ?? {}).includes(emoji.emoji);
+      const reaction = jaReagiu ? '' : emoji.emoji;
       const resp = await sendReactionMessage(
         activeChat.id,
         reaction,

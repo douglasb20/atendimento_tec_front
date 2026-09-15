@@ -12,6 +12,7 @@ import {
 import { CatchAlerta } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import ModalContatoChat from '../_components/ModalContatoChat';
+import SidebarDetalhesContato from '../_components/SidebarDetalhesContato';
 import ModalFinalizarAtendimento from '../_components/ModalFinalizarAtendimento';
 import AcoesAtendimento from './_Header/AcoesAtendimento';
 import BadgeProtocolo from './_Header/BadgeProtocolo';
@@ -35,6 +36,7 @@ const Header = () => {
 
   const [modalAberto, setModalAberto] = useState<ModalAberto>(null);
   const [iniciando, setIniciando] = useState(false);
+  const [detalhesAberto, setDetalhesAberto] = useState(false);
 
   if (!activeChat) return null;
 
@@ -71,6 +73,7 @@ const Header = () => {
         <IdentificacaoContato
           contato={activeChat.contact}
           ultimaInteracao={activeChat.updated_at ?? activeChat.created_at}
+          onAbrirDetalhes={() => setDetalhesAberto(true)}
         />
 
         {/* Protocolo e tempo são metadado, não ação: ficam à direita, na mesma
@@ -110,6 +113,16 @@ const Header = () => {
         // ali. A conversa continua acessível pela URL, se precisar consultar.
         onFinalizado={fecharConversa}
         onContatoAtualizado={aoSalvarContato}
+      />
+
+      <SidebarDetalhesContato
+        visible={detalhesAberto}
+        onHide={() => setDetalhesAberto(false)}
+        contato={activeChat.contact}
+        onEditar={() => {
+          setDetalhesAberto(false);
+          setModalAberto('contato');
+        }}
       />
 
       <ModalContatoChat

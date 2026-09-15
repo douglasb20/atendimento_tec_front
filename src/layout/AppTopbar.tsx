@@ -1,8 +1,8 @@
 import type { AppTopbarRef } from '@/types';
 import { Button } from 'primereact/button';
 import { forwardRef, useContext, useImperativeHandle, useRef } from 'react';
-import AppBreadcrumb from './AppBreadCrumb';
 import { LayoutContext } from './context/layoutcontext';
+import StatusCanais from './StatusCanais';
 import { PrimeIcons } from 'primereact/api';
 
 const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
@@ -25,11 +25,11 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         >
           <i className="pi pi-bars"></i>
         </button>
-
-        <AppBreadcrumb className="topbar-breadcrumb"></AppBreadcrumb>
       </div>
 
       <div className="topbar-end">
+        <StatusCanais />
+
         <ul className="topbar-menu">
           <li className="topbar-profile">
             <Button

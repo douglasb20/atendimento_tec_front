@@ -135,13 +135,16 @@ const ModalFinalizarAtendimento = ({
           </div>
 
           {semCliente && (
-            <div className="flex align-items-center gap-3 border-1 border-orange-300 bg-orange-50 border-round-lg p-3">
-              <i className="fa-regular fa-triangle-exclamation text-xl text-orange-600" />
-              <div className="flex-1 text-sm text-orange-900">
-                Este contato ainda não está associado a um cliente. Associe antes de finalizar.
+            <div className="flex flex-column gap-3 border-1 border-orange-300 bg-orange-50 border-round-lg p-3">
+              <div className="flex align-items-start gap-2">
+                <i className="fa-regular fa-triangle-exclamation text-xl text-orange-600 mt-1" />
+                <span className="text-sm text-orange-900">
+                  Este contato ainda não está associado a um cliente. Associe antes de finalizar.
+                </span>
               </div>
               <Button
-                label="Associar"
+                label="Associar cliente"
+                icon="fa-regular fa-link"
                 size="small"
                 onClick={() => setModalContatoAberto(true)}
               />

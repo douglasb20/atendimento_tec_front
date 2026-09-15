@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 
-import { ContactResponse, IClientResponse, Masks, Shape } from '@/Interfaces';
+import { ContactResponse, IClientResponse, Masks, Shape, TagResponse } from '@/Interfaces';
 
 import AcoesDataTable from '@/components/AcoesDataTable';
 import LabelPlus from '@/components/LabelPlus';
@@ -25,11 +25,15 @@ import {
   ValidaCNPJ,
 } from '@/service/Util';
 
+import { MultiSelect } from 'primereact/multiselect';
+
+import ChipTag from '@/components/ChipTag';
 import { useService } from '@/contexts/ServicesContext';
 
 type FormType = {
   nome: string;
   cnpj?: string;
+  tag_ids?: number[];
 };
 
 const schema = yup.object<yup.AnyObject, Shape<FormType>>({
@@ -37,11 +41,13 @@ const schema = yup.object<yup.AnyObject, Shape<FormType>>({
   cnpj: yup
     .string()
     .test('cnpj-validator', 'CNPJ inválido', (val) => val === '' || ValidaCNPJ(val)),
+  tag_ids: yup.array().of(yup.number()).notRequired(),
 });
 
 const defaultForm: FormType = {
   nome: '',
   cnpj: '',
+  tag_ids: [],
 };
 
 const BodyTelefone = (data: ContactResponse, options: ColumnBodyOptions) => {
@@ -57,6 +63,7 @@ const BodyTelefone = (data: ContactResponse, options: ColumnBodyOptions) => {
 export default function FormClient() {
   const [rendered, setRendered] = useState(false);
   const [contacts, setContacts] = useState<ContactResponse[]>([]);
+  const [tags, setTags] = useState<TagResponse[]>([]);
   const { FetchReq } = useApi();
   const { control, handleSubmit, reset } = useForm<FormType>({
     reValidateMode: 'onBlur',
@@ -95,14 +102,32 @@ export default function FormClient() {
     }
   };
 
+  /**
+   * Opções do MultiSelect. Carregadas aqui, e não no server component, porque o
+   * formulário inteiro é client — é o mesmo caminho que o resto da tela usa.
+   */
+  const ListarTags = async () => {
+    try {
+      const dados = await FetchReq<TagResponse[]>('ListarTags');
+      setTags(dados ?? []);
+    } catch {
+      // Silencioso: sem etiquetas o campo fica vazio, e o cadastro do cliente
+      // continua utilizável. Um alerta aqui atrapalharia mais do que ajuda.
+    }
+  };
+
   const GetClient = async (id: string) => {
     try {
       setLoading(true);
       const data = await FetchReq<IClientResponse>('BuscarClienteId', [id]);
       const oldContact = data.contacts;
       data.cnpj = data.cnpj === null ? '' : data.cnpj;
+      // A relação sai do reset e vira lista de ids: o MultiSelect trabalha com
+      // os ids, não com as entidades.
+      const tagIds = (data.tags ?? []).map((t) => t.id);
       delete data.contacts;
-      reset({ ...defaultForm, ...data });
+      delete data.tags;
+      reset({ ...defaultForm, ...data, tag_ids: tagIds });
       setContacts(oldContact || []);
       setRendered(true);
     } catch (err) {
@@ -113,12 +138,15 @@ export default function FormClient() {
   };
 
   useEffect(() => {
+    ListarTags();
+
     if (id === undefined) {
       setRendered(true);
       reset(defaultForm);
     } else {
       GetClient(id[0]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   return (
@@ -166,6 +194,48 @@ export default function FormClient() {
                           {...field}
                           placeholder="00.000.000/0000-00"
                           mask={Masks.CNPJ}
+                        />
+                        {getFormErrorMessage(fieldState)}
+                      </>
+                    )}
+                  />
+                </div>
+
+                <div className="col-12">
+                  <Controller
+                    control={control}
+                    name="tag_ids"
+                    render={({ field, fieldState }) => (
+                      <>
+                        <LabelPlus
+                          htmlFor={field.name}
+                          text="Etiquetas"
+                        />
+                        <MultiSelect
+                          id={field.name}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.value)}
+                          options={tags}
+                          optionLabel="name"
+                          optionValue="id"
+                          display="chip"
+                          filter
+                          showClear
+                          placeholder="Selecione as etiquetas"
+                          emptyMessage="Nenhuma etiqueta cadastrada"
+                          emptyFilterMessage="Nenhuma etiqueta encontrada"
+                          // A cor é metade do valor de uma etiqueta: sem ela, a
+                          // lista vira texto e o atendente não a reconhece.
+                          itemTemplate={(tag: TagResponse) => <ChipTag tag={tag} />}
+                          selectedItemTemplate={(id: number) => {
+                            const tag = tags.find((t) => t.id === id);
+                            return tag ? (
+                              <ChipTag
+                                tag={tag}
+                                className="mr-1"
+                              />
+                            ) : null;
+                          }}
                         />
                         {getFormErrorMessage(fieldState)}
                       </>

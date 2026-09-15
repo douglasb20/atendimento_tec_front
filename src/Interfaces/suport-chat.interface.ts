@@ -74,6 +74,13 @@ export interface SupportChatMessageResponse {
   to: string;
   device_type: string;
   is_deleted: boolean;
+  /**
+   * Quando a mensagem foi removida do portal ("apagar para mim").
+   *
+   * Distinta de `is_deleted`, que é a revogação no WhatsApp: aqui a mensagem
+   * segue no aparelho do contato, e aparece como marcador na conversa.
+   */
+  hidden_at: string | null;
 
   /**
    * Mídia removida pela política de retenção - distinto de `is_deleted`, que é
@@ -89,7 +96,13 @@ export interface SupportChatMessageResponse {
   is_edited: boolean;
   is_gif: boolean;
   has_reaction: boolean;
-  reaction: string;
+  /**
+   * Um emoji por pessoa: `{ "<jid de quem reagiu>": "<emoji>" }`.
+   *
+   * O mapa por autor é o que permite a mesma mensagem ter reações de várias
+   * pessoas, e cada uma trocar ou remover a sua.
+   */
+  reaction: Record<string, string>;
   raw_payload: string;
   created_at: string;
   updated_at: string;

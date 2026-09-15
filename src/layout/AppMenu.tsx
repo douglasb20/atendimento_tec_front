@@ -55,6 +55,11 @@ const AppMenu = () => {
               icon: `${PrimeIcons.ID_CARD} pi-fw`,
               to: '/clientes/contatos',
             },
+            {
+              label: 'Etiquetas',
+              icon: `${PrimeIcons.TAGS} pi-fw`,
+              to: '/clientes/tags',
+            },
           ],
         },
         {

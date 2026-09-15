@@ -24,7 +24,7 @@ const isAfter15min = (input: string) => {
   return passou15min;
 };
 
-const isAfter60Hour = (input: string) => {
+export const isAfter60Hour = (input: string) => {
   const date = parseISO(input);
 
   // Data + 60 horas
@@ -35,12 +35,27 @@ const isAfter60Hour = (input: string) => {
   return passou60horas;
 };
 
+/**
+ * Se a mensagem aceita ser revogada no WhatsApp.
+ *
+ * Mesma regra usada pelo item 'Apagar' do menu e pela seleção múltipla — as
+ * duas precisam concordar, senão a seleção ofereceria o que o apagar recusa.
+ */
+export const podeApagar = (message: SupportChatMessageResponse) =>
+  !message.is_deleted &&
+  !message.pending &&
+  !message.hidden_at &&
+  message.from_me &&
+  !isAfter60Hour(message.datetime);
+
 const MenuMessageComponent = ({ menuModel, message, bottomEl }: MenuMessageProps) => {
   const menuRef = useRef<{ [key: string]: Menu | null }>({});
 
   // Revogada não tem conteúdo para responder, citar ou baixar; pendente ainda
   // não existe no WhatsApp, então nenhuma ação de lá se aplica.
-  const semAcoes = message.is_deleted || message.pending;
+  // Oculta entra na mesma regra da revogada: não há conteúdo a citar,
+  // baixar ou editar.
+  const semAcoes = message.is_deleted || message.pending || !!message.hidden_at;
 
   const newModel = menuModel.map((item) => {
     const newItem: MenuItem = { ...item };
@@ -58,7 +73,13 @@ const MenuMessageComponent = ({ menuModel, message, bottomEl }: MenuMessageProps
           message.message_id.length === 22;
         break;
       case 'delete':
-        newItem.visible = !semAcoes && !isAfter60Hour(message.datetime) && message.from_me;
+        newItem.visible = podeApagar(message);
+        break;
+      // Diferente do 'delete': qualquer mensagem ainda visível pode entrar na
+      // seleção. O que não couber na revogação do WhatsApp é ocultado só do
+      // nosso lado; o que já está oculto não tem o que apagar de novo.
+      case 'select':
+        newItem.visible = !semAcoes;
         break;
       case 'download':
         // Mídia expirada pela retenção não tem arquivo no storage para baixar.

@@ -61,7 +61,16 @@
     .layout-container {
         .layout-content-wrapper {
             margin-left: 0;
+        }
+
+        // O respiro no mobile vai no conteúdo, não no wrapper: no wrapper ele
+        // descolaria o topbar das bordas.
+        .layout-content {
             padding: 1rem;
+        }
+
+        .content-breadcrumb {
+            padding: 1rem 1rem 0;
         }
 
         .layout-sidebar {

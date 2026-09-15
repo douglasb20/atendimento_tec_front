@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useService } from '@/contexts/ServicesContext';
@@ -16,6 +16,22 @@ type DadosClientesProps = {
 
 export default function DadosClientesSection({ data }: DadosClientesProps) {
   const [clients, setClients] = useState(data || []);
+
+  /**
+   * Acrescenta `tags_busca` — os nomes das etiquetas num texto só.
+   *
+   * O filtro global da tabela compara valores simples; um array de objetos
+   * nunca casaria com o termo digitado. Derivado aqui para valer tanto no
+   * carregamento inicial quanto depois de um refetch.
+   */
+  const clientsComBusca = useMemo(
+    () =>
+      (clients ?? []).map((cliente) => ({
+        ...cliente,
+        tags_busca: (cliente.tags ?? []).map((t) => t.name).join(' '),
+      })),
+    [clients],
+  );
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
@@ -84,7 +100,7 @@ export default function DadosClientesSection({ data }: DadosClientesProps) {
         <div className="p-card-content">
           <DtClientes
             actions={acoesTable}
-            value={clients}
+            value={clientsComBusca}
           />
         </div>
       </>

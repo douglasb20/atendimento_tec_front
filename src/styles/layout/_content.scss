@@ -1,3 +1,20 @@
 .layout-content-wrapper {
+    // Sem padding aqui: é o que permite ao topbar encostar no topo e ocupar a
+    // largura inteira. O respiro passou para o conteúdo, abaixo dele.
+    display: flex;
+    flex-direction: column;
+}
+
+.layout-content {
     padding: 2rem;
+}
+
+// Quando há breadcrumb ele já dá o respiro do topo; o conteúdo abaixo não
+// precisa repetir.
+.content-breadcrumb {
+    padding: 1.5rem 2rem 0;
+
+    + .layout-content {
+        padding-top: 1rem;
+    }
 }

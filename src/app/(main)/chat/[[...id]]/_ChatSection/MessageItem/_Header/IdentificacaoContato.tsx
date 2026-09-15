@@ -3,6 +3,8 @@
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+import { classNames } from 'primereact/utils';
+
 import Avatar from '@/components/Avatar';
 import { ContactResponse } from '@/Interfaces';
 import { DateToBR, Mask, nomeExibicao } from '@/service/Util';
@@ -11,6 +13,8 @@ type IdentificacaoContatoProps = {
   contato?: ContactResponse;
   /** Data da última movimentação da conversa. */
   ultimaInteracao?: string | null;
+  /** Abre o painel com os dados completos. */
+  onAbrirDetalhes?: () => void;
 };
 
 /**
@@ -43,14 +47,34 @@ const mascaraTelefone = (telefone?: string) => {
   return Mask(digitos, digitos.length > 10 ? '(##) # ####-####' : '(##) ####-####');
 };
 
-const IdentificacaoContato = ({ contato, ultimaInteracao }: IdentificacaoContatoProps) => {
+const IdentificacaoContato = ({
+  contato,
+  ultimaInteracao,
+  onAbrirDetalhes,
+}: IdentificacaoContatoProps) => {
   const telefone = mascaraTelefone(contato?.phone);
   const semCliente = !contato?.client_id;
+
+  // Mesma hierarquia da lista lateral: o cliente é quem nomeia a conversa, e o
+  // contato vira subtítulo. Sem cliente, o contato sobe para o título — repetir
+  // o mesmo nome nas duas linhas seria ruído.
+  const cliente = contato?.client?.nome?.trim();
+  const nomeContato = contato?.name?.trim() || 'Contato';
+  const titulo = cliente || nomeContato;
 
   return (
     // `min-w-0` é o que permite o texto encolher com reticências dentro de um
     // flex; sem ele, o nome longo empurra os botões para fora do cabeçalho.
-    <div className="flex flex-1 align-items-center gap-3 min-w-0">
+    <button
+      type="button"
+      onClick={onAbrirDetalhes}
+      disabled={!onAbrirDetalhes}
+      title={onAbrirDetalhes ? 'Ver dados do cliente e do contato' : undefined}
+      className={classNames(
+        'flex flex-1 align-items-center gap-3 min-w-0 p-link text-left border-round p-1',
+        onAbrirDetalhes && 'cursor-pointer hover:surface-hover transition-colors transition-duration-150',
+      )}
+    >
       <Avatar
         src={contato?.avatar_url}
         alt={contato?.name ?? 'Contato'}
@@ -68,7 +92,7 @@ const IdentificacaoContato = ({ contato, ultimaInteracao }: IdentificacaoContato
             className="text-xl font-semibold text-900 line-height-1 white-space-nowrap overflow-hidden text-overflow-ellipsis"
             title={nomeExibicao(contato)}
           >
-            {nomeExibicao(contato)}
+            {titulo}
           </span>
 
           {/* Anuncia desde já a pendência que vai barrar a finalização, em vez
@@ -83,6 +107,16 @@ const IdentificacaoContato = ({ contato, ultimaInteracao }: IdentificacaoContato
             </span>
           )}
         </div>
+
+        {/* O contato só aparece quando há cliente: sem ele, já está no título. */}
+        {cliente && (
+          <span
+            className="text-sm font-semibold text-500 line-height-1 white-space-nowrap overflow-hidden text-overflow-ellipsis"
+            title={nomeContato}
+          >
+            {nomeContato}
+          </span>
+        )}
 
         {/* Some em tela estreita: o nome e as ações têm prioridade. */}
         <div className="hidden md:flex align-items-center gap-2 text-sm text-500 line-height-1 min-w-0">
@@ -102,7 +136,7 @@ const IdentificacaoContato = ({ contato, ultimaInteracao }: IdentificacaoContato
           )}
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 

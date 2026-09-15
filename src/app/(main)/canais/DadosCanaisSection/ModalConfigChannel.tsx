@@ -15,6 +15,8 @@ interface IProps<T> {
   onHide: () => void;
   onStartSession: () => void;
   onDisconnectSession: () => void;
+  onSincronizarStatus: () => void;
+  sincronizando?: boolean;
 }
 
 const stepValues = [
@@ -42,7 +44,15 @@ const stepValues = [
 ];
 
 const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
-  const { visible, onHide, value, onStartSession, onDisconnectSession } = props;
+  const {
+    visible,
+    onHide,
+    value,
+    onStartSession,
+    onDisconnectSession,
+    onSincronizarStatus,
+    sincronizando = false,
+  } = props;
 
   return (
     <>
@@ -82,6 +92,18 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
               </span>
             </div>
             <div className="flex-shrink-0 flex justify-content-center align-items-center gap-2 ">
+              {/* O status guardado vem do último evento recebido, e evento se
+                  perde: este botão pergunta ao provider e corrige o registro. */}
+              <Button
+                icon={PrimeIcons.SYNC}
+                onClick={() => onSincronizarStatus && onSincronizarStatus()}
+                loading={sincronizando}
+                outlined
+                severity="secondary"
+                tooltip="Verificar status real no WhatsApp"
+                tooltipOptions={{ position: 'bottom' }}
+                aria-label="Verificar status real"
+              />
               <Button
                 label={value?.channel_status_id === 1 ? 'Iniciar sessão' : 'Desconectar'}
                 icon={value?.channel_status_id === 1 ? PrimeIcons.SIGN_IN : PrimeIcons.TIMES}

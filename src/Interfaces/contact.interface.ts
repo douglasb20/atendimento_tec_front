@@ -6,7 +6,6 @@ export type ContactResponse = {
   name: string;
   avatar_url: string;
   is_avatar_external: number;
-  tags: string | null;
   phone: string;
   remote_jid: string;
   created_at: string;

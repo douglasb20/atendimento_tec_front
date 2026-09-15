@@ -2,6 +2,7 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import { MenuItem } from 'primereact/menuitem';
+import { Checkbox } from 'primereact/checkbox';
 import { classNames } from 'primereact/utils';
 import { v4 as uuidV4 } from 'uuid';
 
@@ -10,6 +11,7 @@ import ModalEditarMensagem from '../_components/ModalEditarMensagem';
 import { CatchAlerta, ConfirmaAcao, debounce } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import { useOutboxStore } from '@/store/useOutboxStore';
+import { useSelecaoMensagens } from '@/store/useSelecaoMensagens';
 import { cancelarItem, podeReenviar, reenviar } from '@/service/Outbox';
 import useApi from '@/service/Api/ApiClient';
 import {
@@ -30,6 +32,10 @@ const Messages = () => {
   const reactionState = useChatStore((s) => s.reactionState);
   const setQuotedMessage = useChatStore((s) => s.setQuotedMessage);
   const itensFila = useOutboxStore((s) => s.itens);
+  const modoSelecao = useSelecaoMensagens((s) => s.ativo);
+  const selecionadas = useSelecaoMensagens((s) => s.selecionadas);
+  const entrarModoSelecao = useSelecaoMensagens((s) => s.entrarModoSelecao);
+  const alternarSelecao = useSelecaoMensagens((s) => s.alternar);
   const { FetchReq } = useApi();
   const bottomEl = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(0);
@@ -150,6 +156,14 @@ const Messages = () => {
       icon: 'fa-regular fa-pen-to-square',
       command: ({ item: { data } }) => {
         setMensagemEditando(data as SupportChatMessageResponse);
+      },
+    },
+    {
+      id: 'select',
+      label: 'Selecionar',
+      icon: 'fa-regular fa-circle-check',
+      command: ({ item: { data } }) => {
+        entrarModoSelecao((data as SupportChatMessageResponse).message_id);
       },
     },
     {
@@ -317,7 +331,14 @@ const Messages = () => {
 
             const naFila = itensFila.find((i) => i.id === msg.id);
 
-            return (
+            // Qualquer mensagem visível pode ser selecionada: as que não cabem
+            // na revogação do WhatsApp são ocultadas só do nosso lado. Pendente
+            // ainda não existe no provider, e revogada/oculta já não tem o que
+            // apagar.
+            const selecionavel = !msg.pending && !msg.is_deleted && !msg.hidden_at;
+            const marcada = selecionadas.includes(msg.message_id);
+
+            const conteudoMensagem = (
               <div
                 className={`w-full relative message-content flex-column flex ${messageClass}`}
                 key={msg.id}
@@ -404,6 +425,38 @@ const Messages = () => {
                     )}
                   </div>
                 )}
+              </div>
+            );
+
+            // Fora do modo de seleção a linha extra nem existe — evita mexer no
+            // layout da conversa no uso normal.
+            if (!modoSelecao) return conteudoMensagem;
+
+            return (
+              <div
+                key={msg.id}
+                className={classNames(
+                  'flex align-items-center gap-2 w-full border-round transition-colors transition-duration-150',
+                  selecionavel && 'cursor-pointer hover:surface-hover',
+                  marcada && 'surface-100',
+                )}
+                // Clicar em qualquer ponto da linha marca, como no WhatsApp.
+                onClick={() => selecionavel && alternarSelecao(msg.message_id)}
+              >
+                <div
+                  className="flex-shrink-0"
+                  style={{ width: '1.5rem' }}
+                >
+                  {selecionavel && (
+                    <Checkbox
+                      checked={marcada}
+                      onChange={() => alternarSelecao(msg.message_id)}
+                      aria-label={`Selecionar mensagem de ${msg.datetime}`}
+                    />
+                  )}
+                </div>
+
+                {conteudoMensagem}
               </div>
             );
           })}

@@ -8,6 +8,7 @@ export * from './chat-store.interface';
 export * from './channel.interface';
 export * from './contact.interface';
 export * from './client.interface';
+export * from './tag.interface';
 
 export enum Masks {
   DATEBR = '99/99/9999',

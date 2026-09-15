@@ -11,6 +11,13 @@ export const ListUrl = {
   AtualizarCliente: { url: '/clients/{{client_id}}', method: 'PATCH' },
   RemoverCliente: { url: '/clients/{{client_id}}', method: 'DELETE' },
   BuscarClienteId: { url: '/clients/{{client_id}}', method: 'GET' },
+  ListarTags: { url: '/tags', method: 'GET' },
+  BuscarTag: { url: '/tags/{{tag_id}}', method: 'GET' },
+  AdicionarTag: { url: '/tags', method: 'POST' },
+  AtualizarTag: { url: '/tags/{{tag_id}}', method: 'PATCH' },
+  RemoverTag: { url: '/tags/{{tag_id}}', method: 'DELETE' },
+  AtualizarTagsCliente: { url: '/clients/{{client_id}}/tags', method: 'PATCH' },
+
   BuscarContatoClientId: { url: '/clients/{{client_id}}/contact', method: 'GET' },
 
   ListarContatos: { url: '/contacts', method: 'GET' },
@@ -39,6 +46,10 @@ export const ListUrl = {
 
   ListarCanais: { url: '/channels', method: 'GET' },
   BuscarCanal: { url: '/channels/{{channel_id}}', method: 'GET' },
+  SincronizarStatusCanal: {
+    url: '/channels/{{channel_id}}/sincronizar-status',
+    method: 'GET',
+  },
   AdicionarCanal: { url: '/channels', method: 'POST' },
   AtualizarCanal: { url: '/channels/{{channel_id}}', method: 'PATCH' },
   RemoverCanal: { url: '/channels/{{channel_id}}', method: 'DELETE' },
@@ -65,6 +76,10 @@ export const ListUrl = {
   SendReply: { url: '/support-chats/{{support_chat_id}}/send-reply', method: 'POST' },
   AssinarMediaUpload: { url: '/support-chats/sign-media-post', method: 'POST' },
   SendMedia: { url: '/support-chats/{{support_chat_id}}/send-media', method: 'POST' },
+  OcultarMensagens: {
+    url: '/support-chats/{{support_chat_id}}/ocultar-mensagens',
+    method: 'POST',
+  },
   DeleteMessage: { url: '/support-chats/{{support_chat_id}}/delete-message', method: 'POST' },
   EditarMensagem: { url: '/support-chats/{{support_chat_id}}/edit-message', method: 'POST' },
 

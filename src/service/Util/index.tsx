@@ -449,6 +449,27 @@ export function debounce(fn, delay) {
  * primeira vez e ainda não foi cadastrado. Compartilhado entre o header do
  * chat e a lista de conversas, que antes duplicavam o ternário.
  */
+/**
+ * Cor de texto legível sobre um fundo arbitrário.
+ *
+ * As etiquetas têm cor livre, escolhida no ColorPicker: texto branco sobre
+ * amarelo some, e preto sobre azul-marinho também. A luminância relativa decide
+ * qual dos dois usar — o limiar 0.6 foi ajustado para as cores médias caírem no
+ * texto escuro, que lê melhor.
+ */
+export const corDoTextoSobre = (corDeFundo?: string): string => {
+  const hex = (corDeFundo ?? '').replace('#', '');
+  if (hex.length !== 6) return '#ffffff';
+
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+
+  // Coeficientes de luminância da recomendação ITU-R BT.709: o olho enxerga o
+  // verde muito mais que o azul, e uma média simples erraria feio.
+  const luminancia = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+  return luminancia > 0.6 ? '#1f2937' : '#ffffff';
+};
+
 export const nomeExibicao = (contato?: {
   name?: string;
   client?: { nome?: string } | null;

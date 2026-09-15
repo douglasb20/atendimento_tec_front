@@ -149,7 +149,15 @@ const SingleMessageComponent = ({
       )}
       style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
     >
-      {message.is_deleted ? (
+      {message.hidden_at ? (
+        // Removida só do nosso lado ("apagar para mim"): no WhatsApp do contato
+        // ela continua. O marcador fica para o histórico não ter buracos
+        // silenciosos — o atendente seguinte vê que houve algo ali.
+        <div className="flex align-items-center gap-2 font-italic opacity-80">
+          <i className="fa-regular fa-eye-slash" />
+          <span>Mensagem removida do sistema</span>
+        </div>
+      ) : message.is_deleted ? (
         // Revogada pelo autor: o conteúdo não existe mais, então nada do corpo
         // original é exibido - só o aviso, como no WhatsApp.
         <div className="flex align-items-center gap-2 font-italic opacity-80">

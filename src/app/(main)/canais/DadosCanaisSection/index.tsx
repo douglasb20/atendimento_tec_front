@@ -1,4 +1,5 @@
 'use client';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { parseCookies } from 'nookies';
 import { PrimeIcons } from 'primereact/api';
 import { useEffect, useRef, useState } from 'react';
@@ -7,7 +8,8 @@ import { io } from 'socket.io-client';
 import { ChannelResponse } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
+import { useCanaisRevalidacao } from '@/store/useCanaisRevalidacao';
+import { Alerta, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 
 import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
@@ -21,7 +23,11 @@ type DadosCanaisProps = {
 };
 
 export default function DadosCanaisSection({ data }: DadosCanaisProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const invalidarCanais = useCanaisRevalidacao((s) => s.invalidarCanais);
   const [canais, setCanais] = useState(data || []);
+  const [sincronizando, setSincronizando] = useState(false);
   const [activeChannel, setActiveChannel] = useState<ChannelResponse | null>(null);
   const [modalVisible, setModalVisible] = useState({
     configChannel: false,
@@ -121,6 +127,10 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       if (use_loading) setLoading(true);
       const data = await FetchReq<ChannelResponse[]>('ListarCanais');
       setCanais(data);
+      // O badge do topbar observa esta versão: criar e excluir canal não
+      // passam pelo socket, então sem o aviso ele seguiria contando um canal
+      // que já não existe.
+      invalidarCanais();
     } catch (err) {
       CatchAlerta(err, 'Erro ao consultar canais');
     } finally {
@@ -162,6 +172,43 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     }
   };
 
+  /**
+   * Pergunta ao provider qual o estado real da sessão e alinha o registro.
+   *
+   * O status exibido vem do último `connection.update` recebido; quando esse
+   * evento se perde, o portal mostra "Conectado" para um canal que caiu e a
+   * falha só aparece na hora de enviar.
+   */
+  const onSincronizarStatus = async () => {
+    if (!activeChannel) return;
+
+    try {
+      setSincronizando(true);
+      const atualizado = await FetchReq<ChannelResponse>('SincronizarStatusCanal', [
+        activeChannel.id,
+      ]);
+
+      const anterior = activeChannel.channelStatus?.name ?? 'desconhecido';
+      const atual = atualizado.channelStatus?.name ?? 'desconhecido';
+      const mudou = atualizado.channel_status_id !== activeChannel.channel_status_id;
+
+      setActiveChannel(atualizado);
+      await ReloadCanais(false);
+
+      Alerta(
+        mudou
+          ? `O canal estava marcado como "${anterior}" e na verdade está "${atual}". O registro foi corrigido.`
+          : `O status continua "${atual}".`,
+        mudou ? 'Status corrigido' : 'Status confirmado',
+        mudou ? 'warning' : 'success',
+      );
+    } catch (err) {
+      CatchAlerta(err, 'Não foi possível consultar o status');
+    } finally {
+      setSincronizando(false);
+    }
+  };
+
   const onStartSession = async () => {
     try {
       if (activeChannel) {
@@ -187,6 +234,18 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   useEffect(() => {
     activeChannelRef.current = activeChannel;
   }, [activeChannel]);
+
+  // `/canais?canal=<id>` abre direto a configuração daquele canal — é como o
+  // badge de status do topbar leva o atendente até aqui. O parâmetro é
+  // removido em seguida para o modal não reabrir a cada voltar/avançar.
+  useEffect(() => {
+    const id = Number(searchParams.get('canal'));
+    if (!id) return;
+
+    AbrirModalConfig(id);
+    router.replace('/canais');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     const cookiesStore = parseCookies(null);
@@ -251,6 +310,8 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
           onHide={FecharModalConfig}
           onStartSession={onStartSession}
           onDisconnectSession={onDisconnectSession}
+          onSincronizarStatus={onSincronizarStatus}
+          sincronizando={sincronizando}
         />
         <ModalForm
           visible={modalVisible.formChannel}

@@ -1,8 +1,15 @@
 .layout-topbar {
-    margin-bottom: 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    // Mesmo fundo do menu lateral: `--menu-bg` é definida pelo tema de menu
+    // ativo (colorScheme / primarycolor / transparent), então usar a variável
+    // em vez da cor faz o topbar acompanhar a troca de tema sozinho.
+    background-color: var(--menu-bg);
+    // Barra de ponta a ponta, colada no topo — sem margem nem raio. A borda
+    // separa do conteúdo, que tem o mesmo tom de fundo em alguns temas.
+    border-bottom: 1px solid var(--surface-border);
+    padding: 0.75rem 1.5rem;
 
     .topbar-start {
         display: flex;
@@ -33,6 +40,12 @@
                 }
             }
         }
+    }
+
+    .topbar-end {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .topbar-menu {
