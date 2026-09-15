@@ -3,7 +3,7 @@ import React, { useRef, useState } from 'react';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Menu } from 'primereact/menu';
 import { MenuItem } from 'primereact/menuitem';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 
 import { parseCookies } from 'nookies';
 
@@ -63,9 +63,13 @@ export default function SendMessageBox() {
   const quoted = useChatStore((s) => s.quoted);
   const setQuotedMessage = useChatStore((s) => s.setQuotedMessage);
   const enfileirar = useOutboxStore((s) => s.enfileirar);
-  const { control, handleSubmit, reset, watch } = useForm<{ messageText: string }>({
+  const { control, handleSubmit, reset } = useForm<{ messageText: string }>({
     defaultValues: { messageText: '' },
   });
+  // `useWatch` em vez de `watch()` no corpo: este re-renderizava o componente
+  // inteiro a cada tecla, levando junto o menu de anexos e a revisão. O hook
+  // isola a assinatura, e um único booleano substitui as quatro leituras.
+  const temTexto = Boolean(useWatch({ control, name: 'messageText' })?.trim());
   const [statusRecording, setStatusRecording] = useState<
     'idle' | 'recording' | 'paused' | 'stopped' | 'sending'
   >('idle');
@@ -118,7 +122,6 @@ export default function SendMessageBox() {
 
   const startRecording = async () => {
     try {
-      console.log('Iniciando gravação de áudio...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
@@ -164,7 +167,11 @@ export default function SendMessageBox() {
       mediaRecorder.start();
     } catch (err) {
       console.error('ERRO AO ACESSAR MICROFONE:', err);
-      alert('Não foi possível acessar o microfone');
+      Alerta(
+        'Verifique se o navegador tem permissão para usar o microfone.',
+        'Não foi possível acessar o microfone',
+        'warning',
+      );
     }
   };
 
@@ -189,7 +196,9 @@ export default function SendMessageBox() {
   const stopRecording = (): Promise<Blob> => {
     return new Promise((resolve) => {
       const recorder = mediaRecorderRef.current;
-      if (!recorder) return;
+      // Sem `resolve` aqui o `await` de quem chamou ficava pendurado para
+      // sempre; um blob vazio deixa o fluxo terminar e nada é enviado.
+      if (!recorder) return resolve(new Blob([], { type: 'audio/ogg' }));
 
       recorder.onstop = () => {
         const blob = new Blob(chunksRef.current, {
@@ -469,27 +478,19 @@ export default function SendMessageBox() {
             <button
               className={classNames(
                 {
-                  'border-none bg-primary-500 hover:bg-primary-600 ':
-                    watch('messageText')?.trim() !== '',
-                  'border-1 border-primary bg-transparent hover:bg-primary-50 ':
-                    watch('messageText')?.trim() === '',
+                  'border-none bg-primary-500 hover:bg-primary-600 ': temTexto,
+                  'border-1 border-primary bg-transparent hover:bg-primary-50 ': !temTexto,
                 },
                 'flex cursor-pointer justify-content-center align-items-center w-3rem h-3rem align-self-end border-circle ',
               )}
-              onClick={async () => {
-                if (watch('messageText')?.trim() === '') {
-                  // Lógica para gravação de áudio pode ser implementada aqui
-                  startRecording();
-                } else {
-                  handleSubmit(handleSendMessage)();
-                }
-              }}
+              // Campo vazio grava áudio; com texto, envia.
+              onClick={() => (temTexto ? handleSubmit(handleSendMessage)() : startRecording())}
             >
               <i
                 className={classNames(
                   {
-                    'fa-microphone text-primary': watch('messageText')?.trim() === '',
-                    'fa-send text-white': watch('messageText')?.trim() !== '',
+                    'fa-microphone text-primary': !temTexto,
+                    'fa-send text-white': temTexto,
                   },
                   'text-xl fa-regular ',
                 )}

@@ -92,10 +92,12 @@ const ConversationSection = () => {
   };
 
   const onChangeBreadcrumbs = (chatId: number) => {
-    let breadcrumbs: Breadcrumb[] = [
+    const breadcrumbs: Breadcrumb[] = [
       { labels: ['Dashboard', 'Atendimentos', 'Chat'], to: `/chat/${chatId}` },
     ];
-    setBreadcrumbs((prev) => [...prev, ...breadcrumbs]);
+    // Substitui em vez de concatenar: a trilha nomeia onde se está agora, e
+    // acumulando ela ganhava uma entrada repetida a cada troca de conversa.
+    setBreadcrumbs(breadcrumbs);
   };
 
   const getChatMessages = async (chatId: number) => {
@@ -125,7 +127,9 @@ const ConversationSection = () => {
         setActiveChat(null);
         setChatNotFound(true);
       }
-      console.log(err.response, err.response.status);
+      // Sem `response` em falha de rede, timeout ou CORS: ler `.status` direto
+      // lançava um TypeError dentro do próprio catch e engolia o erro real.
+      console.error('Falha ao carregar a conversa:', err?.response?.status ?? err);
     } finally {
       setLoadMessages(false);
     }
@@ -148,12 +152,23 @@ const ConversationSection = () => {
       }
     });
 
-    window.addEventListener('blur', () => changeWindowFocus(false));
-    window.addEventListener('focus', () => changeWindowFocus(true));
+    // As funções precisam ser nomeadas: `removeEventListener` compara por
+    // referência, e uma arrow nova no cleanup não removia nada. Como o efeito
+    // depende do socket, cada reconexão empilhava mais um par de handlers.
+    const aoDesfocar = () => changeWindowFocus(false);
+    const aoFocar = () => changeWindowFocus(true);
+
+    window.addEventListener('blur', aoDesfocar);
+    window.addEventListener('focus', aoFocar);
+
     return () => {
+      // `chat_state` também sai aqui: sem isso o `.off()` no início do efeito
+      // era a única proteção contra duplicar o handler — e handler duplicado
+      // toca o som de notificação duas vezes.
       socket.off('whatsapp:unread_count');
-      window.removeEventListener('blur', () => changeWindowFocus(false));
-      window.removeEventListener('focus', () => changeWindowFocus(true));
+      socket.off('whatsapp:chat_state');
+      window.removeEventListener('blur', aoDesfocar);
+      window.removeEventListener('focus', aoFocar);
     };
   }, [socket]);
 

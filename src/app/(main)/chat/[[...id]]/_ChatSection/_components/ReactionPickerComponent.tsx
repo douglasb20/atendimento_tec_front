@@ -48,7 +48,7 @@ const ReactionPickerComponent = ({ activeChat, bottomEl }: ReactionPickerProps) 
       reference: reactionState.anchorEl as HTMLElement,
     },
     open: reactionState.open,
-    placement: reactionState.message.from_me ? 'left-start' : 'right-start',
+    placement: reactionState.message?.from_me ? 'left-start' : 'right-start',
     middleware: [offset(8), flip(), shift({ padding: 10 })],
     whileElementsMounted: autoUpdate,
   });
@@ -71,10 +71,12 @@ const ReactionPickerComponent = ({ activeChat, bottomEl }: ReactionPickerProps) 
       );
 
       if (resp?.error) {
-        console.log('Erro ao enviar reação:', resp.message);
+        console.error('Erro ao enviar reação:', resp.message);
       }
     } catch (err) {
-      // console.log(err);
+      // A reação é acessória: falhar nela não interrompe o atendimento, mas
+      // sumir sem rastro deixava o problema invisível no diagnóstico.
+      console.error('Falha ao enviar reação:', err);
     }
   };
 

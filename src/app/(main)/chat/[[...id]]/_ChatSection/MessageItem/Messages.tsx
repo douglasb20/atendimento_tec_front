@@ -133,7 +133,6 @@ const Messages = () => {
         const message = data as SupportChatMessageResponse;
         setQuotedMessage(ModeQuoted.REPLY, message);
         SetScrollBottom();
-        console.log(message);
       },
     },
     {
@@ -211,12 +210,17 @@ const Messages = () => {
    * valer - inclusive o nome do arquivo.
    */
   const onDownload = async ({ source, mime_type, file_name }) => {
+    // Declarada fora do try para o `finally` alcançá-la: com a revogação no
+    // fim do bloco, uma falha entre a criação e ela deixava o blob retido na
+    // memória da aba — num vídeo grande, centenas de MB até o reload.
+    let url: string | null = null;
+
     try {
       const resposta = await fetch(source);
       if (!resposta.ok) throw new Error(`Falha ao baixar (HTTP ${resposta.status})`);
 
       const blob = await resposta.blob();
-      const url = URL.createObjectURL(blob);
+      url = URL.createObjectURL(blob);
 
       const link = document.createElement('a');
       link.href = url;
@@ -224,11 +228,10 @@ const Messages = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      // Sem revogar, o blob fica retido na memória da aba até recarregar.
-      URL.revokeObjectURL(url);
     } catch (error) {
       CatchAlerta(error, 'Não foi possível baixar o arquivo');
+    } finally {
+      if (url) URL.revokeObjectURL(url);
     }
   };
 
@@ -310,7 +313,7 @@ const Messages = () => {
       }
 
       scrollRef.current = el.scrollTop;
-    }, 50); // só executa 150ms depois do último scroll
+    }, 50); // só executa 50ms depois do último scroll
 
     el.addEventListener('scroll', handleScroll);
 
@@ -341,7 +344,6 @@ const Messages = () => {
             const conteudoMensagem = (
               <div
                 className={`w-full relative message-content flex-column flex ${messageClass}`}
-                key={msg.id}
                 id={msg.message_id}
               >
                 <div
@@ -369,7 +371,11 @@ const Messages = () => {
                       }
                       message={msg}
                       doAnimation={jaRolouAoFim.current}
-                      isLast={messages[messages.length - 1].id === msg.id}
+                      // Compara contra a lista que está sendo renderizada: a fila
+                      // entra em `mensagensNaTela` e não em `messages`, e numa
+                      // conversa nova esta última está vazia — `messages[-1].id`
+                      // estourava ao enviar a primeira mensagem.
+                      isLast={mensagensNaTela[mensagensNaTela.length - 1]?.id === msg.id}
                       activeChat={activeChat}
                     />
                     <ShowReactionMessageComponent message={msg} />
@@ -428,33 +434,39 @@ const Messages = () => {
               </div>
             );
 
-            // Fora do modo de seleção a linha extra nem existe — evita mexer no
-            // layout da conversa no uso normal.
-            if (!modoSelecao) return conteudoMensagem;
-
+            // O wrapper existe sempre, e só a coluna da checkbox é condicional:
+            // trocando a profundidade da árvore ao entrar e sair do modo de
+            // seleção, o React desmontava tudo e a mídia que estava tocando
+            // reiniciava do zero.
             return (
               <div
                 key={msg.id}
                 className={classNames(
                   'flex align-items-center gap-2 w-full border-round transition-colors transition-duration-150',
-                  selecionavel && 'cursor-pointer hover:surface-hover',
-                  marcada && 'surface-100',
+                  modoSelecao && selecionavel && 'cursor-pointer hover:surface-hover',
+                  modoSelecao && marcada && 'surface-100',
                 )}
                 // Clicar em qualquer ponto da linha marca, como no WhatsApp.
-                onClick={() => selecionavel && alternarSelecao(msg.message_id)}
+                onClick={
+                  modoSelecao && selecionavel
+                    ? () => alternarSelecao(msg.message_id)
+                    : undefined
+                }
               >
-                <div
-                  className="flex-shrink-0"
-                  style={{ width: '1.5rem' }}
-                >
-                  {selecionavel && (
-                    <Checkbox
-                      checked={marcada}
-                      onChange={() => alternarSelecao(msg.message_id)}
-                      aria-label={`Selecionar mensagem de ${msg.datetime}`}
-                    />
-                  )}
-                </div>
+                {modoSelecao && (
+                  <div
+                    className="flex-shrink-0"
+                    style={{ width: '1.5rem' }}
+                  >
+                    {selecionavel && (
+                      <Checkbox
+                        checked={marcada}
+                        onChange={() => alternarSelecao(msg.message_id)}
+                        aria-label={`Selecionar mensagem de ${msg.datetime}`}
+                      />
+                    )}
+                  </div>
+                )}
 
                 {conteudoMensagem}
               </div>

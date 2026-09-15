@@ -51,10 +51,12 @@ export default function ChatSection(props: ChatSectionProps) {
   }, []);
 
   const onChangeBreadcrumbs = () => {
-    let breadcrumbs: Breadcrumb[] = [
+    const breadcrumbs: Breadcrumb[] = [
       { labels: ['Dashboard', 'Atendimentos', 'Chat'], to: `/chat/${params?.id?.[0]}` },
     ];
-    setBreadcrumbs((prev) => [...prev, ...breadcrumbs]);
+    // Substitui em vez de concatenar: a trilha nomeia onde se está agora, e
+    // acumulando ela ganhava uma entrada repetida a cada troca de conversa.
+    setBreadcrumbs(breadcrumbs);
   };
 
   const loadConversationMessage = async () => {
@@ -67,7 +69,9 @@ export default function ChatSection(props: ChatSectionProps) {
         setActiveChat(null);
         setChatNotFound(true);
       }
-      console.log(err.response, err.response.status);
+      // Sem `response` em falha de rede, timeout ou CORS: ler `.status` direto
+      // lançava um TypeError dentro do próprio catch e engolia o erro real.
+      console.error('Falha ao carregar a conversa:', err?.response?.status ?? err);
     } finally {
       setLoadMessages(false);
     }

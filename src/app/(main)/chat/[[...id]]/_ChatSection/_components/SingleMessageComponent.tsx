@@ -119,12 +119,23 @@ const SingleMessageComponent = ({
 
   const InterpretedContent = useMemo(() => fixHeartEmoji(content), [content]);
 
+  /**
+   * Corpo de texto da bolha.
+   *
+   * Chamada como função (`DivWithEmoji()`), não montada como `<DivWithEmoji />`
+   * — e é de propósito: como componente, o React a trataria como um tipo novo a
+   * cada render e remontaria a subárvore, que é exatamente o problema descrito
+   * no `ComProgresso` acima. Chamada direta, o JSX é inserido no lugar.
+   *
+   * O conteúdo já vem do `InterpretedContent`, que aplica o `fixHeartEmoji` —
+   * ele acrescenta o seletor de variação ao `❤` cru, sem o qual o navegador o
+   * desenha como caractere de texto preto em vez de emoji. Aplicá-lo de novo
+   * aqui não era inofensivo: a função não é idempotente, e a segunda passada
+   * deixava um segundo seletor invisível grudado no emoji (`❤️️`).
+   */
   const DivWithEmoji = () => (
     <div>
-      <Interweave
-        // style={{ overflowWrap: 'anywhere' }}
-        content={fixHeartEmoji(InterpretedContent)}
-      />
+      <Interweave content={InterpretedContent} />
     </div>
   );
 

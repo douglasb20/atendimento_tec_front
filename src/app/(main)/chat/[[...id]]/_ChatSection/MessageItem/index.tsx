@@ -40,6 +40,11 @@ export default function MessageItem() {
   const apagarSelecionadas = async () => {
     setApagando(true);
 
+    // `messages` não contém os itens da fila de envio, e é de propósito: o que
+    // ainda não chegou ao provider não tem o que revogar nem ocultar. A lista
+    // já impede selecioná-los (`selecionavel` exclui `pending`), e o filtro
+    // aqui é a segunda barreira — se as duas divergirem, a contagem do aviso
+    // final é a que denuncia.
     const mensagens = messages.filter((m) => selecionadas.includes(m.message_id));
     const paraRevogar = mensagens.filter(podeApagar);
     const paraOcultar = mensagens.filter((m) => !podeApagar(m));
@@ -90,7 +95,9 @@ export default function MessageItem() {
 
     if (falhas > 0) {
       Alerta(
-        `${falhas} de ${selecionadas.length} não puderam ser apagadas.`,
+        // Conta sobre o que de fato foi tentado, não sobre o que estava
+        // marcado: os dois divergem se algo tiver sido filtrado acima.
+        `${falhas} de ${mensagens.length} não puderam ser apagadas.`,
         'Nem todas foram apagadas',
         'warning',
       );
@@ -137,6 +144,7 @@ export default function MessageItem() {
       },
     );
 
+    socket.off('whatsapp:message_ack');
     socket.on('whatsapp:message_ack', (message: SupportChatMessageResponse) => {
       if (String(activeChatRef.current?.id) !== String(message.support_chat_id)) return;
 
@@ -144,7 +152,10 @@ export default function MessageItem() {
     });
 
     return () => {
+      // Os dois saem juntos: `message_ack` ficava registrado após o cleanup, e
+      // o próximo efeito o duplicava — dois `updateMessage` por ack.
       socket.off('whatsapp:messages');
+      socket.off('whatsapp:message_ack');
     };
   }, [socket]);
 
