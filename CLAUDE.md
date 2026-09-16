@@ -35,6 +35,12 @@ compilação**. Consequências:
 (`atendecertoprevidencia`). O Next o lê automaticamente e ele pode mascarar
 valores em execuções sem `env-cmd`.
 
+O front **não** tem variável própria de sessão: a migração para cookies
+httpOnly pôs tudo no backend (`COOKIE_DOMAIN`, `ACCESS_JWT_EXPIRATION`,
+`REFRESH_JWT_EXPIRATION`). Aqui o que importa é `URL_ENDPOINT` apontar para a
+mesma origem que o `COOKIE_DOMAIN` do backend cobre — senão o navegador não
+devolve o cookie.
+
 ## Rotas
 
 Dois grupos: `(main)` para as páginas autenticadas (shell PrimeReact com sidebar
@@ -53,8 +59,8 @@ do `page.tsx`, como client component.
 
 `/relatorios` aparece no menu (`AppMenu.tsx`) mas a rota não existe.
 
-`/integracoes` cadastra as integrações de provider, que antes só existiam via
-API. O formulário tem duas particularidades: o campo de API Key **vem preenchido na
+`/integracoes` (menu **Configurações**, junto de Canais) cadastra as integrações
+de provider, que antes só existiam via API. O formulário tem duas particularidades: o campo de API Key **vem preenchido na
 edição**, por um endpoint à parte (`/:id/credenciais`, exigindo
 `integration:update`) e com botão de olho para alternar a exibição — a chave não
 vem na listagem, sai do banco só ao abrir a edição. Apagar o campo não limpa a
@@ -63,11 +69,16 @@ evita derrubar a integração por um apagão acidental. E o
 `webhook_url` é sugerido a partir de `URL_ENDPOINT` mas continua editável,
 porque o endereço certo depende de onde o provider roda.
 
+O **cadastro de canal** (`/canais`) tem a seleção de integração, com "Usar a
+integração padrão" como primeira opção — valor nulo, que é escolha legítima e
+precisa ser selecionável de volta. A listagem mostra "Padrão" em itálico para
+canais sem vínculo.
+
 ## Acesso à API
 
 Tudo passa por um registro único: o **`ListUrl`** em
-`src/service/Api/ApiClient.ts` — 46 entradas mapeando um nome em português para
-`{ url, method }`, com `{{placeholders}}` no path.
+`src/service/Api/ApiClient.ts` — pouco mais de 60 entradas mapeando um nome em
+português para `{ url, method }`, com `{{placeholders}}` no path.
 
 ```ts
 FetchReq<T>('ListarClientes')
@@ -96,8 +107,9 @@ O `ApiServer` importa o `ListUrl` do `ApiClient` mas **duplica o `AjeitaUrl`** �
 mantenha os dois em sincronia. Login e refresh não estão no `ListUrl`; são
 chamadas hardcoded.
 
-⚠️ `ApiServer.ts` tem um `console.log('API Request:', ...)` em toda chamada,
-**incluindo o body** — vaza payloads no log do servidor.
+⚠️ `ApiServer.ts:81` tem um `console.log('API Request:', ...)` em toda chamada,
+**incluindo o body** — vaza payloads no log do servidor. Passou a importar mais
+desde a tela de integrações: um POST ali carrega a API Key do provider.
 
 ## Autenticação
 
@@ -232,6 +244,14 @@ Limite de 512 MB — o teto do protocolo Baileys, não os 16 MB do WhatsApp Web.
 - Finalizar exige `contact.client_id`. Em vez de barrar com erro, o modal mostra
   um aviso inline com botão "Associar", que abre o modal de contato por cima.
 - `Esc` fecha a conversa — exceto com diálogo aberto ou foco em campo de texto.
+- A **animação de mensagem nova** exige três coisas, e cada uma resolve um
+  problema distinto: a mensagem não estava na tela quando a conversa abriu
+  (senão o histórico inteiro desfilaria), é a última da lista, e ainda não
+  animou. A terceira usa um registro compartilhado com a fila de envio
+  (`service/Outbox/jaAnimadas.ts`), porque a mensagem própria troca de
+  identidade no caminho — nasce com o id da fila (`envio-…`) e é substituída
+  pela definitiva, com o id do WhatsApp. Sem isso ela animava duas vezes; e sem
+  o controle de "já animou", a última bolha reanimava a cada ack.
 - O filtro de abas decide o grupo pelo **id** do status, não pela relação
   `supportChatStatus`: ela não vem nos payloads de webhook, e um grupo errado
   sumiria com a conversa da lista.
