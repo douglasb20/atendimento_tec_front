@@ -1,9 +1,7 @@
 'use client';
 import { createContext, useContext, useReducer } from 'react';
-import { parseCookies, setCookie, destroyCookie } from 'nookies';
-import { jwtDecode } from 'jwt-decode';
+import { parseCookies, destroyCookie } from 'nookies';
 import useApi from '@/service/Api/ApiClient';
-import { JWTToken } from '@/Interfaces';
 
 export const AuthContext = createContext({});
 
@@ -14,41 +12,34 @@ interface IAuthContext {
 
 export function AuthProvider({ children }) {
   const cookies = parseCookies();
-  const { apiLogin } = useApi();
+  const { apiLogin, apiLogout } = useApi();
 
   const login = async (email: string, password: string) => {
     try {
-      const { access_token, refresh_token } = await apiLogin(email, password);
-      const decodedToken = jwtDecode<JWTToken>(access_token);
-      const decodedRefresh = jwtDecode<Pick<JWTToken, 'exp'>>(refresh_token);
-
-      setCookie(null, 'token', access_token, {
-        maxAge: decodedToken.exp + 60 * 5 - Math.floor(Date.now() / 1000.0),
-        path: '/',
-      });
-      setCookie(null, 'refresh_token', refresh_token, {
-        maxAge: decodedRefresh.exp - Math.floor(Date.now() / 1000.0),
-        path: '/',
-      });
-      setCookie(null, 'expires_at', decodedToken.exp.toString(), {
-        maxAge: 20000,
-        path: '/',
-      });
-
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('expires_at', decodedToken.exp.toString());
+      // Nada de credencial no localStorage: as duas linhas que gravavam
+      // `token` e `expires_at` ali eram resíduo — ninguém as lia, e deixavam o
+      // access token num lugar a mais ao alcance de qualquer script da página.
+      await apiLogin(email, password);
     } catch (error) {
       throw error;
     }
   };
 
   const logout = async () => {
+    // Os cookies de sessão são httpOnly: `destroyCookie` não os alcança, só o
+    // servidor consegue apagá-los. A chamada vem primeiro — se ela falhar, a
+    // limpeza local ainda acontece e o usuário sai da aplicação de todo modo.
     try {
+      await apiLogout();
+    } catch (error) {
+      console.error('Falha ao encerrar a sessão no servidor:', error);
+    }
+
+    try {
+      // Os demais (userInfo, preferências) são legíveis e saem daqui.
       localStorage.clear();
       Object.keys(cookies).forEach((cookie) => {
-        destroyCookie({}, cookie, {
-          path: '/',
-        });
+        destroyCookie({}, cookie, { path: '/' });
       });
     } catch (error) {}
   };

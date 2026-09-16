@@ -9,6 +9,7 @@ export * from './channel.interface';
 export * from './contact.interface';
 export * from './client.interface';
 export * from './tag.interface';
+export * from './integration.interface';
 
 export enum Masks {
   DATEBR = '99/99/9999',

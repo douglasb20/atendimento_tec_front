@@ -1,4 +1,5 @@
 import { ItemFila, useOutboxStore } from '@/store/useOutboxStore';
+import { marcaComoAnimada } from './jaAnimadas';
 import { SignatureResponse } from '@/Interfaces';
 
 /**
@@ -149,8 +150,10 @@ async function executar(item: ItemFila, fetchReq: Requisicao): Promise<void> {
     // O upload já correu em paralelo, antes da vez na corrente.
     const mediaKey = item.mediaKey;
 
+    let enviada: EnvioResponse | undefined;
+
     if (item.tipo === 'texto') {
-      await fetchReq<EnvioResponse>({
+      enviada = await fetchReq<EnvioResponse>({
         endpoint: item.quotedMessageId ? 'SendReply' : 'SendMessage',
         body: {
           chat_id: item.chatId,
@@ -160,7 +163,7 @@ async function executar(item: ItemFila, fetchReq: Requisicao): Promise<void> {
         variables: [item.supportChatId],
       });
     } else {
-      await fetchReq<EnvioResponse>({
+      enviada = await fetchReq<EnvioResponse>({
         endpoint: 'SendMedia',
         body: {
           chat_id: item.chatId,
@@ -177,6 +180,10 @@ async function executar(item: ItemFila, fetchReq: Requisicao): Promise<void> {
     }
 
     arquivos.delete(item.id);
+
+    // A bolha otimista já apareceu com o id da fila; marcar o id definitivo
+    // evita que a mensagem anime de novo ao ser substituída pela do webhook.
+    marcaComoAnimada(enviada?.message_id);
 
     // Sai da fila assim que o backend confirma: a mensagem já está gravada lá e
     // chega à tela pelo webhook. Manter o item aqui exibiria duas bolhas - a

@@ -115,6 +115,40 @@
   touch-action: none;
 }
 
+/**
+ * Entrada da mensagem nova na conversa.
+ *
+ * Sobe poucos pixels em vez de deslizar de lado. O `fadeinright`/`fadeinleft` do
+ * PrimeFlex usa `translateX(100%)` — a bolha entra vindo de uma largura inteira
+ * dela mesma, então um "ok" dava um saltinho e um texto longo atravessava meia
+ * tela. Com deslocamento fixo, toda mensagem entra igual, independente do
+ * tamanho.
+ *
+ * `ease-out`: o movimento desacelera no fim, como o olho espera. O keyframe do
+ * PrimeFlex é `linear`, que lê como mecânico.
+ */
+@keyframes mensagem-entrando {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mensagem-entrando {
+  animation: mensagem-entrando 180ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+// Quem pediu para reduzir movimento no sistema recebe só o fade.
+@media (prefers-reduced-motion: reduce) {
+  .mensagem-entrando {
+    animation: none;
+  }
+}
+
 .text-clamp {
   display: -webkit-box;
   max-width: 600px;

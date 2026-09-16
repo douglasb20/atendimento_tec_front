@@ -119,8 +119,27 @@ const Messages = () => {
    * re-render para todos os componentes que a assinam - e, por descer como
    * prop até cada bolha, invalidava qualquer memoização. Como só este
    * componente precisa do valor, um ref basta e não dispara renderização.
+   *
+   * Serve **só** ao scroll. A animação das bolhas não pode depender dela: é
+   * escrita num `useLayoutEffect`, depois do render, então a primeira mensagem
+   * enviada era renderizada com o valor ainda `false` e entrava sem animação —
+   * só a versão definitiva, vinda do webhook, aparecia animada.
    */
   const jaRolouAoFim = useRef(false);
+
+  /**
+   * Ids das mensagens que já estavam na tela quando a conversa abriu.
+   *
+   * O histórico não deve animar — desfilaria inteiro na frente do atendente. O
+   * que chega depois, sim. Comparar contra este conjunto responde isso sem
+   * depender de quando o efeito de scroll rodou, e vale igual para a bolha
+   * otimista e para a definitiva.
+   */
+  const idsIniciais = useRef<Set<string> | null>(null);
+
+  if (idsIniciais.current === null && (messages?.length || !loadMessages)) {
+    idsIniciais.current = new Set((messages ?? []).map((m) => String(m.id)));
+  }
 
   const [mensagemEditando, setMensagemEditando] = useState<SupportChatMessageResponse | null>(null);
 
@@ -281,6 +300,9 @@ const Messages = () => {
   useLayoutEffect(() => {
     jaRolouAoFim.current = false;
     estavaNoFim.current = true;
+    // `null` e não `new Set()`: o bloco acima o preenche no próximo render, já
+    // com as mensagens da conversa nova carregadas.
+    idsIniciais.current = null;
   }, [activeChat?.id]);
 
   useLayoutEffect(() => {
@@ -370,7 +392,10 @@ const Messages = () => {
                         msg.has_quoted ? indicePorId.get(msg.quoted_msg_id) : undefined
                       }
                       message={msg}
-                      doAnimation={jaRolouAoFim.current}
+                      // Anima o que chegou depois de a conversa abrir. Antes
+                      // vinha de `jaRolouAoFim`, que só era escrita após o
+                      // render — e a primeira mensagem enviada não animava.
+                      doAnimation={!idsIniciais.current?.has(String(msg.id))}
                       // Compara contra a lista que está sendo renderizada: a fila
                       // entra em `mensagensNaTela` e não em `messages`, e numa
                       // conversa nova esta última está vazia — `messages[-1].id`

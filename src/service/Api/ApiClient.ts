@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { parseCookies, setCookie } from 'nookies';
-import { jwtDecode } from 'jwt-decode';
-import { ILoginResp, JWTToken } from '@/Interfaces';
+import { parseCookies } from 'nookies';
+import { ILoginResp } from '@/Interfaces';
 
 const url = process.env.URL_ENDPOINT;
 
@@ -16,6 +15,18 @@ export const ListUrl = {
   AdicionarTag: { url: '/tags', method: 'POST' },
   AtualizarTag: { url: '/tags/{{tag_id}}', method: 'PATCH' },
   RemoverTag: { url: '/tags/{{tag_id}}', method: 'DELETE' },
+
+  ListarIntegracoes: { url: '/integrations', method: 'GET' },
+  BuscarIntegracao: { url: '/integrations/{{integration_id}}', method: 'GET' },
+  AdicionarIntegracao: { url: '/integrations', method: 'POST' },
+  AtualizarIntegracao: { url: '/integrations/{{integration_id}}', method: 'PATCH' },
+  RemoverIntegracao: { url: '/integrations/{{integration_id}}', method: 'DELETE' },
+  ListarProvidersIntegracao: { url: '/integrations/providers', method: 'GET' },
+  TestarConexaoIntegracao: { url: '/integrations/testar-conexao', method: 'POST' },
+  RevelarCredenciaisIntegracao: {
+    url: '/integrations/{{integration_id}}/credenciais',
+    method: 'GET',
+  },
   AtualizarTagsCliente: { url: '/clients/{{client_id}}/tags', method: 'PATCH' },
 
   BuscarContatoClientId: { url: '/clients/{{client_id}}/contact', method: 'GET' },
@@ -116,6 +127,10 @@ export default function ApiClient() {
 
   const req = axios.create({
     baseURL: url,
+    // Os tokens são cookies httpOnly: o JavaScript não os lê, e é o navegador
+    // que os anexa. Sem isto ele não os envia em requisição cross-origin — e em
+    // produção front e API estão em subdomínios distintos.
+    withCredentials: true,
   });
 
   const apiLogin = async (email: string, password: string): Promise<ILoginResp> => {
@@ -129,76 +144,53 @@ export default function ApiClient() {
     });
   };
 
-  const apiRefreshToken = async (refreshToken: string): Promise<ILoginResp> => {
-    return new Promise<ILoginResp>(async (res, rej) => {
-      try {
-        const { data } = await req.post<ILoginResp>('/auth/refresh', { refreshToken });
-        res(data);
-      } catch (error) {
-        rej(error);
-      }
-    });
+  /** Encerra a sessão: só o servidor apaga um cookie httpOnly. */
+  const apiLogout = async (): Promise<void> => {
+    await req.post('/auth/logout', {});
   };
 
-  const UpdateToken = async (refreshToken: string) => {
-    const { access_token, refresh_token } = await apiRefreshToken(refreshToken);
-    const decodedToken = jwtDecode<JWTToken>(access_token);
-    const decodedRefresh = jwtDecode<Pick<JWTToken, 'exp'>>(refresh_token);
-
-    setCookie(null, 'token', access_token, {
-      maxAge: decodedToken.exp + 60 * 5 - Math.floor(Date.now() / 1000.0),
-      path: '/',
-    });
-    setCookie(null, 'refresh_token', refresh_token, {
-      maxAge: decodedRefresh.exp - Math.floor(Date.now() / 1000.0),
-      path: '/',
-    });
-    setCookie(null, 'expires_at', decodedToken.exp.toString(), {
-      maxAge: 20000,
-      path: '/',
-    });
-
-    return access_token;
+  /**
+   * Renova a sessão. O refresh vai no cookie httpOnly — não há o que enviar no
+   * corpo, e a resposta traz só o novo `expires_at`; os cookies vêm no
+   * `Set-Cookie` da própria resposta.
+   */
+  const apiRefreshToken = async (): Promise<{ expires_at: number }> => {
+    const { data } = await req.post<{ expires_at: number }>('/auth/refresh', {});
+    return data;
   };
 
-  const ValidateToken = async (): Promise<string> => {
-    return new Promise(async (res) => {
-      const cookiesStore = parseCookies(null);
-      const refreshToken = cookiesStore['refresh_token'];
-      const now = Math.floor(new Date().getTime() / 1000.0);
-      const expires_at = cookiesStore['expires_at'];
-      const token = cookiesStore['token'];
+  /** Manda para o logout e devolve uma promise que nunca resolve: a navegação
+   *  já está a caminho, e resolver faria a requisição seguir sem sessão. */
+  const encerraSessao = (): Promise<void> => {
+    window.location.href = '/auth/logout';
+    return new Promise<void>(() => {});
+  };
 
-      if (!token) {
-        const refreshDecoded = jwtDecode<Pick<JWTToken, 'exp'>>(refreshToken);
-        if (Number(refreshDecoded.exp) >= now) {
-          try {
-            const newToken = await UpdateToken(refreshToken);
-            res(newToken);
-          } catch (err) {
-            window.location.href = '/auth/logout';
-          }
-        }
-      } else {
-        if (Number(expires_at) < now) {
-          if (refreshToken) {
-            const refreshDecoded = jwtDecode<Pick<JWTToken, 'exp'>>(refreshToken);
-            if (Number(refreshDecoded.exp) >= now) {
-              try {
-                const newToken = await UpdateToken(refreshToken);
-                res(newToken);
-              } catch (err) {
-                console.log('erro', err.message);
-                // window.location.href = "/auth/logout";
-              }
-            }
-          } else {
-            window.location.href = '/auth/logout';
-          }
-        }
-        res(token);
-      }
-    });
+  /**
+   * Garante uma sessão válida antes da requisição, renovando se o access venceu.
+   *
+   * Desde que os tokens viraram cookies httpOnly, esta função não devolve nem
+   * lê token nenhum: ela só decide *se* precisa renovar, olhando o `expires_at`
+   * — o único cookie legível, e que carrega apenas um timestamp. Quem envia as
+   * credenciais é o navegador.
+   */
+  const ValidateToken = async (): Promise<void> => {
+    const expiresAt = Number(parseCookies(null)['expires_at']);
+    const now = Math.floor(Date.now() / 1000);
+
+    // Ausente ou ilegível conta como expirado: antes virava `NaN`, e como
+    // `NaN < now` é `false` a renovação era pulada — o pedido seguia com um
+    // access morto enquanto o refresh, válido, ficava sem uso.
+    const precisaRenovar = !Number.isFinite(expiresAt) || expiresAt < now;
+    if (!precisaRenovar) return;
+
+    try {
+      await apiRefreshToken();
+    } catch (err) {
+      // Refresh recusado ou expirado: não há como recuperar a sessão daqui.
+      console.error('Falha ao renovar a sessão:', err);
+      return encerraSessao();
+    }
   };
 
   /**
@@ -218,7 +210,10 @@ export default function ApiClient() {
       props = { endpoint: props, body: null, variables: vars };
     }
 
-    const validatedToken = await ValidateToken();
+    // Renova antes de enviar, se o access já venceu. Não devolve mais o token:
+    // com httpOnly não há o que ler nem o que pôr no header — o cookie
+    // renovado vai sozinho na requisição abaixo.
+    await ValidateToken();
 
     const { endpoint, body, variables } = props;
     const newUrl = AjeitaUrl(ListUrl[endpoint].url, variables);
@@ -227,7 +222,6 @@ export default function ApiClient() {
       url: newUrl,
       method: ListUrl[endpoint].method,
       data: ListUrl[endpoint].method === 'GET' ? null : body,
-      headers: { Authorization: 'Bearer ' + validatedToken },
     });
 
     return data;
@@ -236,6 +230,7 @@ export default function ApiClient() {
   return {
     req,
     apiLogin,
+    apiLogout,
     apiRefreshToken,
     FetchReq,
     token,

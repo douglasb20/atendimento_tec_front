@@ -12,6 +12,9 @@ export type ChannelResponse = {
   updated_at: string | null;
   deleted_at: string | null;
   channelStatus: ChannelStatus;
+  /** Nulo significa "usa a integração padrão". */
+  integration_id: number | null;
+  integration?: { id: number; name: string } | null;
 };
 
 type ChannelStatus = {

@@ -39,15 +39,24 @@ export default async function ApiService() {
     headers: { Authorization: 'Bearer ' + token },
   });
 
-  const apiRefreshToken = async (refreshToken: string): Promise<ILoginResp> => {
-    return new Promise<ILoginResp>(async (res, rej) => {
-      try {
-        const { data } = await req.post<ILoginResp>('/auth/refresh', { refreshToken });
-        res(data);
-      } catch (error) {
-        rej(error);
-      }
-    });
+  /**
+   * Renova a sessão e devolve os `Set-Cookie` emitidos pela API.
+   *
+   * Os tokens são httpOnly e quem os emite é o backend; o chamador (o
+   * middleware) precisa repassar esses cabeçalhos ao navegador, senão a
+   * renovação acontece no servidor e o cliente nunca recebe os cookies novos.
+   *
+   * O refresh vai no cabeçalho `Cookie` porque o axios do servidor não
+   * compartilha o cookie jar do navegador — aqui ele é montado à mão.
+   */
+  const apiRefreshToken = async (refreshToken: string): Promise<string[]> => {
+    const resposta = await req.post<ILoginResp>(
+      '/auth/refresh',
+      {},
+      { headers: { Cookie: `refresh_token=${refreshToken}` } },
+    );
+
+    return resposta.headers['set-cookie'] ?? [];
   };
 
   /**

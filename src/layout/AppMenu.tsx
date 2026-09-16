@@ -30,12 +30,6 @@ const AppMenu = () => {
           ],
         },
         {
-          label: 'Canais',
-          // @ts-ignore
-          icon: `fa fa-plug text-2xl font-light text-center`,
-          to: '/canais',
-        },
-        {
           label: 'Relatórios',
           icon: `${PrimeIcons.BOOK} pi-fw`,
           to: '/relatorios',
@@ -67,6 +61,27 @@ const AppMenu = () => {
           // @ts-ignore
           icon: `${PrimeIcons.ADDRESS_BOOK} pi-fw`,
           to: '/usuarios',
+        },
+        {
+          // No fim da lista: é o que se mexe ao montar o ambiente, não no dia a
+          // dia do atendimento. Canais e integrações andam juntos — cada canal
+          // aponta para uma integração.
+          label: 'Configurações',
+          icon: `${PrimeIcons.COG} pi-fw`,
+          items: [
+            {
+              label: 'Canais',
+              // @ts-ignore
+              icon: `fa fa-plug text-2xl font-light text-center`,
+              to: '/canais',
+            },
+            {
+              label: 'Integrações',
+              // @ts-ignore
+              icon: `fa fa-puzzle-piece text-2xl font-light text-center`,
+              to: '/integracoes',
+            },
+          ],
         },
       ],
     },

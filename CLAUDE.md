@@ -53,6 +53,16 @@ do `page.tsx`, como client component.
 
 `/relatorios` aparece no menu (`AppMenu.tsx`) mas a rota não existe.
 
+`/integracoes` cadastra as integrações de provider, que antes só existiam via
+API. O formulário tem duas particularidades: o campo de API Key **vem preenchido na
+edição**, por um endpoint à parte (`/:id/credenciais`, exigindo
+`integration:update`) e com botão de olho para alternar a exibição — a chave não
+vem na listagem, sai do banco só ao abrir a edição. Apagar o campo não limpa a
+credencial: o backend preserva a gravada quando `credentials` é omitido, o que
+evita derrubar a integração por um apagão acidental. E o
+`webhook_url` é sugerido a partir de `URL_ENDPOINT` mas continua editável,
+porque o endereço certo depende de onde o provider roda.
+
 ## Acesso à API
 
 Tudo passa por um registro único: o **`ListUrl`** em
@@ -91,22 +101,42 @@ chamadas hardcoded.
 
 ## Autenticação
 
-Quatro cookies, todos setados pelo cliente e portanto **não httpOnly**: `token`,
-`refresh_token`, `expires_at`, `userInfo` (este último traz `permissions[]`).
+Quatro cookies. Os dois que importam são **`httpOnly`, gravados pelo backend**:
+`token` e `refresh_token` — nenhum JavaScript da página os alcança, e é o
+navegador que os envia em toda requisição. Os outros dois são legíveis:
+`expires_at` (só um timestamp, usado para decidir quando renovar) e `userInfo`
+(traz `permissions[]`).
 
-O `src/middleware.ts` protege toda rota não pública (lista em `src/constants`),
-renova access tokens expirados, hidrata o `userInfo` e manda para
-`/auth/logout` em caso de falha.
+**Nada de credencial no `localStorage`.** O que sobra ali é a fila de envio
+(`useOutboxStore`, via `persist`) — rascunhos de mensagem, que precisam
+sobreviver ao reload.
 
-⚠️ **A lógica de refresh existe em três lugares** — `middleware.ts`,
-`ApiClient.ValidateToken` e `AuthContext.login` — com fórmulas de `maxAge`
-**divergentes** entre si. Qualquer mudança no contrato dos cookies precisa mexer
-nos três.
+O que isso implica em cada camada:
 
-Duas falhas conhecidas nesse caminho: em `ApiClient.ts`, quando não há `token` e
-o refresh está expirado, a promise **nunca resolve** (não há `res()` nem `rej()`
-naquele ramo) e a requisição pendura; e o redirect para logout está comentado,
-então a falha vira um `console.log` e segue com o token velho.
+| | Como autentica |
+|---|---|
+| `ApiClient` (browser) | `withCredentials: true`; **sem** header `Authorization` — não há token legível para montá-lo |
+| `ApiServer` (servidor) | lê o cookie via `next/headers` e monta o Bearer; `httpOnly` não afeta o servidor |
+| `middleware` | repassa ao navegador os `Set-Cookie` que a API emitiu no refresh |
+| Socket.IO | `withCredentials: true`; o gateway extrai o token de `handshake.headers.cookie` |
+
+⚠️ **O logout precisa chamar `POST /auth/logout`** — `destroyCookie` não apaga
+cookie `httpOnly`; só o servidor consegue.
+
+⚠️ `withCredentials` **envia** cookies httpOnly normalmente. O que o `httpOnly`
+bloqueia é o `document.cookie` do JavaScript **ler** o valor, não o navegador
+enviá-lo.
+
+**Validades:** access 30min, refresh 30 dias. O access é curto porque não é
+revogável; o refresh é longo porque rotaciona a cada uso e fica em
+`user_refresh_tokens`, revogável pelo banco.
+
+Isso resolveu o portal deslogar sozinho. A causa era o cookie `expires_at` com
+`maxAge: 20000` (5h33) cravado enquanto o refresh valia 8h: expirado o cookie, o
+middleware lia `undefined`, `Number(undefined) < now` dava `NaN < now` → `false`,
+e ele **pulava a renovação**, seguindo com um access morto enquanto o refresh
+ainda era válido. Havia três fórmulas de `maxAge` divergentes entre login,
+`ApiClient` e middleware; hoje quem grava é só o backend.
 
 ## Estado do chat
 
@@ -160,9 +190,10 @@ Eventos escutados: `whatsapp:unread_count` e `whatsapp:chat_state`
 `canais/DadosCanaisSection/index.tsx` — com opções diferentes (sem forçar
 websocket). Convergir para a store é trabalho pendente.
 
-⚠️ Os cleanups de listener são incompletos: `whatsapp:message_ack` e
-`whatsapp:chat_state` nunca são removidos, e os `removeEventListener` de
-`blur`/`focus` em `Conversation` usam arrow functions novas — não removem nada.
+Os cleanups de listener foram corrigidos (`message_ack` e `chat_state` saem no
+unmount; `blur`/`focus` usam funções nomeadas). Antes, cada reconexão do socket
+empilhava um par de handlers de foco, e o som de notificação chegava a tocar
+duplicado.
 
 ⚠️ O token do socket é lido uma vez no `connect()` e **não é revalidado**.
 
@@ -255,13 +286,9 @@ type-check.
   no backend. Há TODO explícito no arquivo.
 - `/dashboard/page.tsx` faz `JSON.parse` do cookie `userInfo` sem guard — lança
   se o cookie faltar.
-- Dois `catch (err) {}` vazios no middleware.
 - Resíduos do Pages Router: `Login.getLayout`, um `<Head>` do `next/head` dentro
   do `LayoutProvider` com metatags do template original.
-- `@fullcalendar/*` (4 pacotes) sem uso; `useLocalStorage`/`useSessionStorage`
-  sem consumidores.
-- `console.log` de debug ativos em `Messages.tsx`, `SendMessageBox.tsx`,
-  `Conversation/index.tsx`, `_ChatSection/index.tsx`.
+- `@fullcalendar/*` (4 pacotes) sem uso.
 - Typo no nome do arquivo: `src/Interfaces/suport-chat.interface.ts`.
 - ESLint desligado no build (`ignoreDuringBuilds`) por um bug de ESLint 9 com o
   `.eslintrc.js` legado — migrar para flat config resolveria.

@@ -1,6 +1,5 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { parseCookies } from 'nookies';
 import { PrimeIcons } from 'primereact/api';
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
@@ -248,16 +247,14 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   }, [searchParams]);
 
   useEffect(() => {
-    const cookiesStore = parseCookies(null);
-    const token = cookiesStore['token'];
     // Mesma origem do `socketSlice`: cravar a URL aqui funcionava só em
     // desenvolvimento — em produção o QR nunca chegaria, porque é por este
     // socket que vem o `whatsapp:channel_status`.
     const socket = io(process.env.WEBSOCKET_HOST || '', {
       autoConnect: false, // Impede a conexão automática na inicialização
-      auth: {
-        token,
-      },
+      // O token é cookie httpOnly e o JS não o lê; o navegador o envia no
+      // handshake por causa do `withCredentials`.
+      withCredentials: true,
     });
     // socketRef.current = socket;
 

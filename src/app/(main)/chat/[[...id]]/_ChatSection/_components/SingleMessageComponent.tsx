@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 import { isEqual, parseISO, startOfDay } from 'date-fns';
 import { Image } from 'primereact/image';
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -8,6 +8,7 @@ import Interweave from '@/components/Interweave';
 import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
 import { DateToBR, fixHeartEmoji } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
+import { jaAnimou, marcaComoAnimada } from '@/service/Outbox/jaAnimadas';
 import QuotedMessageItem from './QuotedMessageItem';
 
 type SingleMessageComponentProps = {
@@ -120,6 +121,46 @@ const SingleMessageComponent = ({
   const InterpretedContent = useMemo(() => fixHeartEmoji(content), [content]);
 
   /**
+   * Anima **uma vez** por mensagem, e só na que acabou de chegar.
+   *
+   * Três coisas precisam ser verdade, e cada uma resolve um jeito diferente de
+   * a animação sair errada:
+   *
+   * - `doAnimation` — a mensagem não estava na tela quando a conversa abriu.
+   *   Sem isso o histórico inteiro desfilaria a cada abertura.
+   * - `isLast` — só a última bolha entra; as de cima já estão posicionadas.
+   * - o registro de já animadas — a última bolha volta a renderizar a cada ack
+   *   (enviado → entregue → lido), reação e edição, e sem este controle a
+   *   classe era reaplicada sobre o mesmo nó, reiniciando o CSS. A mensagem
+   *   recém-enviada se mexia três vezes, em intervalos irregulares.
+   *
+   * O registro é compartilhado com a fila de envio (`service/Outbox`) porque a
+   * mensagem própria troca de identidade no meio do caminho: aparece com o id
+   * da fila (`envio-…`) e é substituída pela definitiva, com o id do WhatsApp.
+   * A fila marca o id definitivo ao confirmar, então a substituição não conta
+   * como bolha nova.
+   */
+  // Guarda local além do registro compartilhado: `marcaComoAnimada` só corre no
+  // efeito, e sem isto um re-render entre o render e o efeito reavaliaria
+  // `animar` como verdadeiro. Guarda o **id**, não um booleano: a instância do
+  // componente é reaproveitada quando a bolha otimista vira definitiva, e um
+  // `true` cru bloquearia a animação da mensagem seguinte.
+  const animouLocal = useRef<string | null>(null);
+
+  const animar =
+    doAnimation &&
+    isLast &&
+    animouLocal.current !== message.message_id &&
+    !jaAnimou(message.message_id);
+
+  useEffect(() => {
+    if (animar) {
+      animouLocal.current = message.message_id;
+      marcaComoAnimada(message.message_id);
+    }
+  }, [animar, message.message_id]);
+
+  /**
    * Corpo de texto da bolha.
    *
    * Chamada como função (`DivWithEmoji()`), não montada como `<DivWithEmoji />`
@@ -152,11 +193,8 @@ const SingleMessageComponent = ({
   return (
     <div
       className={classNames(
-        `relative animation-duration-200 w-auto border-1 p-2 mb-1 border-round-lg message-item-${from_me ? 'from-me' : 'from-them'} ${messageClass}`,
-        {
-          fadeinright: doAnimation && isLast && from_me,
-          fadeinleft: doAnimation && isLast && !from_me,
-        },
+        `relative w-auto border-1 p-2 mb-1 border-round-lg message-item-${from_me ? 'from-me' : 'from-them'} ${messageClass}`,
+        { 'mensagem-entrando': animar },
       )}
       style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
     >

@@ -1,6 +1,5 @@
 import { io } from 'socket.io-client';
 import type { StateCreator } from 'zustand';
-import { parseCookies } from 'nookies';
 import { SocketSlice, MessageSlice, ChatSlice } from '@/Interfaces';
 
 export const createSocketSlice: StateCreator<
@@ -18,11 +17,12 @@ export const createSocketSlice: StateCreator<
     if (atual?.connected) return;
     atual?.disconnect();
 
-    const token = parseCookies(null)['token'];
-
     const socket = io(process.env.WEBSOCKET_HOST || '', {
       autoConnect: false,
-      auth: { token },
+      // O token não vai mais em `auth`: é um cookie httpOnly, que o JavaScript
+      // não consegue ler. Com `withCredentials` o navegador o envia no
+      // handshake, e o gateway o extrai do cabeçalho `Cookie`.
+      withCredentials: true,
       // Vai direto a WebSocket em vez de começar em long-polling e migrar.
       // O padrão do Socket.IO é `['polling', 'websocket']`, e o polling mantém
       // um ciclo de requisições HTTP abertas - visível no Network como várias

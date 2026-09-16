@@ -26,83 +26,82 @@ export async function middleware(request: NextRequest) {
   const expires_at = cookies.get('expires_at')?.value;
   const now = Math.floor(new Date().getTime() / 1000.0);
 
-  const UpdateToken = async () => {
-    const { access_token, refresh_token } = await apiRefreshToken(refresh);
-    const newRefreshTokenDecoded = jwtDecode<Pick<JWTToken, 'exp'>>(refresh_token);
-    const newAccessTokenDecoded = jwtDecode<JWTToken>(access_token);
+  const paraLogout = () => NextResponse.redirect(new URL('/auth/logout', request.url));
 
-    cookies.set({
-      name: 'token',
-      value: access_token,
-      maxAge: Number(newAccessTokenDecoded.exp) - Math.floor(Date.now() / 1000.0),
-      path: '/',
-    });
-    cookies.set({
-      name: 'refresh_token',
-      value: refresh_token,
-      maxAge: Number(newRefreshTokenDecoded.exp) - Math.floor(Date.now() / 1000.0),
-      path: '/',
-    });
-    cookies.set({
-      name: 'expires_at',
-      value: newAccessTokenDecoded.exp.toString(),
-      maxAge: Number(newRefreshTokenDecoded.exp) - Math.floor(Date.now() / 1000.0),
-      path: '/',
-    });
-    return true;
+  /**
+   * Tenta renovar a sessão e seguir para a rota pedida.
+   *
+   * Os tokens são cookies **httpOnly**, emitidos pelo backend — o middleware
+   * não os grava, apenas repassa ao navegador os `Set-Cookie` que a API
+   * devolveu. Sem esse repasse a renovação ficaria só no servidor e o cliente
+   * continuaria com os cookies velhos.
+   *
+   * Devolve `null` quando não há como renovar, para o chamador decidir.
+   */
+  const tentaRenovar = async (): Promise<NextResponse | null> => {
+    if (!refresh) return null;
+
+    // Refresh ilegível (cookie corrompido) equivale a não ter refresh.
+    let refreshExp: number;
+    try {
+      refreshExp = Number(jwtDecode<Pick<JWTToken, 'exp'>>(refresh).exp);
+    } catch {
+      return null;
+    }
+
+    if (!Number.isFinite(refreshExp) || refreshExp < now) return null;
+
+    try {
+      const setCookies = await apiRefreshToken(refresh);
+      if (!setCookies.length) return null;
+
+      const resposta = NextResponse.redirect(new URL(request.url, request.url));
+      // `append`, não `set`: são três cookies em cabeçalhos separados, e
+      // concatená-los numa string só faria o navegador recusar todos.
+      for (const cookie of setCookies) {
+        resposta.headers.append('set-cookie', cookie);
+      }
+      return resposta;
+    } catch (err) {
+      // O log é o que distingue refresh recusado de API fora do ar — antes
+      // este catch era vazio e a falha sumia sem rastro.
+      console.error('Falha ao renovar a sessão no middleware:', err);
+      return null;
+    }
   };
 
-  // Verifica se a roda que está passando é publica
-  if (!isPublicRoute(path)) {
-    // verifica se está autenticado,
-    // se não tiver, redireciona para tela de login
-    if (!autenticado) {
-      if (refresh) {
-        const refreshDecoded = jwtDecode<Pick<JWTToken, 'exp'>>(refresh);
-        if (Number(refreshDecoded.exp) >= now) {
-          try {
-            const updated = await UpdateToken();
-            if (updated) {
-              return NextResponse.redirect(new URL(request.url, request.url));
-            }
-          } catch (err) {}
-        }
-      }
-      return NextResponse.redirect(new URL('/auth/logout', request.url));
-    } else {
-      // verifica se o token expirou
-      // se tiver expirado, valida o refresh token
-      if (Number(expires_at) < now) {
-        if (refresh) {
-          const refreshDecoded = jwtDecode<Pick<JWTToken, 'exp'>>(refresh);
-          if (Number(refreshDecoded.exp) >= now) {
-            try {
-              const updated = await UpdateToken();
-              if (updated) {
-                return NextResponse.redirect(new URL(request.url, request.url));
-              }
-            } catch (err) {}
-          }
-        }
-        return NextResponse.redirect(new URL('/auth/logout', request.url));
-      }
-      if (!userInfo) {
-        try {
-          await getUserInfo();
-          // Redireciona para a mesma URL para que a nova requisição contenha o cookie 'userInfo'
-          return NextResponse.redirect(new URL(request.url));
-        } catch (err) {
-          // Se houver erro ao buscar userInfo, deslogar o usuário
-          console.error('Failed to get user info:', err);
-          return NextResponse.redirect(new URL('/auth/logout', request.url));
-        }
-      }
-    }
-  } else {
-    // Caso tiver ir para a tela de login e tiver autenticado
-    // irá redirecionar para a tela principal
+  if (isPublicRoute(path)) {
+    // Já autenticado não precisa ver a tela de login.
     if (path.startsWith('/auth/login') && autenticado) {
       return NextResponse.redirect(new URL('/', request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Sem o cookie de access: só o refresh pode recuperar a sessão.
+  if (!autenticado) {
+    return (await tentaRenovar()) ?? paraLogout();
+  }
+
+  // Ausente conta como expirado: `Number(undefined)` é `NaN`, e como
+  // `NaN < now` é `false` o middleware pulava a renovação e seguia com um
+  // access morto — era a causa de o portal cair mesmo com refresh válido.
+  const accessExpirado =
+    !expires_at || !Number.isFinite(Number(expires_at)) || Number(expires_at) < now;
+
+  if (accessExpirado) {
+    return (await tentaRenovar()) ?? paraLogout();
+  }
+
+  if (!userInfo) {
+    try {
+      await getUserInfo();
+      // Redireciona para a mesma URL para que a nova requisição já leve o
+      // cookie `userInfo`.
+      return NextResponse.redirect(new URL(request.url));
+    } catch (err) {
+      console.error('Failed to get user info:', err);
+      return paraLogout();
     }
   }
 
