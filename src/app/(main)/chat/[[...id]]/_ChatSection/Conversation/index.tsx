@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { format, isToday, parseISO } from 'date-fns';
 
+import Avatar from '@/components/Avatar';
 import Interweave from '@/components/Interweave';
 import { SupportChatsResponse } from '@/Interfaces';
 import { useLayoutStore } from '@/layout/context/layoutcontext';
@@ -226,11 +227,16 @@ const ConversationSection = () => {
               }}
             >
               <div className="relative flex flex-none">
-                <img
-                  src={conversation?.contact?.avatar_url || '/images/avatar/avatar-noprofile.png'}
+                {/* `Avatar`, e não um `<img>` cru: a foto vem do
+                    `pps.whatsapp.net`, com assinatura que vence. Quando a URL
+                    existe mas não carrega, o `||` não socorre — só o `onError`
+                    do componente troca pelo padrão. Sem ele ficava o buraco
+                    circular que parecia um avatar genérico. */}
+                <Avatar
+                  src={conversation?.contact?.avatar_url}
+                  alt={conversation?.contact?.name ?? 'Contato'}
                   width={48}
                   height={48}
-                  alt={conversation?.contact?.name}
                   className="border-circle"
                   style={{ objectFit: 'cover' }}
                 />

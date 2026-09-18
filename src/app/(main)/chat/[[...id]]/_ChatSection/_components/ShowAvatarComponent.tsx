@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
-import { Image } from 'primereact/image';
+import Avatar from '@/components/Avatar';
 
 type ShowAvatarComponentProps = {
   message: SupportChatMessageResponse;
@@ -8,20 +8,23 @@ type ShowAvatarComponentProps = {
 };
 
 const ShowAvatarComponent = ({ message, activeChat }: ShowAvatarComponentProps) => {
-  let avatarUrl = '/images/avatar/avatar-noprofile.png';
+  // `undefined` em vez do caminho padrão: o `Avatar` já resolve a ausência, e
+  // deixar isso com ele é o que garante o mesmo desfecho quando a URL existe
+  // mas falha ao carregar — o caso comum, já que a foto vem do WhatsApp com
+  // assinatura de validade.
+  const avatarUrl = message.from_me
+    ? activeChat?.user?.avatar_url
+    : activeChat?.contact?.avatar_url;
 
-  if (message.from_me && activeChat?.user?.avatar_url) {
-    avatarUrl = activeChat.user.avatar_url;
-  } else if (!message.from_me && activeChat?.contact?.avatar_url) {
-    avatarUrl = activeChat.contact.avatar_url;
-  }
   return (
     <div className="mx-2 overflow-hidden flex flex-none justify-content-center align-items-center">
-      <Image
+      <Avatar
         src={avatarUrl}
         alt="Avatar"
-        imageClassName="w-4rem h-4rem border-circle"
-        imageStyle={{ objectFit: 'cover' }}
+        width={64}
+        height={64}
+        className="border-circle"
+        style={{ objectFit: 'cover' }}
       />
     </div>
   );
