@@ -7,6 +7,9 @@ export const createMessageSlice: StateCreator<MessageSlice & ChatSlice, [], [], 
   messages: [],
   loadMessages: false,
   doSmoothScroll: false,
+  anteriores: [],
+  totalAnteriores: 0,
+  carregandoAnterior: false,
   reactionState: {
     open: false,
     anchorEl: null,
@@ -28,6 +31,25 @@ export const createMessageSlice: StateCreator<MessageSlice & ChatSlice, [], [], 
   setQuotedMessage: (mode, message) => set({ quoted: { mode, message } }),
   addMessages: (newMessages) => set({ messages: newMessages }),
 
+  setTotalAnteriores: (total) => set({ totalAnteriores: total }),
+  setCarregandoAnterior: (carregando) => set({ carregandoAnterior: carregando }),
+
+  adicionaAnterior: (protocolo) =>
+    set(({ anteriores, totalAnteriores }) => {
+      // Guarda contra o clique duplo: dois pedidos em voo trariam o mesmo
+      // protocolo duas vezes, e ele apareceria repetido na tela.
+      if (anteriores.some((a) => a.id === protocolo.id)) {
+        return { anteriores, totalAnteriores };
+      }
+
+      return {
+        // No início: os anteriores ficam acima, e o mais antigo no topo de
+        // todos — a mesma ordem cronológica das mensagens abaixo.
+        anteriores: [protocolo, ...anteriores],
+        totalAnteriores: Math.max(0, totalAnteriores - 1),
+      };
+    }),
+
   updateMessage: (message) => {
     set(({ messages }) => {
       const exists = messages.some((m) => m.message_id === message.message_id);
@@ -45,6 +67,11 @@ export const createMessageSlice: StateCreator<MessageSlice & ChatSlice, [], [], 
       messages: [],
       loadMessages: false,
       doSmoothScroll: false,
+      // Zerados ao trocar de conversa: sem isto o histórico do contato
+      // anterior apareceria na conversa seguinte.
+      anteriores: [],
+      totalAnteriores: 0,
+      carregandoAnterior: false,
     }));
   },
 });

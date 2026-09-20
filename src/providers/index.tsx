@@ -1,10 +1,22 @@
 'use client';
 
-import { PrimeReactProvider } from 'primereact/api';
+import { PrimeReactProvider, addLocale, locale } from 'primereact/api';
 import { usePathname } from 'next/navigation';
 import Loading from '@/components/Loading';
+import ptBR from '@/constants/pt-br.json';
 import { ServiceProvider } from '@/contexts/ServicesContext';
 import { LayoutProvider } from '@/layout/context/layoutcontext';
+
+/**
+ * Traduções registradas no import do módulo, não num `useEffect`.
+ *
+ * `useEffect` só roda no cliente: o servidor renderizava os rótulos internos do
+ * PrimeReact em inglês ("Show Password") e o cliente em português, e o React
+ * derrubava a árvore por divergência de hidratação. Registrando aqui, os dois
+ * lados produzem o mesmo HTML.
+ */
+addLocale('pt-br', ptBR['pt-br']);
+locale('pt-br');
 
 const OthersProvider = ({ children }) => {
   return (
@@ -17,7 +29,9 @@ const OthersProvider = ({ children }) => {
 
 const LoginProvider = ({ children }) => {
   return (
-    <PrimeReactProvider value={{}}>
+    // `locale` aqui também: o `GeneralProvider` o define e este não definia,
+    // então a tela de login usava os rótulos em inglês do PrimeReact.
+    <PrimeReactProvider value={{ locale: 'pt-br' }}>
       <OthersProvider>{children}</OthersProvider>
     </PrimeReactProvider>
   );

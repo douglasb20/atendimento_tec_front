@@ -110,6 +110,8 @@
     "notEquals": "Diferente",
     "now": "Agora",
     "passwordPrompt": "Digite uma senha",
+    "showPassword": "Mostrar senha",
+    "hidePassword": "Ocultar senha",
     "pending": "Pendente",
     "pm": "PM",
     "prevDecade": "Década Anterior",

@@ -1,8 +1,5 @@
 'use client';
-import { createContext, useContext, useEffect, useReducer } from 'react';
-import { addLocale, locale } from 'primereact/api';
-
-import ptBR from '@/constants/pt-br.json';
+import { createContext, useContext, useReducer } from 'react';
 
 export const ServiceContext = createContext({});
 
@@ -54,11 +51,6 @@ export function ServiceProvider({ children }: { children: React.ReactNode }) {
   const setModalPasswordVisible = (state: boolean) => {
     setContexts({ modalPasswordVisible: state });
   };
-
-  useEffect(() => {
-    addLocale('pt-br', ptBR['pt-br']);
-    locale('pt-br');
-  }, []);
 
   return (
     <>

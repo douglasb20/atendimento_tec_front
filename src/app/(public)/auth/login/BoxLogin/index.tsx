@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
@@ -123,17 +124,24 @@ export default function BoxLoginSection() {
             );
           }}
         />
-        <div className="mb-2 flex flex-wrap gap-3">
-          <a className="hidden text-600 cursor-pointer hover:text-primary cursor-pointer ml-auto transition-colors transition-duration-300">
-            Esqueci minha senha
-          </a>
-        </div>
         <Button
           id="btnEntrar"
           label="Entrar"
           className="w-full"
           onClick={handleSubmit(handleLogin)}
         />
+
+        {/* Depois do botão, e não antes: a ordem do Tab segue a do DOM, e com o
+            link no meio quem saía da senha caía nele — o Enter abria a
+            recuperação em vez de entrar. */}
+        <div className="mt-3 flex justify-content-center">
+          <Link
+            href="/auth/esqueci-senha"
+            className="text-600 no-underline cursor-pointer hover:text-primary transition-colors transition-duration-300"
+          >
+            Esqueci minha senha
+          </Link>
+        </div>
       </div>
     </>
   );

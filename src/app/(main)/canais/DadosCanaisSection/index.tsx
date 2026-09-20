@@ -6,6 +6,7 @@ import { io } from 'socket.io-client';
 
 import { ChannelResponse } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import useApi from '@/service/Api/ApiClient';
 import { useCanaisRevalidacao } from '@/store/useCanaisRevalidacao';
 import { Alerta, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
@@ -35,20 +36,26 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
 
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
+  const { pode } = usePermissoes();
   const { FetchReq } = useApi();
   const activeChannelRef = useRef<ChannelResponse | null>(null);
 
-  const ButtonsHeader: IButtonsOthers[] = [
-    {
-      label: 'Adicionar canal',
-      icon: PrimeIcons.PLUS,
-      action: () => AbrirModalForm(null),
-      bgColor: 'primary p-button-outlined',
-    },
-  ];
+  // Sem permissão de criar, o botão não aparece: a chamada seria recusada
+  // pelo backend de qualquer forma.
+  const ButtonsHeader: IButtonsOthers[] = pode('channel:add')
+    ? [
+        {
+          label: 'Adicionar canal',
+          icon: PrimeIcons.PLUS,
+          action: () => AbrirModalForm(null),
+          bgColor: 'primary p-button-outlined',
+        },
+      ]
+    : [];
 
   const acoesTable: IActionTable<ChannelResponse>[] = [
     {
+      isHidden: () => !pode('channel:update'),
       label: 'Editar canal',
       tooltip: 'Editar canal',
       icon: 'pi pi-fw pi-file-edit',
@@ -56,6 +63,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       command: (data) => AbrirModalForm(data),
     },
     {
+      isHidden: () => !pode('channel:update'),
       label: 'Configurar canal',
       tooltip: 'Configurar canal',
       icon: 'pi pi-fw pi-cog',
@@ -63,6 +71,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       command: (data) => AbrirModalConfig(data.id!),
     },
     {
+      isHidden: () => !pode('channel:delete'),
       label: 'Excluir canal',
       tooltip: 'Excluir canal',
       icon: 'pi pi-fw pi-times',
@@ -187,8 +196,17 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
         activeChannel.id,
       ]);
 
-      const anterior = activeChannel.channelStatus?.name ?? 'desconhecido';
-      const atual = atualizado.channelStatus?.name ?? 'desconhecido';
+      // O nome do status pode faltar se a relação não veio carregada; aí o
+      // recurso é a listagem, que sempre a traz. Antes o texto caía direto em
+      // "desconhecido" e o aviso ficava sem sentido para quem via o status na
+      // tela um instante antes.
+      const nomeDoStatus = (canal: ChannelResponse) =>
+        canal?.channelStatus?.name ??
+        canais.find((c) => c.id === canal?.id)?.channelStatus?.name ??
+        'desconhecido';
+
+      const anterior = nomeDoStatus(activeChannel);
+      const atual = nomeDoStatus(atualizado);
       const mudou = atualizado.channel_status_id !== activeChannel.channel_status_id;
 
       setActiveChannel(atualizado);

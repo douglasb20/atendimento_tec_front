@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useService } from '@/contexts/ServicesContext';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { ClientResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
@@ -34,25 +35,32 @@ export default function DadosClientesSection({ data }: DadosClientesProps) {
   );
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
+  const { pode } = usePermissoes();
   const { FetchReq } = useApi();
   const router = useRouter();
 
-  const ButtonsHeader: IButtonsOthers[] = [
+  // Sem permissão de criar, o botão não aparece: a chamada seria recusada
+  // pelo backend de qualquer forma.
+  const ButtonsHeader: IButtonsOthers[] = pode('client:add')
+    ? [
     {
       label: 'Adicionar cliente',
       icon: 'pi pi-user-plus',
       action: () => router.push('/clientes/form/'),
     },
-  ];
+      ]
+    : [];
 
   const acoesTable: IActionTable<ClientResponse>[] = [
     {
+      isHidden: () => !pode('client:update'),
       label: 'Editar cliente',
       tooltip: 'Editar cliente',
       icon: 'pi pi-fw pi-user-edit',
       command: (data) => router.push('/clientes/form/' + data.id),
     },
     {
+      isHidden: () => !pode('client:delete'),
       label: 'Excluir cliente',
       tooltip: 'Excluir cliente',
       icon: 'pi pi-fw pi-times',

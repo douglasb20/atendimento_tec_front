@@ -10,6 +10,8 @@ export * from './contact.interface';
 export * from './client.interface';
 export * from './tag.interface';
 export * from './integration.interface';
+export * from './permission-group.interface';
+export * from './system-settings.interface';
 
 export enum Masks {
   DATEBR = '99/99/9999',
@@ -52,11 +54,22 @@ export interface IUsuariosResponse {
   name: string;
   email: string;
   status?: number;
+  /**
+   * Custo/hora do atendente. **Obsoleto** — saiu do formulário e da listagem.
+   *
+   * Alimentava um cálculo de valor por atendimento no módulo `supports`, que
+   * está parado; a consulta que o usava nem roda (é SQL de MySQL num banco
+   * PostgreSQL). A coluna continua no banco.
+   */
   valor_hora?: number;
   avatar_url?: string | null;
   is_requestpassword?: number;
   created_at?: string;
   lastlogin_at?: string;
+  /** O grupo de permissão do usuário. Nulo significa sem acesso a nada. */
+  permission_group_id?: number | null;
+  /** A relação carregada, quando o endpoint a traz — para exibir o nome. */
+  permissionGroup?: { id: number; name: string } | null;
 }
 
 export interface IClientResponse extends ClientResponse {
@@ -109,7 +122,17 @@ export interface IAtendimentoStatus {
 }
 
 export type UserInfo = IUsuariosResponse & {
+  /**
+   * Os nomes das permissões do usuário, vindas do papel — ex.: `client:view`.
+   *
+   * Apenas os nomes, de propósito: esta resposta é guardada no cookie
+   * `userInfo`, que tem teto de 4 KB, e os registros completos estouravam o
+   * limite. Quem precisa do rótulo legível é a tela de papéis, que busca o
+   * catálogo inteiro em `/permissions`.
+   */
   permissions: string[];
+  /** Nulo significa sem grupo, portanto sem permissão alguma. */
+  permission_group_id?: number | null;
 };
 
 /**

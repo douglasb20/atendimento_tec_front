@@ -10,6 +10,7 @@ import { DateToBR, fixHeartEmoji } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import { jaAnimou, marcaComoAnimada } from '@/service/Outbox/jaAnimadas';
 import QuotedMessageItem from './QuotedMessageItem';
+import PlayerAudio from './PlayerAudio';
 
 type SingleMessageComponentProps = {
   message: SupportChatMessageResponse;
@@ -301,7 +302,14 @@ const SingleMessageComponent = ({
                 segundo caso. */}
             {exibeMidia && (message.type === 'ptt' || message.type === 'audio') && (
               <ComProgresso progresso={message.progresso}>
-                <div className="mb-2 flex flex-column gap-1">
+                {/* Espaço à direita para o chevron do menu, que fica em
+                    `right-0 top-0` e cairia sobre o botão de velocidade. Fixo
+                    e não só no hover: reservado na hora, o player não salta
+                    quando o menu aparece. */}
+                <div
+                  className="mb-2 flex flex-column gap-1"
+                  style={{ paddingRight: '1.75rem' }}
+                >
                   {message.type === 'audio' && message.file_name && (
                     <span
                       className="text-sm font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis"
@@ -311,22 +319,14 @@ const SingleMessageComponent = ({
                       {message.file_name}
                     </span>
                   )}
-                  <audio
-                    // Sem a `key`, trocar a prévia local pela URL do storage
-                    // manteria o elemento preso ao blob já revogado.
-                    key={message.media_url}
-                    controls
-                    // Largura fixa: com `100%` o player se ajustava à bolha, e
-                    // num áudio curto sem legenda ela é estreita - os controles
-                    // colapsavam num oval sem barra de progresso.
-                    style={{ width: 350, maxWidth: '100%' }}
-                  >
-                    <source
-                      src={message.media_url}
-                      type={message.media_type}
-                    />
-                    Seu navegador não suporta o elemento de áudio.
-                  </audio>
+                  {/* Player próprio no lugar do `<audio controls>`: o nativo
+                      traz o menu de três pontos do Chrome e muda de cara a
+                      cada navegador. */}
+                  <PlayerAudio
+                    url={message.media_url}
+                    mimetype={message.media_type}
+                    proprio={message.from_me}
+                  />
                 </div>
               </ComProgresso>
             )}

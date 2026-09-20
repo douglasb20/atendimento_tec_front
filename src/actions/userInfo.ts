@@ -15,10 +15,22 @@ export async function getUserInfo() {
     const tokenString: string = cookieStorage.get('token')?.value;
     const tokenDecoded = jwtDecode<JWTToken>(tokenString);
 
+    // Vence junto com o access token — hoje 30 minutos —, e o middleware o
+    // recria na navegação seguinte por achá-lo ausente. Esse vencimento curto
+    // é o que faz uma troca de papel chegar à interface sem o usuário precisar
+    // sair e entrar: as permissões que ele carrega valem no máximo esse tempo.
+    //
+    // Não o alongue para a validade do refresh (30 dias): quem tivesse o
+    // portal aberto ficaria com as permissões antigas até o fim do mês.
+    const validadeSegundos = Math.max(
+      60,
+      Number(tokenDecoded.exp) - Math.floor(Date.now() / 1000.0),
+    );
+
     cookieStorage.set({
       name: 'userInfo',
       value: JSON.stringify(user),
-      maxAge: Number(tokenDecoded.exp) - Math.floor(Date.now() / 1000.0),
+      maxAge: validadeSegundos,
       path: '/',
     });
   } catch (err) {

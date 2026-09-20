@@ -6,14 +6,6 @@ type BadgeProtocoloProps = {
   protocolo?: string;
 };
 
-/**
- * O protocolo nasce com a conversa e tem 13 dígitos (`AAAAMM` + sequencial).
- * O hífen é só visual: o que se copia é o número cru, que é o que serve para
- * buscar o atendimento.
- */
-const formata = (protocolo: string) =>
-  protocolo.length === 13 ? `${protocolo.slice(0, 6)}-${protocolo.slice(6)}` : protocolo;
-
 const BadgeProtocolo = ({ protocolo }: BadgeProtocoloProps) => {
   const [copiado, setCopiado] = useState(false);
 
@@ -42,7 +34,7 @@ const BadgeProtocolo = ({ protocolo }: BadgeProtocoloProps) => {
         style={{ fontVariantNumeric: 'tabular-nums' }}
       >
         <span className="text-400 font-normal">#</span>
-        {formata(protocolo)}
+        {protocolo}
       </span>
       <i
         className={

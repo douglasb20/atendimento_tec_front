@@ -5,19 +5,25 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import { Button } from 'primereact/button';
 import { Dialog as Modal } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
+import { Dropdown } from 'primereact/dropdown';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { parseCookies } from 'nookies';
 import * as yup from 'yup';
 
 import { getUserInfo } from '@/actions/userInfo';
-import { IUsuariosResponse, Shape, SignatureResponse, UserInfo } from '@/Interfaces';
+import {
+  IUsuariosResponse,
+  PermissionGroupResponse,
+  Shape,
+  SignatureResponse,
+  UserInfo,
+} from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
 import { AlertaCallback, CatchAlerta, getFormErrorMessage, msgRequired } from '@/service/Util';
 import ApiClient from '@/service/Api/ApiClient';
 
 import LabelPlus from '@/components/LabelPlus';
-import InputDecimal from '@/components/InputDecimal';
 
 type ModalProps = {
   visible: boolean;
@@ -29,16 +35,21 @@ type ModalProps = {
 type UsuarioForm = Omit<IUsuariosResponse, 'is_requestpassword' | 'lastlogin_at' | 'created_at'> & {
   senha?: string;
   confirma_senha?: string;
+  /** O grupo define o que o usuário pode fazer. Nulo é sem acesso a nada. */
+  permission_group_id?: number | null;
 };
 
 const defaultForm: UsuarioForm = {
   name: '',
   email: '',
-  valor_hora: 0.0,
   senha: '',
   confirma_senha: '',
   avatar_url: null,
+  permission_group_id: null,
 };
+
+/** Opção que representa "sem grupo" — o usuário entra mas não acessa nada. */
+const SEM_GRUPO = { id: null as number | null, name: 'Sem grupo (nenhum acesso)' };
 
 type AvatarConfig = {
   displayUrl: string | null; // URL para exibir (presigned ou objectURL)
@@ -85,6 +96,7 @@ const ModalFormUser = (props: ModalProps) => {
     isLoading: true,
   });
   const [pointerOver, setPointerOver] = useState(false);
+  const [grupos, setGrupos] = useState<PermissionGroupResponse[]>([]);
   const { FetchReq } = ApiClient();
 
   const schema = yup.object<yup.AnyObject, Shape<UsuarioForm>>({
@@ -177,9 +189,9 @@ const ModalFormUser = (props: ModalProps) => {
       const dataBody = {
         name: fields.name,
         email: fields.email,
-        valor_hora: Number(fields.valor_hora).toFixed(2),
         avatar_url: avatarKey,
-        changed_avatar
+        changed_avatar,
+        permission_group_id: fields.permission_group_id ?? null,
       };
 
       if (!data?.id) {
@@ -259,12 +271,31 @@ const ModalFormUser = (props: ModalProps) => {
 
   const showRemoveButton = !avatarConfig.isLoading && !avatarConfig.removed && pointerOver;
 
+  // Carregados ao abrir: cadastrar um papel novo e não vê-lo aqui seria
+  // confuso. Mesmo critério do campo de integração no cadastro de canal.
+  useEffect(() => {
+    if (!visible) return;
+
+    const carregar = async () => {
+      try {
+        const dados = await FetchReq<PermissionGroupResponse[]>('ListarGruposPermissao');
+        setGrupos(dados ?? []);
+      } catch {
+        // Sem `permission_group:view` a lista fica vazia e o campo some — o caso de quem
+        // pode editar usuário mas não gerir papéis. Alertar seria ruído.
+        setGrupos([]);
+      }
+    };
+
+    carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
   useEffect(() => {
     if (visible) {
       reset({
         ...defaultForm,
         ...data,
-        ...(data?.valor_hora === null && { valor_hora: 0.0 }),
       });
       setAvatarConfig((prev) => ({
         ...prev,
@@ -340,7 +371,9 @@ const ModalFormUser = (props: ModalProps) => {
               />
             </div>
           </div>
-          <div className="col-6">
+          {/* Nome e grupo dividem a linha — mas só quando há grupos: sem eles o
+              campo some, e metade da linha ficaria vazia ao lado do nome. */}
+          <div className={grupos.length > 0 ? 'col-6' : 'col-12'}>
             <Controller
               control={control}
               name="name"
@@ -360,29 +393,38 @@ const ModalFormUser = (props: ModalProps) => {
               )}
             />
           </div>
-          <div className="col-6">
-            <Controller
-              control={control}
-              name="valor_hora"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Valor da hora"
-                  />
-                  <InputDecimal
-                    id={field.name}
-                    {...field}
-                    value={field?.value?.toString()}
-                    mode="decimal"
-                    onChangeDecimal={field.onChange}
-                    placeholder="Nome"
-                  />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
+
+          {/* Só aparece quando há grupos para escolher: sem
+              `permission_group:view` a lista volta vazia, e um campo
+              desabilitado só ocuparia espaço. */}
+          {grupos.length > 0 && (
+            <div className="col-6">
+              <Controller
+                control={control}
+                name="permission_group_id"
+                render={({ field }) => (
+                  <>
+                    <LabelPlus
+                      htmlFor={field.name}
+                      text="Grupo de permissão"
+                      textHelp="Define o que este usuário pode fazer no sistema. Sem grupo, ele entra mas não acessa nada."
+                    />
+                    <Dropdown
+                      id={field.name}
+                      {...field}
+                      className="w-full"
+                      // `SEM_GRUPO` na frente: o valor nulo é escolha legítima
+                      // e precisa ser selecionável de volta depois de trocado.
+                      options={[SEM_GRUPO, ...grupos]}
+                      optionLabel="name"
+                      optionValue="id"
+                      placeholder="Selecione o grupo"
+                    />
+                  </>
+                )}
+              />
+            </div>
+          )}
           <div className="col-12">
             <Controller
               control={control}

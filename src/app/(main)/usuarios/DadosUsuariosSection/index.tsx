@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useService } from '@/contexts/ServicesContext';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { IActionTable } from '@/components/AcoesDataTable';
 import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
@@ -21,21 +22,27 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
   const [rendered, setRendered] = useState(false);
   const [modalForm, setModalForm] = useState(false);
   const { setLoading } = useService();
+  const { pode } = usePermissoes();
   const { FetchReq } = ApiClient();
 
-  const ButtonsHeader: IButtonsOthers[] = [
-    {
-      label: 'Adicionar usuário',
-      icon: 'pi pi-user-plus',
-      action: () => {
-        setUsuarioSelecionado(null);
-        setModalForm(true);
-      },
-    },
-  ];
+  // Sem permissão de criar, o botão não aparece: a chamada seria recusada
+  // pelo backend de qualquer forma.
+  const ButtonsHeader: IButtonsOthers[] = pode('user:add')
+    ? [
+        {
+          label: 'Adicionar usuário',
+          icon: 'pi pi-user-plus',
+          action: () => {
+            setUsuarioSelecionado(null);
+            setModalForm(true);
+          },
+        },
+      ]
+    : [];
 
   const acoesTable: IActionTable<IUsuariosResponse>[] = [
     {
+      isHidden: () => !pode('user:update'),
       label: 'Editar usuário',
       tooltip: 'Editar usuário',
       icon: 'pi pi-fw pi-user-edit',
@@ -44,6 +51,7 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
       },
     },
     {
+      isHidden: () => !pode('user:delete'),
       label: 'Excluir usuário',
       tooltip: 'Excluir usuário',
       icon: 'pi pi-fw pi-times',

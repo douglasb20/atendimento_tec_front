@@ -11,7 +11,7 @@ import useApi from '@/service/Api/ApiClient';
 import { useChatStore } from '@/store/useChatStore';
 import { useOutboxStore } from '@/store/useOutboxStore';
 import { processarItem, registrarArquivo } from '@/service/Outbox';
-import { ehAtendimentoFinalizado, ModeQuoted, SupportChatStatusId, UserInfo } from '@/Interfaces';
+import { ehAtendimentoAtivo, ehAtendimentoFinalizado, ModeQuoted, UserInfo } from '@/Interfaces';
 import { Alerta } from '@/service/Util';
 
 import QuotedMessage from '../_components/QuotedMessage';
@@ -369,10 +369,9 @@ export default function SendMessageBox() {
   ];
 
   const finalizado = ehAtendimentoFinalizado(activeChat?.support_chat_status_id);
-  const naoAssumido =
-    !finalizado &&
-    (activeChat?.support_chat_status_id === SupportChatStatusId.AGUARDANDO ||
-      activeChat?.support_chat_status_id === SupportChatStatusId.EM_FILA);
+  // `ehAtendimentoAtivo` é a mesma regra usada pela reação e pelo menu de
+  // mensagem: uma só definição de "posso escrever nesta conversa".
+  const naoAssumido = !finalizado && !ehAtendimentoAtivo(activeChat?.support_chat_status_id);
 
   // Sem alguém responsável não há o que registrar: o `answered_at` nasce do
   // botão Iniciar, e responder antes disso deixaria o atendimento sem dono e

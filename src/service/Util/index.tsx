@@ -497,3 +497,34 @@ export const formatDuracao = (totalSegundos: number): string => {
     ? `${doisDigitos(horas)}:${doisDigitos(minutos)}:${doisDigitos(segundos)}`
     : `${doisDigitos(minutos)}:${doisDigitos(segundos)}`;
 };
+
+/**
+ * Como descrever uma mídia citada numa linha.
+ *
+ * O WhatsApp mostra "📷 Foto" na prévia da resposta; sem isto, citar uma
+ * imagem sem legenda produz uma faixa vazia - o `content` está em branco, e
+ * quem responde não vê a que está respondendo.
+ */
+export const descreveMidia = (
+  tipo?: string,
+  nomeArquivo?: string,
+): { icone: string; rotulo: string } | null => {
+  switch (tipo) {
+    case 'image':
+      return { icone: 'fa-regular fa-image', rotulo: 'Foto' };
+    case 'video':
+      return { icone: 'fa-regular fa-video', rotulo: 'Vídeo' };
+    case 'sticker':
+      return { icone: 'fa-regular fa-note-sticky', rotulo: 'Figurinha' };
+    // `ptt` é o áudio gravado na hora; `audio`, o arquivo enviado. A distinção
+    // é a mesma que o WhatsApp faz, e o nome do arquivo só existe no segundo.
+    case 'ptt':
+      return { icone: 'fa-regular fa-microphone', rotulo: 'Mensagem de voz' };
+    case 'audio':
+      return { icone: 'fa-regular fa-music', rotulo: nomeArquivo || 'Áudio' };
+    case 'document':
+      return { icone: 'fa-regular fa-file', rotulo: nomeArquivo || 'Documento' };
+    default:
+      return null;
+  }
+};

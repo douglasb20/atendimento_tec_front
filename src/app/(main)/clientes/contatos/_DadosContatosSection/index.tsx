@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { ContactResponse } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 
@@ -21,24 +22,31 @@ export default function DadosContatosSection({ data }: DadosContatosProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
+  const { pode } = usePermissoes();
   const { FetchReq } = useApi();
 
-  const ButtonsHeader: IButtonsOthers[] = [
+  // Sem permissão de criar, o botão não aparece: a chamada seria recusada
+  // pelo backend de qualquer forma.
+  const ButtonsHeader: IButtonsOthers[] = pode('contact:add')
+    ? [
     {
       label: 'Adicionar contato',
       icon: 'pi pi-user-plus',
       action: () => onOpenModalForm(null),
     },
-  ];
+      ]
+    : [];
 
   const acoesTable: IActionTable<ContactResponse>[] = [
     {
+      isHidden: () => !pode('contact:update'),
       label: 'Editar contato',
       tooltip: 'Editar contato',
       icon: 'pi pi-fw pi-user-edit',
       command: (data) => onOpenModalForm(data),
     },
     {
+      isHidden: () => !pode('contact:delete'),
       label: 'Excluir contato',
       tooltip: 'Excluir contato',
       icon: 'pi pi-fw pi-times',

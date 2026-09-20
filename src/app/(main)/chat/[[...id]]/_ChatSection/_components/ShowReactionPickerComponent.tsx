@@ -1,6 +1,6 @@
 import { classNames } from 'primereact/utils';
 
-import { SupportChatMessageResponse } from '@/Interfaces';
+import { ehAtendimentoAtivo, SupportChatMessageResponse } from '@/Interfaces';
 import { useChatStore } from '@/store/useChatStore';
 
 type ShowReactionComponentProps = {
@@ -11,6 +11,7 @@ type ShowReactionComponentProps = {
 const ShowReactionPickerComponent = ({ message, bottomEl }: ShowReactionComponentProps) => {
   const setReactionState = useChatStore((s) => s.setReactionState);
   const reactionState = useChatStore((s) => s.reactionState);
+  const statusDaConversa = useChatStore((s) => s.activeChat?.support_chat_status_id);
 
   const handleReactionState = (event: React.MouseEvent<HTMLButtonElement>) => {
     const isSameButton = reactionState.anchorEl === event.currentTarget;
@@ -34,6 +35,11 @@ const ShowReactionPickerComponent = ({ message, bottomEl }: ShowReactionComponen
 
   // Revogada não tem a que reagir, e pendente ainda não existe no WhatsApp.
   if (message.is_deleted || message.pending) return null;
+
+  // A reação chega ao WhatsApp do cliente como qualquer resposta: sem alguém
+  // ter assumido a conversa, ela sairia sem dono - a mesma razão pela qual a
+  // caixa de mensagem fica bloqueada. Em atendimento finalizado é histórico.
+  if (!ehAtendimentoAtivo(statusDaConversa)) return null;
 
   return (
     <>

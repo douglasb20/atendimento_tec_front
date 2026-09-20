@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { useService } from '@/contexts/ServicesContext';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import {
   IntegrationProviderResponse,
   IntegrationResponse,
@@ -29,14 +30,19 @@ export default function DadosIntegracoesSection({ data }: DadosIntegracoesProps)
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
+  const { pode } = usePermissoes();
 
-  const ButtonsHeader: IButtonsOthers[] = [
+  // Sem permissão de criar, o botão não aparece: a chamada seria recusada
+  // pelo backend de qualquer forma.
+  const ButtonsHeader: IButtonsOthers[] = pode('integration:add')
+    ? [
     {
       label: 'Nova integração',
       icon: PrimeIcons.PLUS,
       action: () => AbrirModal(null),
     },
-  ];
+      ]
+    : [];
 
   const acoesTable: IActionTable<IntegrationResponse>[] = [
     {
@@ -46,12 +52,14 @@ export default function DadosIntegracoesSection({ data }: DadosIntegracoesProps)
       command: (integracao) => TestarConexao(integracao),
     },
     {
+      isHidden: () => !pode('integration:update'),
       label: 'Editar',
       tooltip: 'Editar integração',
       icon: PrimeIcons.PENCIL,
       command: (integracao) => AbrirModal(integracao),
     },
     {
+      isHidden: () => !pode('integration:delete'),
       label: 'Remover',
       tooltip: 'Remover integração',
       icon: PrimeIcons.TRASH,

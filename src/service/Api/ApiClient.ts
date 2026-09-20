@@ -36,6 +36,15 @@ export const ListUrl = {
   AtualizarContato: { url: '/contacts/contact/{{contact_id}}', method: 'PATCH' },
   RemoverContato: { url: '/contacts/contact/{{contact_id}}', method: 'DELETE' },
 
+  ListarGruposPermissao: { url: '/permission-groups', method: 'GET' },
+  BuscarGrupoPermissao: { url: '/permission-groups/{{group_id}}', method: 'GET' },
+  AdicionarGrupoPermissao: { url: '/permission-groups', method: 'POST' },
+  AtualizarGrupoPermissao: { url: '/permission-groups/{{group_id}}', method: 'PATCH' },
+  RemoverGrupoPermissao: { url: '/permission-groups/{{group_id}}', method: 'DELETE' },
+
+  ListarPermissoes: { url: '/permissions', method: 'GET' },
+  ListarModulosPermissao: { url: '/permissions/modules', method: 'GET' },
+
   ListarUsuarios: { url: '/users', method: 'GET' },
   BuscarUsuarioPorId: { url: '/users/{{user_id}}', method: 'GET' },
   AdicionarUsuario: { url: '/users', method: 'POST' },
@@ -71,7 +80,20 @@ export const ListUrl = {
   UserInfo: { url: '/users/info', method: 'GET' },
 
   ListarAtendimentosSuporte: { url: '/support-chats', method: 'GET' },
-  ListarMensagensPorAtendimentoId: { url: '/support-chats/{{support_chat_id}}/messages', method: 'GET' },
+  ContarAtendimentosAnteriores: {
+    url: '/support-chats/{{chat_id}}/anteriores',
+    method: 'GET',
+  },
+  BuscarAtendimentoAnterior: {
+    // `antes_de` como placeholder: o `AjeitaUrl` só substitui `{{...}}`, e não
+    // monta query string — pôr o parâmetro no template é o caminho suportado.
+    url: '/support-chats/{{chat_id}}/anterior?antes_de={{antes_de}}',
+    method: 'GET',
+  },
+  ListarMensagensPorAtendimentoId: {
+    url: '/support-chats/{{support_chat_id}}/messages',
+    method: 'GET',
+  },
 
   SendMessage: { url: '/support-chats/{{support_chat_id}}/send-message', method: 'POST' },
   SendReaction: { url: '/support-chats/{{support_chat_id}}/send-reaction', method: 'POST' },
@@ -94,8 +116,28 @@ export const ListUrl = {
   DeleteMessage: { url: '/support-chats/{{support_chat_id}}/delete-message', method: 'POST' },
   EditarMensagem: { url: '/support-chats/{{support_chat_id}}/edit-message', method: 'POST' },
 
-  ForgottenPassword: { url: '/auth/forgotten_password/{{email}}', method: 'POST' },
+  ListarAjustesSistema: { url: '/system-settings', method: 'GET' },
+  AtualizarAjustesSistema: { url: '/system-settings', method: 'PATCH' },
+  TestarEmailSistema: { url: '/system-settings/testar-email', method: 'POST' },
+
+  EsqueciSenha: { url: '/auth/esqueci-senha', method: 'POST' },
+  ValidarTokenSenha: { url: '/auth/redefinir-senha/{{token}}/valido', method: 'GET' },
+  RedefinirSenha: { url: '/auth/redefinir-senha', method: 'POST' },
 };
+
+/**
+ * Endpoints que funcionam sem sessão.
+ *
+ * O `FetchReq` renova o token antes de cada chamada, e numa tela pública não há
+ * o que renovar: o refresh devolve 401 e o cliente manda para o logout — a tela
+ * de "esqueci minha senha" ia parar no login sem mostrar erro nenhum, porque o
+ * redirecionamento acontecia antes de a requisição sair.
+ */
+const ENDPOINTS_PUBLICOS = new Set<keyof typeof ListUrl>([
+  'EsqueciSenha',
+  'ValidarTokenSenha',
+  'RedefinirSenha',
+]);
 
 /**
  * Função para transformar url com variável na string
@@ -210,12 +252,17 @@ export default function ApiClient() {
       props = { endpoint: props, body: null, variables: vars };
     }
 
+    const { endpoint, body, variables } = props;
+
     // Renova antes de enviar, se o access já venceu. Não devolve mais o token:
     // com httpOnly não há o que ler nem o que pôr no header — o cookie
     // renovado vai sozinho na requisição abaixo.
-    await ValidateToken();
-
-    const { endpoint, body, variables } = props;
+    //
+    // Endpoints públicos ficam de fora: sem sessão, a renovação falha e o
+    // cliente redireciona para o logout antes mesmo de chamar a API.
+    if (!ENDPOINTS_PUBLICOS.has(endpoint)) {
+      await ValidateToken();
+    }
     const newUrl = AjeitaUrl(ListUrl[endpoint].url, variables);
 
     const { data } = await req({

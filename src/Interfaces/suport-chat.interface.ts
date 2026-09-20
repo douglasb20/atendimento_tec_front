@@ -22,6 +22,17 @@ export const ehAtendimentoFinalizado = (statusId?: number): boolean =>
   statusId === SupportChatStatusId.FINALIZADO ||
   statusId === SupportChatStatusId.FINALIZADO_SEM_RESPOSTA;
 
+/**
+ * Se a conversa aceita ação do atendente - responder, reagir, citar, apagar.
+ *
+ * Só quando alguém a assumiu: antes disso o atendimento não tem dono nem
+ * `answered_at`, e depois de finalizado é histórico. Vale para tudo que
+ * escreve, não só para a caixa de mensagem - reagir também chega ao WhatsApp
+ * do cliente.
+ */
+export const ehAtendimentoAtivo = (statusId?: number): boolean =>
+  statusId === SupportChatStatusId.EM_ANDAMENTO;
+
 export interface SupportChatsResponse {
   id: string;
   /** Atendente que assumiu; nulo enquanto a conversa aguarda. */

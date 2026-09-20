@@ -4,7 +4,8 @@ import { Menu } from 'primereact/menu';
 import { MenuItem } from 'primereact/menuitem';
 import { useRef } from 'react';
 
-import { SupportChatMessageResponse } from '@/Interfaces';
+import { ehAtendimentoAtivo, SupportChatMessageResponse } from '@/Interfaces';
+import { useChatStore } from '@/store/useChatStore';
 
 type MenuMessageProps = {
   menuModel: MenuItem[];
@@ -50,6 +51,13 @@ export const podeApagar = (message: SupportChatMessageResponse) =>
 
 const MenuMessageComponent = ({ menuModel, message, bottomEl }: MenuMessageProps) => {
   const menuRef = useRef<{ [key: string]: Menu | null }>({});
+  const statusDaConversa = useChatStore((s) => s.activeChat?.support_chat_status_id);
+
+  // Sem a conversa assumida não há menu nenhum - nem o chevron que o abre.
+  // Bloquear só os itens de escrita não bastava: "Selecionar" continuava
+  // visível e mantinha o botão na tela, que é justamente o que não deve
+  // aparecer antes de alguém assumir o atendimento.
+  const podeAgirNoWhatsapp = ehAtendimentoAtivo(statusDaConversa);
 
   // Revogada não tem conteúdo para responder, citar ou baixar; pendente ainda
   // não existe no WhatsApp, então nenhuma ação de lá se aplica.
@@ -63,17 +71,18 @@ const MenuMessageComponent = ({ menuModel, message, bottomEl }: MenuMessageProps
 
     switch (newItem.id) {
       case 'reply':
-        newItem.visible = !semAcoes;
+        newItem.visible = !semAcoes && podeAgirNoWhatsapp;
         break;
       case 'edit':
         newItem.visible =
           !semAcoes &&
+          podeAgirNoWhatsapp &&
           !isAfter15min(message.datetime) &&
           message.from_me &&
           message.message_id.length === 22;
         break;
       case 'delete':
-        newItem.visible = podeApagar(message);
+        newItem.visible = podeApagar(message) && podeAgirNoWhatsapp;
         break;
       // Diferente do 'delete': qualquer mensagem ainda visível pode entrar na
       // seleção. O que não couber na revogação do WhatsApp é ocultado só do
@@ -89,6 +98,8 @@ const MenuMessageComponent = ({ menuModel, message, bottomEl }: MenuMessageProps
 
     return newItem;
   });
+
+  if (!podeAgirNoWhatsapp) return null;
 
   // Sem nenhuma ação disponível, o botão abriria um menu vazio.
   if (!newModel.some((item) => item.visible !== false)) return null;

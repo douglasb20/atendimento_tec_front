@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { useService } from '@/contexts/ServicesContext';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import { TagResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import { AlertaCallback, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
@@ -26,23 +27,30 @@ export default function DadosTagsSection({ data }: DadosTagsProps) {
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
+  const { pode } = usePermissoes();
 
-  const ButtonsHeader: IButtonsOthers[] = [
+  // Sem permissão de criar, o botão não aparece: a chamada seria recusada
+  // pelo backend de qualquer forma.
+  const ButtonsHeader: IButtonsOthers[] = pode('tag:add')
+    ? [
     {
       label: 'Nova etiqueta',
       icon: PrimeIcons.PLUS,
       action: () => AbrirModal(null),
     },
-  ];
+      ]
+    : [];
 
   const acoesTable: IActionTable<TagResponse>[] = [
     {
+      isHidden: () => !pode('tag:update'),
       label: 'Editar',
       tooltip: 'Editar etiqueta',
       icon: PrimeIcons.PENCIL,
       command: (tag) => AbrirModal(tag),
     },
     {
+      isHidden: () => !pode('tag:delete'),
       label: 'Remover',
       tooltip: 'Remover etiqueta',
       icon: PrimeIcons.TRASH,

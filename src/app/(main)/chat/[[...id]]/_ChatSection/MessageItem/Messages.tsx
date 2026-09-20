@@ -8,6 +8,7 @@ import { v4 as uuidV4 } from 'uuid';
 
 import { ModeQuoted, SupportChatMessageResponse } from '@/Interfaces';
 import ModalEditarMensagem from '../_components/ModalEditarMensagem';
+import { BotaoAnterior, Separador } from '../_components/HistoricoAnterior';
 import { CatchAlerta, ConfirmaAcao, debounce } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import { useOutboxStore } from '@/store/useOutboxStore';
@@ -36,10 +37,97 @@ const Messages = () => {
   const selecionadas = useSelecaoMensagens((s) => s.selecionadas);
   const entrarModoSelecao = useSelecaoMensagens((s) => s.entrarModoSelecao);
   const alternarSelecao = useSelecaoMensagens((s) => s.alternar);
+  const anteriores = useChatStore((s) => s.anteriores);
+  const totalAnteriores = useChatStore((s) => s.totalAnteriores);
+  const carregandoAnterior = useChatStore((s) => s.carregandoAnterior);
+  const setTotalAnteriores = useChatStore((s) => s.setTotalAnteriores);
+  const setCarregandoAnterior = useChatStore((s) => s.setCarregandoAnterior);
+  const adicionaAnterior = useChatStore((s) => s.adicionaAnterior);
   const { FetchReq } = useApi();
   const bottomEl = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(0);
   const divRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Descobre se o contato tem atendimentos anteriores.
+   *
+   * Chamada leve: não traz mensagem nenhuma, só o total — é o que decide se o
+   * botão aparece, sem fazer toda abertura de conversa pagar o custo do
+   * histórico inteiro.
+   */
+  useEffect(() => {
+    if (!activeChat?.id) return;
+
+    const contar = async () => {
+      try {
+        const r = await FetchReq<{ total: number }>('ContarAtendimentosAnteriores', [
+          activeChat.id,
+        ]);
+        setTotalAnteriores(r?.total ?? 0);
+      } catch {
+        // Sem histórico visível é o estado seguro: um erro aqui não deve
+        // impedir o atendente de usar a conversa atual.
+        setTotalAnteriores(0);
+      }
+    };
+
+    contar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChat?.id]);
+
+  /**
+   * Traz o atendimento anterior e devolve o atendente ao ponto onde estava.
+   *
+   * Inserir conteúdo acima empurra o que está visível para baixo: sem medir a
+   * altura antes e restaurar depois, quem estava lendo perde o lugar — é o
+   * defeito clássico deste padrão.
+   */
+  const carregarAnterior = async () => {
+    if (!activeChat?.id || carregandoAnterior) return;
+
+    const el = bottomEl.current;
+    const alturaAntes = el?.scrollHeight ?? 0;
+    const posicaoAntes = el?.scrollTop ?? 0;
+
+    // O mais antigo já carregado é o ponto de partida; sem nenhum, a própria
+    // conversa atual.
+    const antesDe = anteriores.length ? anteriores[0].id : Number(activeChat.id);
+
+    try {
+      setCarregandoAnterior(true);
+
+      const anterior = await FetchReq<{
+        id: number;
+        protocol: string;
+        finished_at?: string | null;
+        updated_at?: string | null;
+        supportChatMessages?: SupportChatMessageResponse[];
+      }>('BuscarAtendimentoAnterior', [activeChat.id, antesDe]);
+
+      if (!anterior?.id) {
+        setTotalAnteriores(0);
+        return;
+      }
+
+      adicionaAnterior({
+        id: anterior.id,
+        protocol: anterior.protocol,
+        encerrado_em: anterior.finished_at ?? anterior.updated_at ?? null,
+        mensagens: anterior.supportChatMessages ?? [],
+      });
+
+      // Depois da pintura: o conteúdo novo precisa estar no DOM para a altura
+      // nova existir.
+      requestAnimationFrame(() => {
+        if (!el) return;
+        el.scrollTop = posicaoAntes + (el.scrollHeight - alturaAntes);
+      });
+    } catch (err) {
+      CatchAlerta(err, 'Não foi possível carregar o atendimento anterior');
+    } finally {
+      setCarregandoAnterior(false);
+    }
+  };
 
   /**
    * Junta as mensagens confirmadas com as que ainda estão na fila de envio.
@@ -351,6 +439,67 @@ const Messages = () => {
         className="message-box relative border-right-1 border-left-1 border-noround-top border-bottom-1 border-primary-300 flex flex-1 flex-column bg-gray-50 border-round p-3 overflow-y-auto overflow-x-hidden"
       >
         <div className="flex flex-column z-0 w-full">
+          <BotaoAnterior
+            total={totalAnteriores}
+            carregando={carregandoAnterior}
+            onCarregar={carregarAnterior}
+          />
+
+          {/* Os atendimentos anteriores, do mais antigo para o mais novo, acima
+              das mensagens deste protocolo. Cada um com seu separador: sem ele
+              uma frase de meses atrás parece resposta à de hoje. */}
+          {anteriores.map((protocolo) => (
+            <div key={protocolo.id}>
+              <Separador
+                protocol={protocolo.protocol}
+                encerradoEm={protocolo.encerrado_em}
+              />
+              {protocolo.mensagens.map((msg) => (
+                // A mesma estrutura das mensagens deste protocolo - avatar,
+                // largura e alinhamento. Um bloco próprio, mais simples,
+                // deixava os balões antigos sem foto e com largura diferente,
+                // como se fossem outra coisa.
+                <div
+                  key={msg.message_id}
+                  className={`w-full relative message-content flex-column flex ${
+                    msg.from_me ? 'align-items-end' : 'align-items-start'
+                  }`}
+                >
+                  <div
+                    className={classNames(
+                      'relative flex message-item mb-1',
+                      msg.from_me ? 'flex-row-reverse' : 'flex-row',
+                    )}
+                    style={{ maxWidth: '70%', minWidth: '10%' }}
+                  >
+                    <ShowAvatarComponent
+                      message={msg}
+                      activeChat={activeChat}
+                    />
+                    {/* Sem `MenuMessageComponent`: responder ou editar mensagem
+                        de atendimento encerrado falharia no backend. */}
+                    <div className="relative message-balloon">
+                      <SingleMessageComponent
+                        message={msg}
+                        activeChat={activeChat}
+                        isLast={false}
+                        doAnimation={false}
+                      />
+                      <ShowReactionMessageComponent message={msg} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          {anteriores.length > 0 && activeChat?.protocol && (
+            <Separador
+              protocol={activeChat.protocol}
+              encerradoEm={null}
+            />
+          )}
+
           {mensagensNaTela?.map((msg) => {
             const messageClass = msg.from_me ? 'align-items-end' : 'align-items-start';
 
@@ -473,9 +622,7 @@ const Messages = () => {
                 )}
                 // Clicar em qualquer ponto da linha marca, como no WhatsApp.
                 onClick={
-                  modoSelecao && selecionavel
-                    ? () => alternarSelecao(msg.message_id)
-                    : undefined
+                  modoSelecao && selecionavel ? () => alternarSelecao(msg.message_id) : undefined
                 }
               >
                 {modoSelecao && (
@@ -484,9 +631,15 @@ const Messages = () => {
                     style={{ width: '1.5rem' }}
                   >
                     {selecionavel && (
+                      // Sem `onChange`: quem alterna é o `onClick` da linha,
+                      // que envolve a checkbox. Com os dois, clicar nela
+                      // disparava a alternância duas vezes - o `onChange` e o
+                      // clique borbulhando até o wrapper - e a marcação
+                      // desfazia na hora. A checkbox aqui é o indicador
+                      // visual; a área clicável é a linha inteira.
                       <Checkbox
                         checked={marcada}
-                        onChange={() => alternarSelecao(msg.message_id)}
+                        readOnly
                         aria-label={`Selecionar mensagem de ${msg.datetime}`}
                       />
                     )}

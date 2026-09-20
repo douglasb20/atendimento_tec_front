@@ -21,8 +21,8 @@ const ShowAvatarComponent = ({ message, activeChat }: ShowAvatarComponentProps) 
       <Avatar
         src={avatarUrl}
         alt="Avatar"
-        width={64}
-        height={64}
+        width={40}
+        height={40}
         className="border-circle"
         style={{ objectFit: 'cover' }}
       />

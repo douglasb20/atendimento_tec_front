@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { InputText } from 'primereact/inputtext';
 import { classNames } from 'primereact/utils';
+import PlayerAudio from './PlayerAudio';
 
 export type AnexoSelecionado = {
   /** Chave local da lista, para o React e para remover o item. */
@@ -85,12 +86,15 @@ const PreviewAnexos = ({
     }
 
     if (tipo === 'audio') {
+      // O mesmo player da conversa: conferir o áudio antes de enviar e
+      // ouvi-lo depois não deveriam ter aparências diferentes.
       return (
-        <audio
-          src={emDestaque.previewUrl}
-          controls
-          className="w-full"
-        />
+        <div className="w-full px-3">
+          <PlayerAudio
+            url={emDestaque.previewUrl}
+            mimetype={emDestaque.arquivo.type}
+          />
+        </div>
       );
     }
 
