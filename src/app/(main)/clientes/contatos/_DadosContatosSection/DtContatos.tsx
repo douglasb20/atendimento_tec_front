@@ -4,17 +4,13 @@ import { Column, ColumnBodyOptions } from 'primereact/column';
 import AcoesDataTable from '@/components/AcoesDataTable';
 import DataTableCustom from '@/components/DataTableCustom';
 import { ContactResponse } from '@/Interfaces';
-import { Mask } from '@/service/Util';
+import { FormataTelefoneExibicao } from '@/service/Util';
 
-const BodyTelefone = (data: ContactResponse, options: ColumnBodyOptions) => {
-  let value: string = data[options.field];
-  if (value) {
-    const maskType = value.length === 11 ? '(##) # ####-####' : '(##) ####-####';
-    value = Mask(value, maskType);
-  }
-
-  return value;
-};
+// A máscara antiga presumia número nacional e lia o `55` do país como DDD:
+// `556492698043` virava `(55) 6492-6980`, com o DDD errado e dois dígitos a
+// menos. O helper conhece o DDI.
+const BodyTelefone = (data: ContactResponse, options: ColumnBodyOptions) =>
+  FormataTelefoneExibicao(data[options.field]);
 
 const DtContatos = ({ actions, ...props }) => {
   return (

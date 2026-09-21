@@ -5,16 +5,20 @@ import { ContactResponse } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
+import { somenteDigitos } from '@/components/InputTelefone';
+import { AlertaCallback, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 
 import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import DtContatos from './DtContatos';
-import ModalFormulario from './ModalFormulario';
+import ModalFormulario, { ContactFormFields } from './ModalFormulario';
 
 type DadosContatosProps = {
   data: ContactResponse[];
 };
+
+/** O contato salvo, com o aviso que o backend acrescenta na criação. */
+type ContactSalvo = ContactResponse & { aviso?: string };
 
 export default function DadosContatosSection({ data }: DadosContatosProps) {
   const [contacts, setContacts] = useState<ContactResponse[]>(data || []);
@@ -80,6 +84,54 @@ export default function DadosContatosSection({ data }: DadosContatosProps) {
     }
   };
 
+  /**
+   * Grava o contato e recarrega a lista.
+   *
+   * O backend responde com um `aviso` quando o número não tem WhatsApp ou não
+   * pôde ser verificado - o cadastro deu certo nos dois casos, então é aviso e
+   * não erro.
+   */
+  const SalvarContato = async (fields: ContactFormFields) => {
+    try {
+      setLoading();
+
+      // O campo devolve E.164 (`+556492698043`); a API recebe só dígitos, e o
+      // DDI já vem embutido pelo seletor de país.
+      const body = {
+        name: fields.name,
+        phone: somenteDigitos(fields.phone) || undefined,
+        // Sempre enviado, mesmo vazio: array vazio remove os que existiam, e
+        // omitir preservaria - quem apagou todas as linhas quis limpar.
+        campos: (fields.campos ?? [])
+          .filter((c) => c.custom_field_id && c.valor?.trim())
+          .map((c) => ({ custom_field_id: c.custom_field_id, valor: c.valor.trim() })),
+      };
+
+      // `aviso` só vem na criação, quando o número não tem WhatsApp ou não pôde
+      // ser verificado; declarado aqui para os dois ramos do ternário.
+      const salvo = await (selectedContact?.id
+        ? FetchReq<ContactSalvo>({
+            endpoint: 'AtualizarContato',
+            variables: [selectedContact.id],
+            body,
+          })
+        : FetchReq<ContactSalvo>({ endpoint: 'AdicionarContato', body }));
+
+      setModalVisible(false);
+      await GetContacts();
+
+      AlertaCallback(
+        salvo?.aviso ?? `Contato ${selectedContact?.id ? 'atualizado' : 'cadastrado'} com sucesso!`,
+        () => {},
+        salvo?.aviso ? 'warning' : 'success',
+      );
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao salvar contato.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const onOpenModalForm = (data?: ContactResponse) => {
     setSelectedContact(data || null);
     setModalVisible(true);
@@ -105,7 +157,7 @@ export default function DadosContatosSection({ data }: DadosContatosProps) {
         <ModalFormulario
           visible={modalVisible}
           onHide={() => setModalVisible(false)}
-          onConfirm={() => {}}
+          onConfirm={SalvarContato}
           data={selectedContact}
         />
       </>

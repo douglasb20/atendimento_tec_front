@@ -528,3 +528,35 @@ export const descreveMidia = (
       return null;
   }
 };
+
+/**
+ * Telefone gravado (só dígitos, com DDI) em forma legível.
+ *
+ * `556492698043` vira `+55 (64) 9269-8043`. A formatação antiga presumia
+ * número nacional e lia o `55` do país como DDD - o resultado era
+ * `(55) 6492-6980`, com dois dígitos perdidos e o DDD errado.
+ *
+ * Números que não começam com `55` recebem só o `+` e o agrupamento básico:
+ * formatar cada país exigiria a tabela inteira, e quem tem contato
+ * estrangeiro reconhece o próprio formato.
+ */
+export const FormataTelefoneExibicao = (valor?: string | null): string => {
+  const digitos = (valor ?? '').replace(/\D/g, '');
+  if (!digitos) return '';
+
+  if (!digitos.startsWith('55')) return `+${digitos}`;
+
+  const nacional = digitos.slice(2);
+  const ddd = nacional.slice(0, 2);
+  const numero = nacional.slice(2);
+
+  if (!numero) return `+55 (${ddd}`;
+
+  // 9 dígitos é celular (9 XXXX-XXXX); 8 é fixo (XXXX-XXXX).
+  const corpo =
+    numero.length === 9
+      ? `${numero[0]} ${numero.slice(1, 5)}-${numero.slice(5)}`
+      : `${numero.slice(0, 4)}-${numero.slice(4)}`;
+
+  return `+55 (${ddd}) ${corpo}`;
+};

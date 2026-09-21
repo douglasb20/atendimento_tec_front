@@ -1,37 +1,58 @@
 import { useEffect } from 'react';
 import { Dialog as Modal } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
-import { InputMask } from 'primereact/inputmask';
 import { Button } from 'primereact/button';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
 import { getFormErrorMessage, msgRequired } from '@/service/Util';
-import { ContactResponse, Masks, Shape } from '@/Interfaces';
+import { ContactResponse, ValorCampoForm } from '@/Interfaces';
+import CamposPersonalizados from '@/components/CamposPersonalizados';
+import InputTelefone, { paraE164 } from '@/components/InputTelefone';
 import LabelPlus from '@/components/LabelPlus';
+
+/**
+ * O que o formulário edita - subconjunto do contato.
+ *
+ * Nomeado em vez de usar `ContactResponse` inteiro: quem recebe o `onConfirm`
+ * precisa saber que só estes campos chegam preenchidos.
+ */
+export type ContactFormFields = Pick<ContactResponse, 'id' | 'name' | 'phone'> & {
+  /** Campos personalizados escolhidos para este contato. */
+  campos?: ValorCampoForm[];
+};
 
 type ModalProps = {
   visible: boolean;
   onHide: () => void;
   data: ContactResponse;
-  onConfirm: (fields: ContactResponse) => void;
+  onConfirm: (fields: ContactFormFields) => void;
 };
 
-const defaultForm: Pick<ContactResponse, 'name' | 'phone' | 'id'> = {
+const defaultForm: ContactFormFields = {
   id: null,
   name: '',
   phone: '',
+  campos: [],
 };
 
-const schema = yup.object<yup.AnyObject, Shape<Pick<ContactResponse, 'name' | 'phone'>>>({
+const schema = yup.object({
   name: yup.string().required(msgRequired),
   phone: yup.string().notRequired(),
+  // Adicionou a linha, tem que preencher: uma linha pela metade não significa
+  // nada, e o backend a recusaria.
+  campos: yup.array().of(
+    yup.object({
+      custom_field_id: yup.number().required('Escolha o campo').nullable(),
+      valor: yup.string().trim().required('Informe o valor'),
+    }),
+  ),
 });
 
 function ModalFormulario(props: ModalProps) {
   const { visible, onHide, data, onConfirm } = props;
-  const { control, handleSubmit, reset } = useForm<ContactResponse>({
+  const { control, handleSubmit, reset } = useForm<ContactFormFields>({
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
   });
@@ -53,7 +74,7 @@ function ModalFormulario(props: ModalProps) {
     );
   };
 
-  const onSubmitForm = (fields: ContactResponse) => {
+  const onSubmitForm = (fields: ContactFormFields) => {
     try {
       onConfirm && onConfirm(fields);
     } catch (error) {}
@@ -64,6 +85,12 @@ function ModalFormulario(props: ModalProps) {
       reset({
         ...defaultForm,
         ...data,
+        // A API devolve `camposPersonalizados` com a relação carregada; o
+        // formulário só precisa do id e do valor.
+        campos: (data?.camposPersonalizados ?? []).map((v) => ({
+          custom_field_id: v.custom_field_id,
+          valor: v.valor,
+        })),
       });
     }
   }, [visible]);
@@ -111,20 +138,33 @@ function ModalFormulario(props: ModalProps) {
                   htmlFor={field.name}
                   text="Telefone"
                 />
-                <InputMask
+                {/* O valor circula em E.164 (`+556492698043`); a conversão
+                    para dígitos acontece ao salvar. A máscara nacional antiga
+                    lia o `55` do país como DDD e comia dois dígitos. */}
+                <InputTelefone
+                  // Remonta ao abrir: o `PhoneInput` lê o país do valor só na
+                  // montagem, e o modal já existe antes de o `reset` trazer os
+                  // dados - sem a `key` ele ficava preso ao primeiro país da
+                  // lista, com o número em branco.
+                  key={data?.id ?? 'novo'}
                   id={field.name}
-                  {...field}
-                  placeholder="(00) 0000-0000"
-                  mask={
-                    field?.value?.replace(/\D/g, '').length > 10
-                      ? Masks.CELULAR
-                      : Masks.FIXO_OPCIONAL
-                  }
-                  value={field?.value || ''}
+                  value={paraE164(field.value)}
+                  onChange={(valor) => field.onChange(valor ?? '')}
+                  onBlur={field.onBlur}
+                  invalido={!!fieldState.error}
                 />
                 {getFormErrorMessage(fieldState)}
               </>
             )}
+          />
+        </div>
+
+        {/* Os campos personalizados que quem edita escolher para este contato.
+            O catálogo diz o que pode ser usado; a escolha é linha a linha. */}
+        <div className="col-12">
+          <CamposPersonalizados
+            control={control}
+            aplicaA="contato"
           />
         </div>
       </div>

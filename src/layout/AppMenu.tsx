@@ -151,6 +151,15 @@ const AppMenu = () => {
               to: '/integracoes',
               visible: liberado(pode('integration:view')),
             },
+            {
+              // Em Configurações, e não em Clientes: o catálogo serve a
+              // contatos e clientes, e ficaria enviesado dentro de um deles.
+              label: 'Campos personalizados',
+              // @ts-ignore
+              icon: `fa fa-list-check text-2xl font-light text-center`,
+              to: '/configuracoes/campos-personalizados',
+              visible: liberado(pode('custom.field:view')),
+            },
           ],
         },
       ],

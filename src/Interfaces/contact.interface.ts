@@ -1,3 +1,4 @@
+import { ValorCampoResponse } from './custom-field.interface';
 import { ClientResponse } from './client.interface';
 
 export type ContactResponse = {
@@ -12,4 +13,7 @@ export type ContactResponse = {
   updated_at: string;
   status: number;
   client: ClientResponse | null;
+
+  /** Campos personalizados preenchidos, com a definição carregada. */
+  camposPersonalizados?: ValorCampoResponse[];
 };

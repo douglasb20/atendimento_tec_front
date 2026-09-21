@@ -10,8 +10,11 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 
-import { ContactResponse, IClientResponse, Masks, Shape, TagResponse } from '@/Interfaces';
+import { ContactResponse, IClientResponse, Masks, TagResponse,
+  ValorCampoForm,
+} from '@/Interfaces';
 
+import CamposPersonalizados from '@/components/CamposPersonalizados';
 import AcoesDataTable from '@/components/AcoesDataTable';
 import LabelPlus from '@/components/LabelPlus';
 import TitleCards from '@/components/TitleCards';
@@ -34,20 +37,34 @@ type FormType = {
   nome: string;
   cnpj?: string;
   tag_ids?: number[];
+  /** Campos personalizados escolhidos para este cliente. */
+  campos?: ValorCampoForm[];
 };
 
-const schema = yup.object<yup.AnyObject, Shape<FormType>>({
+// Sem o `Shape<FormType>` do projeto: ele exige correspondência exata, e o
+// yup infere as propriedades de um array de objetos como opcionais - o que
+// não bate com `ValorCampoForm`. Os campos continuam validados um a um.
+const schema = yup.object({
   nome: yup.string().required(msgRequired),
   cnpj: yup
     .string()
     .test('cnpj-validator', 'CNPJ inválido', (val) => val === '' || ValidaCNPJ(val)),
   tag_ids: yup.array().of(yup.number()).notRequired(),
+  // Linha adicionada exige campo e valor: meia linha não significa nada, e o
+  // backend a recusaria.
+  campos: yup.array().of(
+    yup.object({
+      custom_field_id: yup.number().required('Escolha o campo').nullable(),
+      valor: yup.string().trim().required('Informe o valor'),
+    }),
+  ),
 });
 
 const defaultForm: FormType = {
   nome: '',
   cnpj: '',
   tag_ids: [],
+  campos: [],
 };
 
 const BodyTelefone = (data: ContactResponse, options: ColumnBodyOptions) => {
@@ -81,6 +98,10 @@ export default function FormClient() {
         ...(id !== undefined && { id: id[0] }),
         ...fields,
         cnpj: fields.cnpj.replace(/\D/g, ''),
+        // Sempre enviado: array vazio remove os que existiam.
+        campos: (fields.campos ?? [])
+          .filter((c) => c.custom_field_id && c.valor?.trim())
+          .map((c) => ({ custom_field_id: c.custom_field_id, valor: c.valor.trim() })),
       };
       if (id === undefined) {
         await FetchReq({
@@ -125,9 +146,16 @@ export default function FormClient() {
       // A relação sai do reset e vira lista de ids: o MultiSelect trabalha com
       // os ids, não com as entidades.
       const tagIds = (data.tags ?? []).map((t) => t.id);
+      // Mesmo tratamento das etiquetas: a relação carregada vira o formato
+      // simples do formulário e sai do objeto, para não chegar ao `reset`.
+      const camposForm = (data.camposPersonalizados ?? []).map((v) => ({
+        custom_field_id: v.custom_field_id,
+        valor: v.valor,
+      }));
       delete data.contacts;
       delete data.tags;
-      reset({ ...defaultForm, ...data, tag_ids: tagIds });
+      delete data.camposPersonalizados;
+      reset({ ...defaultForm, ...data, tag_ids: tagIds, campos: camposForm });
       setContacts(oldContact || []);
       setRendered(true);
     } catch (err) {
@@ -240,6 +268,15 @@ export default function FormClient() {
                         {getFormErrorMessage(fieldState)}
                       </>
                     )}
+                  />
+                </div>
+              </div>
+
+              <div className="grid">
+                <div className="col-12 mt-3">
+                  <CamposPersonalizados
+                    control={control}
+                    aplicaA="cliente"
                   />
                 </div>
               </div>

@@ -8,6 +8,7 @@ export * from './chat-store.interface';
 export * from './channel.interface';
 export * from './contact.interface';
 export * from './client.interface';
+export * from './custom-field.interface';
 export * from './tag.interface';
 export * from './integration.interface';
 export * from './permission-group.interface';

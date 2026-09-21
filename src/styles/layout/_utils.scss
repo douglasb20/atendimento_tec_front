@@ -203,3 +203,66 @@
 .protocolo-chat:focus-visible i {
   opacity: 1;
 }
+
+/* Campo de telefone com seletor de país (react-phone-number-input).
+   O CSS da biblioteca não é importado: o seletor foi trocado pelo `Dropdown` do
+   PrimeReact. As regras abaixo fundem os dois numa caixa só - a borda é do
+   contêiner, e seletor e input ficam transparentes dentro dele. Sem isso eram
+   dois campos separados, com o seletor parecendo um filtro solto ao lado. */
+.input-telefone {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--border-radius);
+  background: var(--surface-overlay);
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  /* O foco pinta o contêiner, não o input de dentro: é ele que tem a borda. */
+  &:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem var(--primary-100);
+  }
+
+  .p-dropdown {
+    flex: 0 0 auto;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none !important;
+
+    /* Uma linha fina separando do número, no lugar da borda que foi removida. */
+    border-right: 1px solid var(--surface-border);
+    border-top-left-radius: var(--border-radius);
+    border-bottom-left-radius: var(--border-radius);
+  }
+
+  .p-dropdown .p-dropdown-label {
+    display: flex;
+    align-items: center;
+    padding-right: 0.25rem;
+  }
+
+  .p-dropdown .p-dropdown-trigger {
+    width: 2rem;
+  }
+
+  .PhoneInputInput {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none !important;
+
+    &:focus,
+    &:enabled:focus {
+      outline: none;
+      box-shadow: none !important;
+    }
+  }
+}
+
+/* Campo inválido: a borda vermelha vai para o contêiner, como no `p-invalid`
+   dos demais campos. */
+.input-telefone:has(.p-invalid) {
+  border-color: var(--red-500);
+}
