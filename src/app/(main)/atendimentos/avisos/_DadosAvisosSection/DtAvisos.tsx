@@ -35,6 +35,8 @@ const DtAvisos = ({ value, actions, onAlternarAtivo, podeAlternar }: DtAvisosPro
     <Column
       header="Ativo"
       style={{ width: '6rem' }}
+      align='center'
+      alignHeader='center'
       body={(aviso: ServiceAlertResponse) => (
         <InputSwitch
           checked={aviso.ativo}

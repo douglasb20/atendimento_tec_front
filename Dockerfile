@@ -22,7 +22,7 @@ ENV AMBIENTE=$AMBIENTE
 COPY . .
 
 # `next build` direto, sem o `env-cmd` dos scripts: o arquivo `.env.production`
-# não é versionado, e aqui os valores já vêm pelos ARG acima.
+# não é versionado, e aqui os valores já vêm pelos ARG acima
 RUN npx next build
 
 # ---
