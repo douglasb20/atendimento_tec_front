@@ -1,0 +1,20 @@
+// GERADO POR scripts/build-temas.mjs - NÃO EDITE
+// Tema: Azul Céu (azul) · Modo: Meia-luz (dim)
+
+$primaryColor: #60a5fa;
+$primaryLightColor: #93c5fd;
+$primaryLighterColor: #bfdbfe;
+$primaryLightestColor: rgba(96, 165, 250, 0.2);
+$primaryTextColor: #030712;
+
+$highlightBg: rgba(96, 165, 250, 0.16);
+$highlightTextColor: rgba(255, 255, 255, 0.87);
+$highlightFocusBg: rgba(96, 165, 250, 0.24);
+
+// O `_variables` de cada modo traz as shades, o `:root` inteiro e o
+// `color-scheme` - são os arquivos oficiais do template, não um mapa
+// reconstruído por nós.
+@import "../../../modos/dim/_variables";
+@import "../../../_fonts";
+@import "../../../theme-base/_components";
+@import "../../../modos/dim/_extensions";

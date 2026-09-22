@@ -35,6 +35,8 @@ yarn-error.log*
 # vercel
 .vercel
 
-# Temas compilados por scripts/build-temas.mjs (derivados, ~5 MB).
-# O `prebuild` os gera; versioná-los daria conflito a cada merge.
-public/theme/gerados/
+# ⚠️ `public/theme/gerados/` **é versionado**, embora seja gerado por
+# `scripts/build-temas.mjs`. Ignorá-lo já custou os 27 CSS numa limpeza do
+# working tree: o `predev` os regenera, mas quem clonar o repositório e abrir
+# o build de produção sem rodar o script recebe a tela sem tema.
+# O projeto de referência (nethive) também os versiona.

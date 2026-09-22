@@ -1,0 +1,20 @@
+// GERADO POR scripts/build-temas.mjs - NÃO EDITE
+// Tema: Verde Oceano (oceano) · Modo: Claro (claro)
+
+$primaryColor: #14b8a6;
+$primaryLightColor: #99f6e4;
+$primaryDarkColor: #0d9488;
+$primaryDarkerColor: #0f766e;
+$primaryTextColor: #ffffff;
+
+$highlightBg: #f0fdfa;
+$highlightTextColor: #0f766e;
+$highlightFocusBg: rgba(20, 184, 166, 0.24);
+
+// O `_variables` de cada modo traz as shades, o `:root` inteiro e o
+// `color-scheme` - são os arquivos oficiais do template, não um mapa
+// reconstruído por nós.
+@import "../../../modos/light/_variables";
+@import "../../../_fonts";
+@import "../../../theme-base/_components";
+@import "../../../modos/light/_extensions";

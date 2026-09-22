@@ -1,0 +1,20 @@
+// GERADO POR scripts/build-temas.mjs - NÃO EDITE
+// Tema: Roxo Noturno (roxo) · Modo: Meia-luz (dim)
+
+$primaryColor: #a78bfa;
+$primaryLightColor: #c4b5fd;
+$primaryLighterColor: #ddd6fe;
+$primaryLightestColor: rgba(167, 139, 250, 0.2);
+$primaryTextColor: #030712;
+
+$highlightBg: rgba(167, 139, 250, 0.16);
+$highlightTextColor: rgba(255, 255, 255, 0.87);
+$highlightFocusBg: rgba(167, 139, 250, 0.24);
+
+// O `_variables` de cada modo traz as shades, o `:root` inteiro e o
+// `color-scheme` - são os arquivos oficiais do template, não um mapa
+// reconstruído por nós.
+@import "../../../modos/dim/_variables";
+@import "../../../_fonts";
+@import "../../../theme-base/_components";
+@import "../../../modos/dim/_extensions";

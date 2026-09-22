@@ -1,0 +1,20 @@
+// GERADO POR scripts/build-temas.mjs - NÃO EDITE
+// Tema: Rosa Pink (rosa) · Modo: Claro (claro)
+
+$primaryColor: #ec4899;
+$primaryLightColor: #fbcfe8;
+$primaryDarkColor: #db2777;
+$primaryDarkerColor: #be185d;
+$primaryTextColor: #ffffff;
+
+$highlightBg: #fdf2f8;
+$highlightTextColor: #be185d;
+$highlightFocusBg: rgba(236, 72, 153, 0.24);
+
+// O `_variables` de cada modo traz as shades, o `:root` inteiro e o
+// `color-scheme` - são os arquivos oficiais do template, não um mapa
+// reconstruído por nós.
+@import "../../../modos/light/_variables";
+@import "../../../_fonts";
+@import "../../../theme-base/_components";
+@import "../../../modos/light/_extensions";

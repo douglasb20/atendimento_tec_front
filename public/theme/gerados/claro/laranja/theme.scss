@@ -1,0 +1,20 @@
+// GERADO POR scripts/build-temas.mjs - NÃO EDITE
+// Tema: Laranja Pôr do Sol (laranja) · Modo: Claro (claro)
+
+$primaryColor: #f59e0b;
+$primaryLightColor: #fef08a;
+$primaryDarkColor: #d97706;
+$primaryDarkerColor: #b45309;
+$primaryTextColor: #ffffff;
+
+$highlightBg: #fffbeb;
+$highlightTextColor: #b45309;
+$highlightFocusBg: rgba(245, 158, 11, 0.24);
+
+// O `_variables` de cada modo traz as shades, o `:root` inteiro e o
+// `color-scheme` - são os arquivos oficiais do template, não um mapa
+// reconstruído por nós.
+@import "../../../modos/light/_variables";
+@import "../../../_fonts";
+@import "../../../theme-base/_components";
+@import "../../../modos/light/_extensions";

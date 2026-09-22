@@ -44,6 +44,13 @@ COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 
+# Os `.scss` de `public/theme/` são **entrada do gerador de temas**, não asset:
+# o navegador consome apenas o `theme.css` que o `build:temas` compila a partir
+# deles. Ficam versionados (senão o build não roda em máquina limpa), mas na
+# imagem são 658 KB servidos publicamente, expondo a estrutura do tema sem
+# nenhum uso em runtime.
+RUN find ./public -name "*.scss" -delete
+
 ENV NODE_ENV=production
 # Sem isso o servidor escuta apenas em localhost e o proxy não o alcança.
 ENV HOSTNAME=0.0.0.0

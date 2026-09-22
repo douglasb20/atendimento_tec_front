@@ -1,0 +1,20 @@
+// GERADO POR scripts/build-temas.mjs - NÃO EDITE
+// Tema: Azul Automatec (automatec) · Modo: Claro (claro)
+
+$primaryColor: #262C9B;
+$primaryLightColor: #c7d2fe;
+$primaryDarkColor: #000459;
+$primaryDarkerColor: #00034C;
+$primaryTextColor: #ffffff;
+
+$highlightBg: #eef2ff;
+$highlightTextColor: #00034C;
+$highlightFocusBg: rgba(38, 44, 155, 0.24);
+
+// O `_variables` de cada modo traz as shades, o `:root` inteiro e o
+// `color-scheme` - são os arquivos oficiais do template, não um mapa
+// reconstruído por nós.
+@import "../../../modos/light/_variables";
+@import "../../../_fonts";
+@import "../../../theme-base/_components";
+@import "../../../modos/light/_extensions";

@@ -1,0 +1,20 @@
+// GERADO POR scripts/build-temas.mjs - NÃO EDITE
+// Tema: Índigo (indigo) · Modo: Claro (claro)
+
+$primaryColor: #6366f1;
+$primaryLightColor: #c7d2fe;
+$primaryDarkColor: #4f46e5;
+$primaryDarkerColor: #4338ca;
+$primaryTextColor: #ffffff;
+
+$highlightBg: #eef2ff;
+$highlightTextColor: #4338ca;
+$highlightFocusBg: rgba(99, 102, 241, 0.24);
+
+// O `_variables` de cada modo traz as shades, o `:root` inteiro e o
+// `color-scheme` - são os arquivos oficiais do template, não um mapa
+// reconstruído por nós.
+@import "../../../modos/light/_variables";
+@import "../../../_fonts";
+@import "../../../theme-base/_components";
+@import "../../../modos/light/_extensions";
