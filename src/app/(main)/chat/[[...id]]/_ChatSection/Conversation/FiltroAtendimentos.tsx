@@ -53,8 +53,11 @@ const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar }: FiltroAtendimen
             onClick={() => onSelecionar(id)}
             className={classNames(
               {
-                'bg-primary-500 text-white': ativa,
-                'bg-transparent text-600 hover:surface-300 border-1 border-transparent hover:border-400': !ativa,
+                // `text-primary-contrast` e não `text-white`: nos modos
+                // escuros a primária é clara, e o branco sobre ela não lê.
+                'bg-primary-500 text-primary-contrast': ativa,
+                'bg-transparent text-600 hover:surface-300 border-1 border-transparent hover:border-400':
+                  !ativa,
               },
               'flex cursor-pointer align-items-center gap-2 flex-none border-none border-round-3xl px-3 py-2 text-sm font-medium white-space-nowrap transition-colors transition-duration-150',
             )}
@@ -65,7 +68,10 @@ const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar }: FiltroAtendimen
                 o da aba. */}
             <span
               className={classNames(
-                ativa ? 'bg-white text-primary-600' : 'surface-200 text-900',
+                // `surface-0` e não `bg-white`: o branco literal ficava um
+                // retângulo claro na aba ativa sobre o fundo escuro. A
+                // superfície 0 é branca no claro e escura no escuro.
+                ativa ? 'surface-0 text-primary-600' : 'surface-200 text-900',
                 'flex align-items-center justify-content-center flex-none border-circle text-xs font-bold line-height-1',
               )}
               // Largura mínima igual à altura deixa o número numa circunferência

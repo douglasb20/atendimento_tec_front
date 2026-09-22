@@ -2,6 +2,7 @@
 import { createContext, useContext, useReducer } from 'react';
 import { parseCookies, destroyCookie } from 'nookies';
 import useApi from '@/service/Api/ApiClient';
+import { COOKIE_TEMA } from '@/service/Tema';
 
 export const AuthContext = createContext({});
 
@@ -17,7 +18,7 @@ export function AuthProvider({ children }) {
   const login = async (email: string, password: string) => {
     try {
       // Nada de credencial no localStorage: as duas linhas que gravavam
-      // `token` e `expires_at` ali eram resíduo — ninguém as lia, e deixavam o
+      // `token` e `expires_at` ali eram resíduo - ninguém as lia, e deixavam o
       // access token num lugar a mais ao alcance de qualquer script da página.
       await apiLogin(email, password);
     } catch (error) {
@@ -27,7 +28,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     // Os cookies de sessão são httpOnly: `destroyCookie` não os alcança, só o
-    // servidor consegue apagá-los. A chamada vem primeiro — se ela falhar, a
+    // servidor consegue apagá-los. A chamada vem primeiro - se ela falhar, a
     // limpeza local ainda acontece e o usuário sai da aplicação de todo modo.
     try {
       await apiLogout();
@@ -38,9 +39,15 @@ export function AuthProvider({ children }) {
     try {
       // Os demais (userInfo, preferências) são legíveis e saem daqui.
       localStorage.clear();
-      Object.keys(cookies).forEach((cookie) => {
-        destroyCookie({}, cookie, { path: '/' });
-      });
+      Object.keys(cookies)
+        // O tema sobrevive ao logout: é preferência de quem usa a máquina, não
+        // dado de sessão. Apagando-o, a tela de login e o acesso seguinte
+        // voltariam ao tema padrão com um flash - e quem escolheu escuro
+        // levaria um clarão em cada entrada.
+        .filter((cookie) => cookie !== COOKIE_TEMA)
+        .forEach((cookie) => {
+          destroyCookie({}, cookie, { path: '/' });
+        });
     } catch (error) {}
   };
 

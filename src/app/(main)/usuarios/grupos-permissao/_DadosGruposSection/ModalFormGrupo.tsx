@@ -16,6 +16,7 @@ import {
   PermissionResponse,
 } from '@/Interfaces';
 import { getFormErrorMessage, msgRequired } from '@/service/Util';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 export type FormGrupo = {
   name: string;
@@ -45,6 +46,12 @@ const ModalFormGrupo = ({
   onHide,
   onConfirm,
 }: Props) => {
+  const { podeAdicionar, podeEditar, semPermissao } = usePermissoesModulo('permission_group');
+
+  // Editar exige `:update`; criar, `:add`. Sem a permissão do caso, o
+  // formulário abre em somente leitura - quem tem `:view` consulta o cadastro.
+  const somenteLeitura = data?.id ? !podeEditar : !podeAdicionar;
+
   const { control, handleSubmit, reset } = useForm<FormGrupo>({ defaultValues });
   const [selecionadas, setSelecionadas] = useState<Set<number>>(new Set());
 
@@ -93,7 +100,7 @@ const ModalFormGrupo = ({
     setSelecionadas(marcar ? new Set(permissoes.map((p) => p.id)) : new Set());
   };
 
-  /** Marca ou desmarca o grupo inteiro — são 45 permissões em 12 módulos. */
+  /** Marca ou desmarca o grupo inteiro - são 45 permissões em 12 módulos. */
   const alternaGrupo = (itens: PermissionResponse[], marcar: boolean) => {
     setSelecionadas((atual) => {
       const novo = new Set(atual);
@@ -150,6 +157,7 @@ const ModalFormGrupo = ({
                 <InputText
                   {...field}
                   placeholder="Ex.: Supervisor"
+                  disabled={somenteLeitura}
                 />
                 {getFormErrorMessage(fieldState)}
               </>
@@ -160,7 +168,7 @@ const ModalFormGrupo = ({
         <div className="col-12 p-fluid">
           <LabelPlus
             text="Descrição"
-            textHelp="Uma linha explicando para quem é este grupo — ajuda na hora de escolher no cadastro do usuário."
+            textHelp="Uma linha explicando para quem é este grupo - ajuda na hora de escolher no cadastro do usuário."
           />
           <Controller
             control={control}
@@ -169,6 +177,7 @@ const ModalFormGrupo = ({
               <InputText
                 {...field}
                 placeholder="Ex.: Acompanha a operação sem mexer em usuários"
+                disabled={somenteLeitura}
               />
             )}
           />
@@ -183,7 +192,7 @@ const ModalFormGrupo = ({
                 {selecionadas.size} de {permissoes.length} selecionadas
               </span>
 
-              {/* `p-button-text`: são atalhos, não a ação principal do modal —
+              {/* `p-button-text`: são atalhos, não a ação principal do modal -
                   botões sólidos aqui competiriam com o Salvar. */}
               <Button
                 type="button"
@@ -228,6 +237,7 @@ const ModalFormGrupo = ({
                       // não ter nenhuma.
                       className={!todas && marcadas > 0 ? 'opacity-60' : undefined}
                       onChange={() => alternaGrupo(itens, !todas)}
+                      disabled={somenteLeitura}
                     />
                     <label
                       htmlFor={`grupo-${modulo.id}`}
@@ -250,6 +260,7 @@ const ModalFormGrupo = ({
                           inputId={`perm-${permissao.id}`}
                           checked={selecionadas.has(permissao.id)}
                           onChange={() => alterna(permissao.id)}
+                          disabled={somenteLeitura}
                         />
                         <label
                           htmlFor={`perm-${permissao.id}`}
@@ -277,6 +288,8 @@ const ModalFormGrupo = ({
           />
           <Button
             label="Salvar"
+            disabled={somenteLeitura}
+            title={somenteLeitura ? semPermissao : undefined}
             onClick={() => handleSubmit(onSubmit)()}
           />
         </div>

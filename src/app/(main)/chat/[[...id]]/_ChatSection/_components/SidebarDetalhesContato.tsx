@@ -3,11 +3,19 @@
 import { Button } from 'primereact/button';
 import { Sidebar } from 'primereact/sidebar';
 
-import Avatar from '@/components/Avatar';
-import { ContactResponse } from '@/Interfaces';
-import { DateToBR, Mask } from '@/service/Util';
+import { ContactResponse, formataValorCampo, ValorCampoResponse } from '@/Interfaces';
+import { DateToBR, Mask, nomeCompleto } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import EtiquetasDoCliente from './EtiquetasDoCliente';
+
+/**
+ * Primeira letra do nome, para o círculo de identificação.
+ *
+ * Só a inicial, e não as iniciais de nome e sobrenome: razão social costuma
+ * ter artigo e sufixo ("Automatec Sistemas LTDA"), e duas letras acabariam em
+ * combinações sem sentido.
+ */
+const inicialDe = (nome?: string): string => (nome ?? '?').trim().charAt(0).toUpperCase() || '?';
 
 type SidebarDetalhesContatoProps = {
   visible: boolean;
@@ -15,6 +23,15 @@ type SidebarDetalhesContatoProps = {
   contato?: ContactResponse;
   /** Abre o cadastro para corrigir os dados ou trocar o cliente. */
   onEditar?: () => void;
+  /**
+   * Para onde propagar o contato alterado.
+   *
+   * ⚠️ Obrigatório quando o painel é aberto **fora** da conversa ativa - pela
+   * lista, por exemplo. O padrão escreve na `activeChat`, que ali é outra
+   * conversa ou nenhuma, e a alteração iria para o contato errado ou seria
+   * descartada em silêncio (`patchActiveChat` ignora sem conversa aberta).
+   */
+  onContatoAtualizado?: (contato: ContactResponse) => void;
 };
 
 /** Uma linha do painel; some quando não há o que mostrar. */
@@ -26,6 +43,32 @@ const Campo = ({ rotulo, valor }: { rotulo: string; valor?: string | null }) => 
       <span className="text-xs text-500 uppercase">{rotulo}</span>
       <span className="text-sm text-900 word-break-break-word">{valor}</span>
     </div>
+  );
+};
+
+/**
+ * Os campos personalizados preenchidos, um sob o outro.
+ *
+ * Reusa o `Campo` para lerem igual aos dados fixos da seção - para quem
+ * consulta, "CPF" cadastrado como campo personalizado não é diferente de
+ * "CNPJ", que é coluna.
+ *
+ * Nada aparece quando não há nenhum: o cadastro é opcional e a maioria dos
+ * registros não tem, então um título solto com espaço vazio seria ruído.
+ */
+const CamposPersonalizados = ({ valores }: { valores?: ValorCampoResponse[] }) => {
+  if (!valores?.length) return null;
+
+  return (
+    <>
+      {valores.map((v) => (
+        <Campo
+          key={v.custom_field_id}
+          rotulo={v.customField?.nome ?? 'Campo'}
+          valor={formataValorCampo(v.valor, v.customField?.tipo)}
+        />
+      ))}
+    </>
   );
 };
 
@@ -58,6 +101,7 @@ const SidebarDetalhesContato = ({
   onHide,
   contato,
   onEditar,
+  onContatoAtualizado,
 }: SidebarDetalhesContatoProps) => {
   const patchActiveChat = useChatStore((s) => s.patchActiveChat);
   const cliente = contato?.client;
@@ -65,14 +109,23 @@ const SidebarDetalhesContato = ({
   /**
    * Propaga as etiquetas novas para a conversa aberta.
    *
-   * Sem isto, fechar e reabrir o painel mostraria as etiquetas antigas — o
+   * Sem isto, fechar e reabrir o painel mostraria as etiquetas antigas - o
    * `activeChat` guarda o contato com o cliente aninhado, e ele não se atualiza
    * sozinho.
    */
   const aoAtualizarCliente = (atualizado: typeof cliente) => {
     if (!contato) return;
 
-    patchActiveChat({ contact: { ...contato, client: atualizado } });
+    const novoContato = { ...contato, client: atualizado };
+
+    // Quem abriu o painel diz para onde propagar; sem isso, vale a conversa
+    // ativa - que é o caso do cabeçalho do chat.
+    if (onContatoAtualizado) {
+      onContatoAtualizado(novoContato);
+      return;
+    }
+
+    patchActiveChat({ contact: novoContato });
   };
 
   return (
@@ -85,21 +138,24 @@ const SidebarDetalhesContato = ({
     >
       <div className="flex flex-column gap-4">
         <div className="flex align-items-center gap-3">
-          <Avatar
-            src={contato?.avatar_url}
-            alt={contato?.name ?? 'Contato'}
-            width={56}
-            height={56}
-            className="border-circle flex-none"
-            style={{ objectFit: 'cover' }}
-          />
+          {/* A inicial do cliente, não a foto do contato: o rosto já aparece
+              no cabeçalho da conversa, e repeti-lo aqui sugeria que fosse a
+              foto da empresa - que nem tem avatar no cadastro. */}
+          <span
+            className="flex align-items-center justify-content-center flex-none border-circle bg-primary-500 text-primary-contrast text-2xl font-semibold"
+            style={{ width: 56, height: 56 }}
+            aria-hidden
+          >
+            {inicialDe(cliente?.nome ?? contato?.name)}
+          </span>
+
           <div className="flex flex-column min-w-0">
             <span className="text-lg font-semibold text-900 white-space-nowrap overflow-hidden text-overflow-ellipsis">
-              {cliente?.nome ?? contato?.name ?? 'Contato'}
+              {cliente?.nome ?? nomeCompleto(contato) ?? 'Contato'}
             </span>
             {cliente?.nome && (
               <span className="text-sm text-500 white-space-nowrap overflow-hidden text-overflow-ellipsis">
-                {contato?.name}
+                {nomeCompleto(contato)}
               </span>
             )}
           </div>
@@ -122,13 +178,14 @@ const SidebarDetalhesContato = ({
               rotulo="Cliente desde"
               valor={cliente.created_at ? DateToBR(cliente.created_at, 'P') : null}
             />
+            <CamposPersonalizados valores={cliente.camposPersonalizados} />
             <EtiquetasDoCliente
               cliente={cliente}
               onAtualizado={aoAtualizarCliente}
             />
           </Secao>
         ) : (
-          // Sem cliente a finalização fica bloqueada — dizer isso aqui evita o
+          // Sem cliente a finalização fica bloqueada - dizer isso aqui evita o
           // atendente descobrir só na hora de encerrar.
           <div className="flex flex-column gap-3 border-1 border-orange-300 bg-orange-50 border-round-lg p-3">
             <div className="flex align-items-start gap-2">
@@ -155,7 +212,7 @@ const SidebarDetalhesContato = ({
         >
           <Campo
             rotulo="Nome"
-            valor={contato?.name}
+            valor={nomeCompleto(contato)}
           />
           <Campo
             rotulo="Telefone"
@@ -165,6 +222,7 @@ const SidebarDetalhesContato = ({
             rotulo="Cadastrado em"
             valor={contato?.created_at ? DateToBR(contato.created_at, 'P') : null}
           />
+          <CamposPersonalizados valores={contato?.camposPersonalizados} />
         </Secao>
 
         {cliente && onEditar && (

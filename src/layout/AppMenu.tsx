@@ -11,7 +11,7 @@ import { usePermissoes } from '@/hooks/usePermissoes';
  * O `AppMenuitem` respeita `visible` item a item, mas não olha para os filhos:
  * sem isto, um Atendente veria "Configurações" abrindo para lugar nenhum.
  *
- * Grupo sem `items` é folha e passa direto — a decisão dele já veio pronta.
+ * Grupo sem `items` é folha e passa direto - a decisão dele já veio pronta.
  */
 const podaVazios = (itens: MenuModel[]): MenuModel[] =>
   itens
@@ -31,13 +31,13 @@ const AppMenu = () => {
   //
   // O hook só o lê depois da montagem (ver lá o porquê), então no primeiro
   // render ninguém tem permissão nenhuma. Filtrar já nesse momento faria o menu
-  // nascer vazio e encher um quadro depois — e quem não tem acesso a nada veria
+  // nascer vazio e encher um quadro depois - e quem não tem acesso a nada veria
   // o mesmo piscar. Liberar até a leitura é o inverso: o menu nasce completo e
   // encolhe, o que passa despercebido.
   const liberado = (permitido: boolean) => !carregado || permitido;
 
   // O menu deixou de ser constante: cada entrada consulta o que o usuário pode.
-  // Esconder aqui é conveniência — quem digitar a rota direto chega à tela, e é
+  // Esconder aqui é conveniência - quem digitar a rota direto chega à tela, e é
   // o backend que recusa as chamadas. Ver `usePermissoes`.
   const model: MenuModel[] = podaVazios([
     {
@@ -64,6 +64,24 @@ const AppMenu = () => {
               icon: `pi pi-pen-to-square pi-fw`,
               to: '/atendimentos',
               visible: liberado(pode('support:view')),
+            },
+            {
+              // Junto do chat, e não em Conexões: é configuração do
+              // atendimento, e quem cadastra é quem atende.
+              label: 'Respostas rápidas',
+              icon: `${PrimeIcons.COMMENT} pi-fw`,
+              to: '/atendimentos/respostas-rapidas',
+              visible: liberado(pode('quick.reply:view')),
+            },
+            {
+              // Também no atendimento: o aviso entra na conversa, logo após a
+              // saudação, e quem o liga é quem está atendendo o incidente.
+              label: 'Avisos',
+              // String direta: `PrimeIcons.MEGAPHONE` existe no runtime mas não na
+              // tipagem instalada (o `.d.ts` está defasado em relação ao `api.js`).
+              icon: 'pi pi-megaphone pi-fw',
+              to: '/atendimentos/avisos',
+              visible: liberado(pode('service.alert:view')),
             },
           ],
         },
@@ -95,6 +113,15 @@ const AppMenu = () => {
               icon: `${PrimeIcons.TAGS} pi-fw`,
               to: '/clientes/tags',
               visible: liberado(pode('tag:view')),
+            },
+            {
+              // O catálogo serve a contatos e clientes, mas é daqui que se
+              // chega a ele: quem cadastra o campo é quem preenche os dois.
+              label: 'Campos personalizados',
+              // @ts-ignore
+              icon: `fa fa-list-check text-2xl font-light text-center`,
+              to: '/configuracoes/campos-personalizados',
+              visible: liberado(pode('custom.field:view')),
             },
           ],
         },
@@ -132,10 +159,10 @@ const AppMenu = () => {
         },
         {
           // No fim da lista: é o que se mexe ao montar o ambiente, não no dia a
-          // dia do atendimento. Canais e integrações andam juntos — cada canal
-          // aponta para uma integração.
-          label: 'Configurações',
-          icon: `${PrimeIcons.COG} pi-fw`,
+          // dia do atendimento. Canais e integrações andam juntos - cada canal
+          // aponta para uma integração -, e é isso que o nome do grupo diz.
+          label: 'Conexões',
+          icon: `${PrimeIcons.LINK} pi-fw`,
           items: [
             {
               label: 'Canais',
@@ -150,15 +177,6 @@ const AppMenu = () => {
               icon: `fa fa-puzzle-piece text-2xl font-light text-center`,
               to: '/integracoes',
               visible: liberado(pode('integration:view')),
-            },
-            {
-              // Em Configurações, e não em Clientes: o catálogo serve a
-              // contatos e clientes, e ficaria enviesado dentro de um deles.
-              label: 'Campos personalizados',
-              // @ts-ignore
-              icon: `fa fa-list-check text-2xl font-light text-center`,
-              to: '/configuracoes/campos-personalizados',
-              visible: liberado(pode('custom.field:view')),
             },
           ],
         },

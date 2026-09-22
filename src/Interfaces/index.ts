@@ -12,6 +12,8 @@ export * from './custom-field.interface';
 export * from './tag.interface';
 export * from './integration.interface';
 export * from './permission-group.interface';
+export * from './quick-reply.interface';
+export * from './service-alert.interface';
 export * from './system-settings.interface';
 
 export enum Masks {
@@ -32,6 +34,12 @@ export type JWTToken = {
   id: number;
   sub: number;
   name: string;
+  /**
+   * ⚠️ Opcional de propósito: tokens emitidos **antes** da separação de
+   * nome/sobrenome não têm este campo, e continuam válidos até expirar. Quem
+   * lê precisa tolerar a ausência em vez de mostrar "undefined".
+   */
+  last_name?: string | null;
   email: string;
   lastlogin_at: string;
   iat: number;
@@ -53,10 +61,11 @@ export interface ILoginResp {
 export interface IUsuariosResponse {
   id?: number;
   name: string;
+  last_name?: string | null;
   email: string;
   status?: number;
   /**
-   * Custo/hora do atendente. **Obsoleto** — saiu do formulário e da listagem.
+   * Custo/hora do atendente. **Obsoleto** - saiu do formulário e da listagem.
    *
    * Alimentava um cálculo de valor por atendimento no módulo `supports`, que
    * está parado; a consulta que o usava nem roda (é SQL de MySQL num banco
@@ -69,7 +78,7 @@ export interface IUsuariosResponse {
   lastlogin_at?: string;
   /** O grupo de permissão do usuário. Nulo significa sem acesso a nada. */
   permission_group_id?: number | null;
-  /** A relação carregada, quando o endpoint a traz — para exibir o nome. */
+  /** A relação carregada, quando o endpoint a traz - para exibir o nome. */
   permissionGroup?: { id: number; name: string } | null;
 }
 
@@ -124,7 +133,7 @@ export interface IAtendimentoStatus {
 
 export type UserInfo = IUsuariosResponse & {
   /**
-   * Os nomes das permissões do usuário, vindas do papel — ex.: `client:view`.
+   * Os nomes das permissões do usuário, vindas do papel - ex.: `client:view`.
    *
    * Apenas os nomes, de propósito: esta resposta é guardada no cookie
    * `userInfo`, que tem teto de 4 KB, e os registros completos estouravam o
@@ -134,6 +143,10 @@ export type UserInfo = IUsuariosResponse & {
   permissions: string[];
   /** Nulo significa sem grupo, portanto sem permissão alguma. */
   permission_group_id?: number | null;
+  /** Cor escolhida para a interface. Nulo = nunca escolheu, usa o padrão. */
+  tema?: string | null;
+  /** `claro`, `escuro` ou `dim`. Nulo = nunca escolheu. */
+  modo_tema?: string | null;
 };
 
 /**

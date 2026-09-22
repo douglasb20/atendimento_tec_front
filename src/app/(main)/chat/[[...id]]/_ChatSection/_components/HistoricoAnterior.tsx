@@ -17,7 +17,7 @@ type BotaoProps = {
  *
  * Só existe quando há histórico: o backend informa o total ao abrir a conversa,
  * e com zero este componente não renderiza nada. Carregar tudo de uma vez faria
- * um cliente de dois anos travar a tela ao abrir — justamente o cliente que
+ * um cliente de dois anos travar a tela ao abrir - justamente o cliente que
  * mais volta.
  */
 const BotaoCarregarAnterior = ({ total, carregando, onCarregar }: BotaoProps) => {

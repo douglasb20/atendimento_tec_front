@@ -14,11 +14,12 @@ type HeaderSectionProps = {
 const HeaderSection = ({ name, lastLogin, avatarUrl }: HeaderSectionProps) => {
   const { setLoading } = useService();
 
-  const ArrumaPrimeiroNome = (nome: string): string => {
-    let separaNome: string[] = nome.split(' ');
-    const primeiroNome: string = separaNome[0].toLowerCase();
-    return UcWords(primeiroNome);
-  };
+  /**
+   * O `name` já é o primeiro nome desde a separação de nome/sobrenome - o
+   * `split(' ')[0]` que havia aqui virou redundante, e estourava com nome
+   * vazio. O `UcWords` fica: o cadastro aceita "douglas" em minúsculas.
+   */
+  const primeiroNome = UcWords((name ?? '').trim().toLowerCase());
 
   useEffect(() => {
     setLoading(false);
@@ -42,7 +43,7 @@ const HeaderSection = ({ name, lastLogin, avatarUrl }: HeaderSectionProps) => {
           </div>
           <div className="flex flex-column align-items-center sm:align-items-start w-full">
             <div className="flex justify-content-between w-full">
-              <span className="font-bold text-4xl text-10">Olá, {ArrumaPrimeiroNome(name)}</span>
+              <span className="font-bold text-4xl text-10">Olá, {primeiroNome}</span>
             </div>
             {lastLogin && (
               <p className="text-600 m-0">

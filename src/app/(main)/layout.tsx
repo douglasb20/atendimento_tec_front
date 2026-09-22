@@ -10,7 +10,7 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
-  // Renovação proativa da sessão, para todo o portal — não só o chat. Sem ela a
+  // Renovação proativa da sessão, para todo o portal - não só o chat. Sem ela a
   // renovação dependia de haver uma chamada HTTP acontecendo, e uma aba parada
   // esperando mensagem não faz nenhuma.
   useEffect(() => {

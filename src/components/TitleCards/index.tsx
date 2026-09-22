@@ -13,6 +13,16 @@ export interface IButtonsOthers {
   label: string;
   icon?: string;
   bgColor?: string;
+  /**
+   * Desabilita em vez de esconder.
+   *
+   * Um "Adicionar" cinza comunica que a função existe e que falta permissão;
+   * o botão ausente não diz nada. O `title` explica o porquê ao passar o
+   * mouse.
+   */
+  disabled?: boolean;
+  /** Texto do `title`, para dizer por que está desabilitado. */
+  tooltip?: string;
 }
 
 const TitleCards = (props: ITitleCardsProps) => {
@@ -27,6 +37,10 @@ const TitleCards = (props: ITitleCardsProps) => {
           className={`border-1 p-button-sm ${button.bgColor ? 'p-button-' + button.bgColor : ''}`}
           label={button.label}
           onClick={button.action}
+          disabled={button.disabled}
+          // `title` nativo, e não o `tooltip` do PrimeReact: aquele depende de
+          // eventos de mouse, que um botão desabilitado não dispara.
+          title={button.tooltip}
         />
       );
     });

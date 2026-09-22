@@ -61,7 +61,7 @@ const ModalAlteraSenha = () => {
   const onComplete = async (data: IForm) => {
     try {
       setLoading(true);
-      // TODO: a rota de troca de senha não existe — nem no `ListUrl` do front,
+      // TODO: a rota de troca de senha não existe - nem no `ListUrl` do front,
       // nem no backend. O modal chama algo que nunca foi implementado, e o
       // caminho falha aqui com 404. Mantido explícito para não passar por
       // funcionalidade pronta.

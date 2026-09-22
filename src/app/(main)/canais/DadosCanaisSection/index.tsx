@@ -4,9 +4,9 @@ import { PrimeIcons } from 'primereact/api';
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 
-import { ChannelResponse } from '@/Interfaces';
+import { ChannelResponse, ChannelStatusId } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
-import { usePermissoes } from '@/hooks/usePermissoes';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import useApi from '@/service/Api/ApiClient';
 import { useCanaisRevalidacao } from '@/store/useCanaisRevalidacao';
 import { Alerta, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
@@ -36,34 +36,43 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
 
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
-  const { pode } = usePermissoes();
+  const { podeAdicionar, podeEditar, podeExcluir, podeAcao, semPermissao } =
+    usePermissoesModulo('channel');
+
+  // Conectar, desconectar e reiniciar a sessão do WhatsApp. Separada de
+  // `channel:update` porque derrubar a conexão para o atendimento de todos -
+  // é mais grave do que corrigir o nome do canal.
+  const podeConfigurar = podeAcao('config');
   const { FetchReq } = useApi();
   const activeChannelRef = useRef<ChannelResponse | null>(null);
 
   // Sem permissão de criar, o botão não aparece: a chamada seria recusada
   // pelo backend de qualquer forma.
-  const ButtonsHeader: IButtonsOthers[] = pode('channel:add')
-    ? [
+  const ButtonsHeader: IButtonsOthers[] = [
         {
           label: 'Adicionar canal',
           icon: PrimeIcons.PLUS,
           action: () => AbrirModalForm(null),
           bgColor: 'primary p-button-outlined',
+          disabled: !podeAdicionar,
+          tooltip: podeAdicionar ? undefined : semPermissao,
         },
-      ]
-    : [];
+  ];
 
   const acoesTable: IActionTable<ChannelResponse>[] = [
     {
-      isHidden: () => !pode('channel:update'),
-      label: 'Editar canal',
-      tooltip: 'Editar canal',
-      icon: 'pi pi-fw pi-file-edit',
+      // Sempre visível: sem `:update` o cadastro abre em somente leitura.
+      label: podeEditar ? 'Editar canal' : 'Visualizar canal',
+      tooltip: podeEditar ? 'Editar canal' : 'Ver canal',
+      icon: podeEditar ? 'pi pi-fw pi-file-edit' : 'pi pi-fw pi-eye',
       bgcolor: 'primary py-2',
       command: (data) => AbrirModalForm(data),
     },
     {
-      isHidden: () => !pode('channel:update'),
+      // `channel:config`, não `:update`: o modal conecta e desconecta a
+      // sessão. Escondido e não desabilitado porque não há o que ler ali - a
+      // tela é de ações.
+      isHidden: () => !podeConfigurar,
       label: 'Configurar canal',
       tooltip: 'Configurar canal',
       icon: 'pi pi-fw pi-cog',
@@ -71,7 +80,23 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       command: (data) => AbrirModalConfig(data.id!),
     },
     {
-      isHidden: () => !pode('channel:delete'),
+      // Só em canal conectado: a Evolution recusa reiniciar sessão fechada, e
+      // desconectado é caso de conectar, não de reiniciar.
+      isHidden: (data) =>
+        !podeConfigurar || data?.channel_status_id !== ChannelStatusId.CONECTADO,
+      label: 'Reiniciar conexão',
+      tooltip: 'Reiniciar conexão',
+      icon: 'pi pi-fw pi-refresh',
+      bgcolor: 'warning py-2',
+      command: (data) =>
+        ConfirmaAcao(
+          'A conexão cai por alguns segundos e volta sozinha. Confirma reiniciar?',
+          ReiniciarCanal,
+          data,
+        ),
+    },
+    {
+      isHidden: () => !podeExcluir,
       label: 'Excluir canal',
       tooltip: 'Excluir canal',
       icon: 'pi pi-fw pi-times',
@@ -80,29 +105,54 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     },
   ];
 
-  const onSubmitForm = async (data: Pick<ChannelResponse, 'name' | 'id'>) => {
+  const onSubmitForm = async (
+    data: Pick<
+      ChannelResponse,
+      'name' | 'id' | 'integration_id' | 'mensagem_saudacao' | 'mensagem_despedida'
+    >,
+  ) => {
     try {
       setLoading();
+      // `integration_id` vai junto: o dropdown existia na tela e o valor
+      // escolhido nunca chegava à API - todo canal era salvo como "usar a
+      // integração padrão", qualquer que fosse a escolha.
+      const corpo = {
+        name: data.name,
+        integration_id: data.integration_id ?? null,
+        // Vazio vira nulo: é como o backend entende "não enviar", e guardar
+        // string vazia faria a coluna ter dois jeitos de dizer a mesma coisa.
+        mensagem_saudacao: data.mensagem_saudacao?.trim() || null,
+        mensagem_despedida: data.mensagem_despedida?.trim() || null,
+      };
+
       if (!data?.id) {
-        await FetchReq({
-          endpoint: 'AdicionarCanal',
-          body: {
-            name: data.name,
-          },
-        });
+        await FetchReq({ endpoint: 'AdicionarCanal', body: corpo });
       } else {
         await FetchReq({
           endpoint: 'AtualizarCanal',
           variables: [data.id],
-          body: {
-            name: data.name,
-          },
+          body: corpo,
         });
       }
       await ReloadCanais();
       await FecharModalForm();
     } catch (err) {
       CatchAlerta(err, 'Erro ao salvar canal');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ReiniciarCanal = async (canal: ChannelResponse) => {
+    try {
+      setLoading();
+      await FetchReq({ endpoint: 'ReiniciarCanal', variables: [canal.id] });
+      // Sem recarregar a lista: o estado real chega pelo socket
+      // `whatsapp:channel_status`, que a Evolution dispara ao derrubar e ao
+      // subir de novo. Buscar agora pegaria o estado de antes da queda.
+      Alerta('Reiniciando a conexão...', 'Aviso', 'success');
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao reiniciar a conexão');
     } finally {
       setLoading(false);
     }
@@ -252,7 +302,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     activeChannelRef.current = activeChannel;
   }, [activeChannel]);
 
-  // `/canais?canal=<id>` abre direto a configuração daquele canal — é como o
+  // `/canais?canal=<id>` abre direto a configuração daquele canal - é como o
   // badge de status do topbar leva o atendente até aqui. O parâmetro é
   // removido em seguida para o modal não reabrir a cada voltar/avançar.
   useEffect(() => {
@@ -266,7 +316,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
 
   useEffect(() => {
     // Mesma origem do `socketSlice`: cravar a URL aqui funcionava só em
-    // desenvolvimento — em produção o QR nunca chegaria, porque é por este
+    // desenvolvimento - em produção o QR nunca chegaria, porque é por este
     // socket que vem o `whatsapp:channel_status`.
     const socket = io(process.env.WEBSOCKET_HOST || '', {
       autoConnect: false, // Impede a conexão automática na inicialização

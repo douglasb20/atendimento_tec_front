@@ -1,6 +1,7 @@
 export type UserResponse = {
   id: number;
   name: string;
+  last_name?: string | null;
   email: string;
   valor_hora: string;
   avatar_url: string;

@@ -47,7 +47,7 @@ export default async function ApiService() {
    * renovação acontece no servidor e o cliente nunca recebe os cookies novos.
    *
    * O refresh vai no cabeçalho `Cookie` porque o axios do servidor não
-   * compartilha o cookie jar do navegador — aqui ele é montado à mão.
+   * compartilha o cookie jar do navegador - aqui ele é montado à mão.
    */
   const apiRefreshToken = async (refreshToken: string): Promise<string[]> => {
     const resposta = await req.post<ILoginResp>(

@@ -36,7 +36,7 @@ export const createSocketSlice: StateCreator<
     //
     // O gateway valida o JWT apenas no handshake: uma conexão já aberta nunca
     // é derrubada por vencimento. O `jwt expired` do log é sempre de uma
-    // *reconexão* — a máquina dormiu, a rede oscilou —, em que o navegador
+    // *reconexão* - a máquina dormiu, a rede oscilou -, em que o navegador
     // reenvia o mesmo cookie, agora vencido. O Socket.IO então insiste em
     // silêncio, e o portal fica sem eventos até alguém recarregar a página.
     socket.io.on('reconnect_attempt', () => {

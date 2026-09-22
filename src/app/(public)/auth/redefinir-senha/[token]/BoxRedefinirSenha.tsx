@@ -30,7 +30,7 @@ export default function BoxRedefinirSenha({ token }: { token: string }) {
   const { handleSubmit, control, watch, trigger, getValues } = useForm<FormFields>({
     defaultValues: { password: '', confirma: '' },
     // `onBlur` nos dois: sem `mode`, a primeira validação só acontece ao
-    // submeter — o usuário digitava as duas senhas diferentes, clicava, e só
+    // submeter - o usuário digitava as duas senhas diferentes, clicava, e só
     // então descobria. Agora o aviso sai ao sair do campo.
     mode: 'onBlur',
     reValidateMode: 'onChange',
@@ -62,7 +62,7 @@ export default function BoxRedefinirSenha({ token }: { token: string }) {
         'success',
       );
     } catch (err) {
-      // O link pode ter vencido entre a validação da página e o envio — são 30
+      // O link pode ter vencido entre a validação da página e o envio - são 30
       // minutos, e alguém pode deixar a aba aberta.
       setErro(
         err?.response?.data?.message ??
@@ -97,7 +97,7 @@ export default function BoxRedefinirSenha({ token }: { token: string }) {
                 toggleMask
                 // Sem o medidor: ele avalia por caracteres especiais e passa a
                 // impressão de que uma senha "fraca" será recusada, o que não
-                // acontece — a regra é o mínimo de 6.
+                // acontece - a regra é o mínimo de 6.
                 feedback={false}
                 autoComplete="new-password"
                 placeholder="Ao menos 6 caracteres"

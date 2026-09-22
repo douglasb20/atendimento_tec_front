@@ -5,7 +5,7 @@ import { parseCookies } from 'nookies';
  * Mantém o cookie de sessão renovado enquanto a aba estiver aberta.
  *
  * Antes, a renovação só acontecia dentro do `FetchReq`: quem ficasse parado no
- * chat — que é o uso normal de um portal de atendimento, esperando mensagem —
+ * chat - que é o uso normal de um portal de atendimento, esperando mensagem -
  * não disparava requisição nenhuma, o access de 30min vencia, e na primeira
  * reconexão do socket o gateway recusava com `jwt expired`.
  *
@@ -30,7 +30,7 @@ const urlApi = process.env.URL_ENDPOINT;
  *
  * A deduplicação importa: o timer e o `visibilitychange` podem coincidir, e
  * duas chamadas simultâneas a `/auth/refresh` fariam a segunda usar um refresh
- * já rotacionado — que o backend recusa, derrubando a sessão justamente por
+ * já rotacionado - que o backend recusa, derrubando a sessão justamente por
  * tentar preservá-la.
  */
 export const renovaSessao = (): Promise<void> => {

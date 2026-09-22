@@ -262,6 +262,13 @@ PrimeReact + PrimeFlex, com o CSS praticamente todo em classes utilitárias
 inline. Tema Apollo servido de `public/theme/theme.css`; estilos próprios em
 `src/styles/layout/`.
 
+⚠️ **Todo utilitário do PrimeFlex carrega `!important`** — `.flex`,
+`.absolute`, `.h-full`, todos. Misturá-los com regras próprias num mesmo
+elemento torna imprevisível quem vence, e o sintoma é um componente que ignora
+o SCSS sem erro nenhum. Em algo posicionado ou com visibilidade condicional,
+escreva o bloco inteiro no SCSS (ver `.acoes-conversa` em `_utils.scss`) em vez
+de combinar as duas fontes.
+
 Ícones vêm de **três fontes**: PrimeIcons no menu, Font Awesome em quase todo o
 chat, e `react-icons` nas dependências.
 
@@ -312,3 +319,13 @@ type-check.
 - Typo no nome do arquivo: `src/Interfaces/suport-chat.interface.ts`.
 - ESLint desligado no build (`ignoreDuringBuilds`) por um bug de ESLint 9 com o
   `.eslintrc.js` legado — migrar para flat config resolveria.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

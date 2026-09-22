@@ -171,9 +171,11 @@ const Layout = (props: ChildContainerProps) => {
   });
 
   const containerClass = classNames({
-    'layout-light': layoutConfig.colorScheme === 'light',
-    'layout-dim': layoutConfig.colorScheme === 'dim',
-    'layout-dark': layoutConfig.colorScheme === 'dark',
+    // ⚠️ O modo **não** entra aqui: quem o aplica é o `RootLayout`, no
+    // `<html>`, para alcançar também os portais do PrimeReact. Deixar
+    // `layout-light` nesta div - como vinha do template, preso ao
+    // `colorScheme` fixo do contexto - reintroduzia a sombra azulada do modo
+    // claro em volta do menu: a definição mais próxima vence a do `<html>`.
     'layout-colorscheme-menu': layoutConfig.menuTheme === 'colorScheme',
     'layout-primarycolor-menu': layoutConfig.menuTheme === 'primaryColor',
     'layout-transparent-menu': layoutConfig.menuTheme === 'transparent',

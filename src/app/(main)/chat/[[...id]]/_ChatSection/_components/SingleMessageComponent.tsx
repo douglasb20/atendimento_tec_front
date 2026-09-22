@@ -127,10 +127,10 @@ const SingleMessageComponent = ({
    * Três coisas precisam ser verdade, e cada uma resolve um jeito diferente de
    * a animação sair errada:
    *
-   * - `doAnimation` — a mensagem não estava na tela quando a conversa abriu.
+   * - `doAnimation` - a mensagem não estava na tela quando a conversa abriu.
    *   Sem isso o histórico inteiro desfilaria a cada abertura.
-   * - `isLast` — só a última bolha entra; as de cima já estão posicionadas.
-   * - o registro de já animadas — a última bolha volta a renderizar a cada ack
+   * - `isLast` - só a última bolha entra; as de cima já estão posicionadas.
+   * - o registro de já animadas - a última bolha volta a renderizar a cada ack
    *   (enviado → entregue → lido), reação e edição, e sem este controle a
    *   classe era reaplicada sobre o mesmo nó, reiniciando o CSS. A mensagem
    *   recém-enviada se mexia três vezes, em intervalos irregulares.
@@ -165,11 +165,11 @@ const SingleMessageComponent = ({
    * Corpo de texto da bolha.
    *
    * Chamada como função (`DivWithEmoji()`), não montada como `<DivWithEmoji />`
-   * — e é de propósito: como componente, o React a trataria como um tipo novo a
+   * - e é de propósito: como componente, o React a trataria como um tipo novo a
    * cada render e remontaria a subárvore, que é exatamente o problema descrito
    * no `ComProgresso` acima. Chamada direta, o JSX é inserido no lugar.
    *
-   * O conteúdo já vem do `InterpretedContent`, que aplica o `fixHeartEmoji` —
+   * O conteúdo já vem do `InterpretedContent`, que aplica o `fixHeartEmoji` -
    * ele acrescenta o seletor de variação ao `❤` cru, sem o qual o navegador o
    * desenha como caractere de texto preto em vez de emoji. Aplicá-lo de novo
    * aqui não era inofensivo: a função não é idempotente, e a segunda passada
@@ -187,9 +187,16 @@ const SingleMessageComponent = ({
 
   const enviandoMidia = message.progresso !== undefined;
 
+  // ⚠️ `surface-*` e não `gray-*`: o tema **inverte a escala de superfície** no
+  // modo escuro (`surface-200` vira `#4b5563`), mas deixa os cinzas como estão
+  // (`gray-200` continua `#e5e7eb`). Com `bg-gray-200` a bolha recebida ficava
+  // clara sobre o chat escuro, e o `text-black` de antes sumia dentro dela.
+  //
+  // Na bolha própria, `text-primary-contrast` em vez de `text-white`: nos modos
+  // escuros a primária é clara, e branco sobre ela não contrasta.
   const messageClass = from_me
-    ? 'align-self-end border-primary-300 bg-primary-500 text-white'
-    : 'align-self-start border-gray-300 bg-gray-200 text-black';
+    ? 'align-self-end border-primary-300 bg-primary-500 text-primary-contrast'
+    : 'align-self-start border-300 surface-200 text-color';
 
   return (
     <div
@@ -202,7 +209,7 @@ const SingleMessageComponent = ({
       {message.hidden_at ? (
         // Removida só do nosso lado ("apagar para mim"): no WhatsApp do contato
         // ela continua. O marcador fica para o histórico não ter buracos
-        // silenciosos — o atendente seguinte vê que houve algo ali.
+        // silenciosos - o atendente seguinte vê que houve algo ali.
         <div className="flex align-items-center gap-2 font-italic opacity-80">
           <i className="fa-regular fa-eye-slash" />
           <span>Mensagem removida do sistema</span>
@@ -257,7 +264,7 @@ const SingleMessageComponent = ({
                   rel="noreferrer"
                   download={message.file_name ?? undefined}
                   className={classNames(
-                    from_me ? 'bg-primary-600 text-white' : 'surface-200 text-color',
+                    from_me ? 'bg-primary-600 text-primary-contrast' : 'surface-200 text-color',
                     'flex align-items-center gap-3 border-round p-3 mb-2 no-underline',
                   )}
                   style={{ maxWidth: 250 }}

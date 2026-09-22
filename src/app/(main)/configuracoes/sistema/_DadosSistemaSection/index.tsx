@@ -95,7 +95,7 @@ export default function DadosSistemaSection({ data }: Props) {
           'success',
         );
       } else {
-        // A mensagem vem do próprio servidor de e-mail — "Username and Password
+        // A mensagem vem do próprio servidor de e-mail - "Username and Password
         // not accepted", por exemplo. É mais útil que um texto nosso genérico.
         Alerta(r?.erro ?? 'Não foi possível enviar.', 'Falhou', 'error');
       }
@@ -185,7 +185,7 @@ export default function DadosSistemaSection({ data }: Props) {
           value={String(alterados[a.chave] ?? '')}
           onChange={(e) => alterar(a.chave, e.target.value)}
           autoComplete="new-password"
-          // Em branco significa "mantém a que está gravada" — a senha nunca sai
+          // Em branco significa "mantém a que está gravada" - a senha nunca sai
           // da API, então não há o que preencher aqui.
           placeholder={a.definido ? '•••••••• (definida)' : 'Não definida'}
         />

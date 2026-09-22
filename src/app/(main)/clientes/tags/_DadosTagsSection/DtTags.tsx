@@ -21,7 +21,7 @@ const DtTags = ({ actions, ...props }) => {
         sortable
       />
 
-      {/* A etiqueta é mostrada como o usuário vai vê-la no cliente — nome e cor
+      {/* A etiqueta é mostrada como o usuário vai vê-la no cliente - nome e cor
           juntos, não duas colunas separadas. */}
       <Column
         field="name"

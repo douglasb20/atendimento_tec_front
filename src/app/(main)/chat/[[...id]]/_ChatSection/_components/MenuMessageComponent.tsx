@@ -4,8 +4,9 @@ import { Menu } from 'primereact/menu';
 import { MenuItem } from 'primereact/menuitem';
 import { useRef } from 'react';
 
-import { ehAtendimentoAtivo, SupportChatMessageResponse } from '@/Interfaces';
+import { podeAgirNoAtendimento, SupportChatMessageResponse } from '@/Interfaces';
 import { useChatStore } from '@/store/useChatStore';
+import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 
 type MenuMessageProps = {
   menuModel: MenuItem[];
@@ -39,7 +40,7 @@ export const isAfter60Hour = (input: string) => {
 /**
  * Se a mensagem aceita ser revogada no WhatsApp.
  *
- * Mesma regra usada pelo item 'Apagar' do menu e pela seleção múltipla — as
+ * Mesma regra usada pelo item 'Apagar' do menu e pela seleção múltipla - as
  * duas precisam concordar, senão a seleção ofereceria o que o apagar recusa.
  */
 export const podeApagar = (message: SupportChatMessageResponse) =>
@@ -51,13 +52,18 @@ export const podeApagar = (message: SupportChatMessageResponse) =>
 
 const MenuMessageComponent = ({ menuModel, message, bottomEl }: MenuMessageProps) => {
   const menuRef = useRef<{ [key: string]: Menu | null }>({});
-  const statusDaConversa = useChatStore((s) => s.activeChat?.support_chat_status_id);
+  // O chat inteiro, e não só o status: a decisão agora também depende do dono.
+  const activeChat = useChatStore((s) => s.activeChat);
+  const { usuarioId } = useUsuarioLogado();
 
   // Sem a conversa assumida não há menu nenhum - nem o chevron que o abre.
   // Bloquear só os itens de escrita não bastava: "Selecionar" continuava
   // visível e mantinha o botão na tela, que é justamente o que não deve
   // aparecer antes de alguém assumir o atendimento.
-  const podeAgirNoWhatsapp = ehAtendimentoAtivo(statusDaConversa);
+  // Inclui o dono: num atendimento de outro atendente a conversa é só leitura,
+  // e responder ou apagar ali chegaria ao WhatsApp do cliente assinado por
+  // quem não o conduz.
+  const podeAgirNoWhatsapp = podeAgirNoAtendimento(activeChat, usuarioId);
 
   // Revogada não tem conteúdo para responder, citar ou baixar; pendente ainda
   // não existe no WhatsApp, então nenhuma ação de lá se aplica.

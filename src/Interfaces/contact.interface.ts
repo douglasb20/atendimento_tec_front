@@ -5,6 +5,8 @@ export type ContactResponse = {
   id: number;
   client_id: number | null;
   name: string;
+  /** Sobrenome; nulo em contato de empresa ou vindo do `pushName`. */
+  last_name?: string | null;
   avatar_url: string;
   is_avatar_external: number;
   phone: string;

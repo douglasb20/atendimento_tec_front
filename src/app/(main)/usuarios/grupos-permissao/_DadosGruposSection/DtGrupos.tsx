@@ -44,7 +44,7 @@ const DtGrupos = ({ actions, ...props }) => {
         field="description"
         header="Descrição"
         body={(grupo: PermissionGroupResponse) => (
-          <span className="text-sm text-500">{grupo.description || '—'}</span>
+          <span className="text-sm text-500">{grupo.description || '-'}</span>
         )}
       />
 

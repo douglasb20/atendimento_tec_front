@@ -12,6 +12,7 @@ import { parseCookies } from 'nookies';
 import * as yup from 'yup';
 
 import { getUserInfo } from '@/actions/userInfo';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import {
   IUsuariosResponse,
   PermissionGroupResponse,
@@ -41,6 +42,7 @@ type UsuarioForm = Omit<IUsuariosResponse, 'is_requestpassword' | 'lastlogin_at'
 
 const defaultForm: UsuarioForm = {
   name: '',
+  last_name: '',
   email: '',
   senha: '',
   confirma_senha: '',
@@ -48,7 +50,7 @@ const defaultForm: UsuarioForm = {
   permission_group_id: null,
 };
 
-/** Opção que representa "sem grupo" — o usuário entra mas não acessa nada. */
+/** Opção que representa "sem grupo" - o usuário entra mas não acessa nada. */
 const SEM_GRUPO = { id: null as number | null, name: 'Sem grupo (nenhum acesso)' };
 
 type AvatarConfig = {
@@ -101,6 +103,7 @@ const ModalFormUser = (props: ModalProps) => {
 
   const schema = yup.object<yup.AnyObject, Shape<UsuarioForm>>({
     name: yup.string().required(msgRequired),
+    last_name: yup.string().notRequired(),
     email: yup.string().required(msgRequired).email('Email incorreto'),
     senha: yup.string().when('id', {
       is: () => data?.id === undefined,
@@ -114,7 +117,7 @@ const ModalFormUser = (props: ModalProps) => {
       .when('senha', {
         is: () => data?.id === undefined,
         then: (schema) =>
-          schema.required(msgRequired).min(4, 'Campo precisa ter no mínimo 4 caracteres'),
+          schema.required(msgRequired).min(6, 'Campo precisa ter no mínimo 6 caracteres'),
         otherwise: (schema) => schema.notRequired(),
       }),
   });
@@ -124,6 +127,22 @@ const ModalFormUser = (props: ModalProps) => {
     resolver: yupResolver<any>(schema),
   });
   const { setLoading } = useService();
+  const { pode, ehSuperusuario, usuarioId } = usePermissoes();
+
+  // Editando a si mesmo, as permissões granulares valem; editando outro, quem
+  // manda é `user:update`, que já governa o botão Salvar.
+  const ehProprioCadastro = !!data?.id && Number(data.id) === Number(usuarioId);
+
+  // O próprio cadastro vai por `user:profile_update` e pela rota
+  // `/users/meu-perfil`; o de outra pessoa, por `user:update` e `/users/:id`.
+  // São permissões diferentes porque administrar usuários e manter o próprio
+  // cadastro são coisas diferentes.
+  const podeSalvar = ehProprioCadastro
+    ? pode('user:profile_update')
+    : pode(data?.id ? 'user:update' : 'user:add');
+
+  const bloqueiaEmail = ehProprioCadastro && !ehSuperusuario && !pode('user:change_own_email');
+  const bloqueiaGrupo = ehProprioCadastro && !ehSuperusuario && !pode('user:change_group');
 
   const modalFooter = () => {
     return (
@@ -134,8 +153,11 @@ const ModalFormUser = (props: ModalProps) => {
           outlined
           onClick={onHide}
         />
+        {/* Sem permissão de gravar, o botão fica desabilitado em vez de sumir:
+            a pessoa ainda abre o cadastro para conferir os próprios dados. */}
         <Button
           label="Salvar"
+          disabled={!podeSalvar}
           onClick={() => handleSubmit(onSubmitForm)()}
         />
       </div>
@@ -188,6 +210,7 @@ const ModalFormUser = (props: ModalProps) => {
 
       const dataBody = {
         name: fields.name,
+        last_name: fields.last_name?.trim() || null,
         email: fields.email,
         avatar_url: avatarKey,
         changed_avatar,
@@ -204,11 +227,11 @@ const ModalFormUser = (props: ModalProps) => {
         if (fields.senha !== '') {
           dataBody['password'] = fields.senha;
         }
-        await FetchReq({
-          endpoint: 'AtualizarUsuario',
-          body: dataBody,
-          variables: [fields?.id],
-        });
+        await FetchReq(
+          ehProprioCadastro
+            ? { endpoint: 'AtualizarMeuPerfil', body: dataBody }
+            : { endpoint: 'AtualizarUsuario', body: dataBody, variables: [fields?.id] },
+        );
       }
 
       if (data?.id === userInfo?.id) {
@@ -281,7 +304,7 @@ const ModalFormUser = (props: ModalProps) => {
         const dados = await FetchReq<PermissionGroupResponse[]>('ListarGruposPermissao');
         setGrupos(dados ?? []);
       } catch {
-        // Sem `permission_group:view` a lista fica vazia e o campo some — o caso de quem
+        // Sem `permission_group:view` a lista fica vazia e o campo some - o caso de quem
         // pode editar usuário mas não gerir papéis. Alertar seria ruído.
         setGrupos([]);
       }
@@ -371,9 +394,9 @@ const ModalFormUser = (props: ModalProps) => {
               />
             </div>
           </div>
-          {/* Nome e grupo dividem a linha — mas só quando há grupos: sem eles o
-              campo some, e metade da linha ficaria vazia ao lado do nome. */}
-          <div className={grupos.length > 0 ? 'col-6' : 'col-12'}>
+          {/* Nome e sobrenome dividem a linha; o grupo, quando existe, fica na
+              de baixo. Antes o nome dividia com o grupo. */}
+          <div className="col-6">
             <Controller
               control={control}
               name="name"
@@ -387,6 +410,7 @@ const ModalFormUser = (props: ModalProps) => {
                   <InputText
                     id={field.name}
                     {...field}
+                    disabled={!podeSalvar}
                   />
                   {getFormErrorMessage(fieldState)}
                 </>
@@ -394,6 +418,49 @@ const ModalFormUser = (props: ModalProps) => {
             />
           </div>
 
+          <div className="col-6">
+            <Controller
+              control={control}
+              name="last_name"
+              render={({ field, fieldState }) => (
+                <>
+                  <LabelPlus
+                    htmlFor={field.name}
+                    text="Sobrenome"
+                  />
+                  <InputText
+                    id={field.name}
+                    {...field}
+                    value={field?.value || ''}
+                    disabled={!podeSalvar}
+                  />
+                  {getFormErrorMessage(fieldState)}
+                </>
+              )}
+            />
+          </div>
+          <div className="col-6">
+            <Controller
+              control={control}
+              name="email"
+              render={({ field, fieldState }) => (
+                <>
+                  <LabelPlus
+                    htmlFor={field.name}
+                    text="Email"
+                    required
+                  />
+                  <InputText
+                    id={field.name}
+                    {...field}
+                    placeholder="exemplo@exemplo.com"
+                    disabled={bloqueiaEmail}
+                  />
+                  {getFormErrorMessage(fieldState)}
+                </>
+              )}
+            />
+          </div>
           {/* Só aparece quando há grupos para escolher: sem
               `permission_group:view` a lista volta vazia, e um campo
               desabilitado só ocuparia espaço. */}
@@ -419,33 +486,16 @@ const ModalFormUser = (props: ModalProps) => {
                       optionLabel="name"
                       optionValue="id"
                       placeholder="Selecione o grupo"
+                      // Sem `user:change_group` ninguém muda o próprio grupo -
+                      // seria promover a si mesmo. O backend recusa com 401.
+                      disabled={bloqueiaGrupo}
                     />
                   </>
                 )}
               />
             </div>
           )}
-          <div className="col-12">
-            <Controller
-              control={control}
-              name="email"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Email"
-                    required
-                  />
-                  <InputText
-                    id={field.name}
-                    {...field}
-                    placeholder="exemplo@exemplo.com"
-                  />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
+          
           <div className="col-6">
             <Controller
               control={control}
@@ -461,6 +511,7 @@ const ModalFormUser = (props: ModalProps) => {
                     id={field.name}
                     {...field}
                     type="password"
+                    disabled={!podeSalvar}
                   />
                   {getFormErrorMessage(fieldState)}
                 </>
@@ -482,6 +533,7 @@ const ModalFormUser = (props: ModalProps) => {
                     id={field.name}
                     {...field}
                     type="password"
+                    disabled={!podeSalvar}
                   />
                   {getFormErrorMessage(fieldState)}
                 </>

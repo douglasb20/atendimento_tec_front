@@ -1,4 +1,3 @@
-import React from 'react';
 import { Metadata } from 'next';
 import { SelectItem } from 'primereact/selectitem';
 import { jwtDecode } from 'jwt-decode';

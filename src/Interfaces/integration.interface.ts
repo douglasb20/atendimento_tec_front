@@ -21,7 +21,7 @@ export type IntegrationResponse = {
 };
 
 /**
- * As credenciais **nunca** vêm da API — são `select: false` na entidade e só
+ * As credenciais **nunca** vêm da API - são `select: false` na entidade e só
  * saem pelos métodos internos dos providers. O formulário as envia, nunca as lê.
  */
 export type IntegrationFormPayload = {

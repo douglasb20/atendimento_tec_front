@@ -18,6 +18,7 @@ import {
   TipoCampo,
 } from '@/Interfaces';
 import { getFormErrorMessage, msgRequired } from '@/service/Util';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 export type FormCampo = {
   nome: string;
@@ -65,6 +66,12 @@ const schema = yup.object({
 });
 
 function ModalFormCampo({ visible, onHide, onConfirm, data }: ModalProps) {
+  const { podeAdicionar, podeEditar, semPermissao } = usePermissoesModulo('custom.field');
+
+  // Editar exige `:update`; criar, `:add`. Sem a permissão do caso, o
+  // formulário abre em somente leitura - quem tem `:view` consulta o cadastro.
+  const somenteLeitura = data?.id ? !podeEditar : !podeAdicionar;
+
   const { control, handleSubmit, reset, watch } = useForm<FormCampo>({
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
@@ -101,6 +108,8 @@ function ModalFormCampo({ visible, onHide, onConfirm, data }: ModalProps) {
       />
       <Button
         label="Salvar"
+        disabled={somenteLeitura}
+        title={somenteLeitura ? semPermissao : undefined}
         onClick={() => handleSubmit(onSubmitForm)()}
       />
     </div>
@@ -135,6 +144,7 @@ function ModalFormCampo({ visible, onHide, onConfirm, data }: ModalProps) {
                   value={field.value ?? ''}
                   placeholder="Ex.: Origem, Aniversário, CPF"
                   autoComplete="off"
+                  disabled={somenteLeitura}
                 />
                 {getFormErrorMessage(fieldState)}
               </>
@@ -195,6 +205,7 @@ function ModalFormCampo({ visible, onHide, onConfirm, data }: ModalProps) {
                   // Sem filtro: são duas opções, e uma caixa de busca sobre
                   // duas linhas só atrapalha.
                   showClear={false}
+                  disabled={somenteLeitura}
                 />
                 {getFormErrorMessage(fieldState)}
               </>

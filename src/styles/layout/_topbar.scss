@@ -6,7 +6,7 @@
     // ativo (colorScheme / primarycolor / transparent), então usar a variável
     // em vez da cor faz o topbar acompanhar a troca de tema sozinho.
     background-color: var(--menu-bg);
-    // Barra de ponta a ponta, colada no topo — sem margem nem raio. A borda
+    // Barra de ponta a ponta, colada no topo - sem margem nem raio. A borda
     // separa do conteúdo, que tem o mesmo tom de fundo em alguns temas.
     border-bottom: 1px solid var(--surface-border);
     padding: 0.75rem 1.5rem;

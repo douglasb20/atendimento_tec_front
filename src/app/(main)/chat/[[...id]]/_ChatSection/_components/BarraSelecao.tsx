@@ -41,7 +41,7 @@ const BarraSelecao = ({ onApagar, apagando = false }: BarraSelecaoProps) => {
         rounded
         severity="danger"
         aria-label="Apagar selecionadas"
-        // Sem nada marcado não há o que apagar — o botão fica inerte em vez de
+        // Sem nada marcado não há o que apagar - o botão fica inerte em vez de
         // abrir uma confirmação vazia.
         disabled={total === 0 || apagando}
         loading={apagando}

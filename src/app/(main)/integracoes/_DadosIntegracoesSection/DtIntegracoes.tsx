@@ -18,7 +18,7 @@ const Endereco = ({ url }: { url: string | null }) =>
       {url}
     </span>
   ) : (
-    <span className="text-sm text-400">—</span>
+    <span className="text-sm text-400">-</span>
   );
 
 const DtIntegracoes = ({ actions, ...props }) => {
@@ -36,7 +36,7 @@ const DtIntegracoes = ({ actions, ...props }) => {
           <div className="flex flex-column">
             <div className="flex align-items-center gap-2">
               <span className="font-medium">{integracao.name}</span>
-              {/* A padrão atende todo canal sem integração própria — é a
+              {/* A padrão atende todo canal sem integração própria - é a
                   informação que decide qual delas o atendimento está usando. */}
               {integracao.is_default && (
                 <Tag

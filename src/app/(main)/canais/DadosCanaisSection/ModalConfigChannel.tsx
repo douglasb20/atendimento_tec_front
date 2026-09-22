@@ -8,6 +8,7 @@ import { Timeline } from 'primereact/timeline';
 import { classNames } from 'primereact/utils';
 
 import { ChannelResponse } from '@/Interfaces';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 interface IProps<T> {
   visible: boolean;
@@ -44,6 +45,12 @@ const stepValues = [
 ];
 
 const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
+  const { podeAcao, semPermissao } = usePermissoesModulo('channel');
+
+  // O modal só abre com a permissão, mas os botões a checam de novo: o cookie
+  // pode ter sido renovado sem ela enquanto a tela estava aberta, e aí a
+  // chamada voltaria 403 depois de o atendente achar que desconectou.
+  const podeConfigurar = podeAcao('config');
   const {
     visible,
     onHide,
@@ -114,13 +121,16 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
                     onDisconnectSession && onDisconnectSession();
                   }
                 }}
-                disabled={value?.channel_status_id === 2}
+                disabled={!podeConfigurar || value?.channel_status_id === 2}
+                title={podeConfigurar ? undefined : semPermissao}
                 outlined
                 severity={value?.channel_status_id === 1 ? 'success' : 'danger'}
               />
               <Button
                 label={'Fechar sessão'}
                 icon={PrimeIcons.SIGN_OUT}
+                disabled={!podeConfigurar}
+                title={podeConfigurar ? undefined : semPermissao}
                 onClick={() => {
                   onDisconnectSession && onDisconnectSession();
                 }}

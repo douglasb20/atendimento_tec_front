@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import Interweave from '@/components/Interweave';
-import { descreveMidia, fixHeartEmoji } from '@/service/Util';
+import { descreveMidia, fixHeartEmoji, nomeCompleto } from '@/service/Util';
 import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
 
 function QuotedMessageItem({
@@ -29,7 +29,7 @@ function QuotedMessageItem({
       >
         <div className="flex-1 overflow-hidden">
           <p className={`font-bold ${quoted.from_me ? 'text-blue-600' : 'text-green-600'}`}>
-            {quoted.from_me ? 'Você' : activeChat?.contact?.name}
+            {quoted.from_me ? 'Você' : nomeCompleto(activeChat?.contact)}
           </p>
 
           {/* O mesmo tratamento da barra acima do input: mídia sem legenda

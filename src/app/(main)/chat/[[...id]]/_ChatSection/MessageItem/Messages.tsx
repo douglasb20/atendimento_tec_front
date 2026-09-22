@@ -1,14 +1,16 @@
 'use client';
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import { MenuItem } from 'primereact/menuitem';
 import { Checkbox } from 'primereact/checkbox';
 import { classNames } from 'primereact/utils';
 import { v4 as uuidV4 } from 'uuid';
 
-import { ModeQuoted, SupportChatMessageResponse } from '@/Interfaces';
+import { ModeQuoted, podeAgirNoAtendimento, SupportChatMessageResponse } from '@/Interfaces';
+import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 import ModalEditarMensagem from '../_components/ModalEditarMensagem';
 import { BotaoAnterior, Separador } from '../_components/HistoricoAnterior';
+import EventoAtendimento from '../_components/EventoAtendimento';
 import { CatchAlerta, ConfirmaAcao, debounce } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import { useOutboxStore } from '@/store/useOutboxStore';
@@ -30,6 +32,7 @@ const Messages = () => {
   const messages = useChatStore((s) => s.messages);
   const loadMessages = useChatStore((s) => s.loadMessages);
   const activeChat = useChatStore((s) => s.activeChat);
+  const { usuarioId } = useUsuarioLogado();
   const reactionState = useChatStore((s) => s.reactionState);
   const setQuotedMessage = useChatStore((s) => s.setQuotedMessage);
   const itensFila = useOutboxStore((s) => s.itens);
@@ -51,7 +54,7 @@ const Messages = () => {
   /**
    * Descobre se o contato tem atendimentos anteriores.
    *
-   * Chamada leve: não traz mensagem nenhuma, só o total — é o que decide se o
+   * Chamada leve: não traz mensagem nenhuma, só o total - é o que decide se o
    * botão aparece, sem fazer toda abertura de conversa pagar o custo do
    * histórico inteiro.
    */
@@ -79,7 +82,7 @@ const Messages = () => {
    * Traz o atendimento anterior e devolve o atendente ao ponto onde estava.
    *
    * Inserir conteúdo acima empurra o que está visível para baixo: sem medir a
-   * altura antes e restaurar depois, quem estava lendo perde o lugar — é o
+   * altura antes e restaurar depois, quem estava lendo perde o lugar - é o
    * defeito clássico deste padrão.
    */
   const carregarAnterior = async () => {
@@ -179,6 +182,32 @@ const Messages = () => {
   }, [messages, itensFila, activeChat?.id]);
 
   /**
+   * Transferências desta conversa, em ordem.
+   *
+   * Chegam junto das mensagens na rota que abre o chat; os payloads de socket
+   * não os trazem, então uma transferência feita por outro atendente com a
+   * conversa já aberta só aparece ao recarregá-la.
+   */
+  const souODono = podeAgirNoAtendimento(activeChat, usuarioId);
+
+  const eventos = useMemo(
+    () =>
+      [...(activeChat?.supportChatEvents ?? [])].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      ),
+    [activeChat?.supportChatEvents],
+  );
+
+  /** Os que vieram depois da última mensagem - renderizados ao final da lista. */
+  const eventosDepoisDaUltima = useMemo(() => {
+    const ultima = mensagensNaTela[mensagensNaTela.length - 1];
+    if (!ultima) return eventos;
+
+    const limite = new Date(ultima.datetime).getTime();
+    return eventos.filter((evento) => new Date(evento.created_at).getTime() > limite);
+  }, [eventos, mensagensNaTela]);
+
+  /**
    * Índice por `message_id` para resolver mensagens citadas.
    *
    * Antes cada bolha assinava a lista inteira e fazia um `find` linear nela -
@@ -210,7 +239,7 @@ const Messages = () => {
    *
    * Serve **só** ao scroll. A animação das bolhas não pode depender dela: é
    * escrita num `useLayoutEffect`, depois do render, então a primeira mensagem
-   * enviada era renderizada com o valor ainda `false` e entrava sem animação —
+   * enviada era renderizada com o valor ainda `false` e entrava sem animação -
    * só a versão definitiva, vinda do webhook, aparecia animada.
    */
   const jaRolouAoFim = useRef(false);
@@ -218,7 +247,7 @@ const Messages = () => {
   /**
    * Ids das mensagens que já estavam na tela quando a conversa abriu.
    *
-   * O histórico não deve animar — desfilaria inteiro na frente do atendente. O
+   * O histórico não deve animar - desfilaria inteiro na frente do atendente. O
    * que chega depois, sim. Comparar contra este conjunto responde isso sem
    * depender de quando o efeito de scroll rodou, e vale igual para a bolha
    * otimista e para a definitiva.
@@ -319,7 +348,7 @@ const Messages = () => {
   const onDownload = async ({ source, mime_type, file_name }) => {
     // Declarada fora do try para o `finally` alcançá-la: com a revogação no
     // fim do bloco, uma falha entre a criação e ela deixava o blob retido na
-    // memória da aba — num vídeo grande, centenas de MB até o reload.
+    // memória da aba - num vídeo grande, centenas de MB até o reload.
     let url: string | null = null;
 
     try {
@@ -436,7 +465,7 @@ const Messages = () => {
     <>
       <div
         ref={bottomEl}
-        className="message-box relative border-right-1 border-left-1 border-noround-top border-bottom-1 border-primary-300 flex flex-1 flex-column bg-gray-50 border-round p-3 overflow-y-auto overflow-x-hidden"
+        className="message-box relative border-right-1 border-left-1 border-noround-top border-bottom-1 border-primary-700 flex flex-1 flex-column bg-gray-50 border-round p-3 overflow-y-auto overflow-x-hidden"
       >
         <div className="flex flex-column z-0 w-full">
           <BotaoAnterior
@@ -500,8 +529,19 @@ const Messages = () => {
             />
           )}
 
-          {mensagensNaTela?.map((msg) => {
+          {mensagensNaTela?.map((msg, indice) => {
             const messageClass = msg.from_me ? 'align-items-end' : 'align-items-start';
+
+            // Os eventos que aconteceram antes desta mensagem e ainda não foram
+            // desenhados. Ficam fora de `mensagensNaTela` de propósito: entrar
+            // ali obrigaria `indicePorId`, `isLast` e a seleção a distinguir
+            // evento de mensagem em todo lugar.
+            const eventosAntes = eventos.filter((evento) => {
+              const quando = new Date(evento.created_at).getTime();
+              const anterior =
+                indice > 0 ? new Date(mensagensNaTela[indice - 1].datetime).getTime() : 0;
+              return quando > anterior && quando <= new Date(msg.datetime).getTime();
+            });
 
             const naFila = itensFila.find((i) => i.id === msg.id);
 
@@ -543,11 +583,11 @@ const Messages = () => {
                       message={msg}
                       // Anima o que chegou depois de a conversa abrir. Antes
                       // vinha de `jaRolouAoFim`, que só era escrita após o
-                      // render — e a primeira mensagem enviada não animava.
+                      // render - e a primeira mensagem enviada não animava.
                       doAnimation={!idsIniciais.current?.has(String(msg.id))}
                       // Compara contra a lista que está sendo renderizada: a fila
                       // entra em `mensagensNaTela` e não em `messages`, e numa
-                      // conversa nova esta última está vazia — `messages[-1].id`
+                      // conversa nova esta última está vazia - `messages[-1].id`
                       // estourava ao enviar a primeira mensagem.
                       isLast={mensagensNaTela[mensagensNaTela.length - 1]?.id === msg.id}
                       activeChat={activeChat}
@@ -565,7 +605,11 @@ const Messages = () => {
                       <>
                         <i className="fa-regular fa-circle-exclamation text-red-500" />
                         <span className="text-red-500">{naFila.erro ?? 'Falha ao enviar'}</span>
-                        {podeReenviar(naFila) && (
+                        {/* Reenviar escreveria na conversa, e o backend recusa
+                            com 403 se ela mudou de dono. Descartar continua
+                            disponível: a fila é deste navegador, e limpar o
+                            próprio rascunho não toca no atendimento. */}
+                        {podeReenviar(naFila) && souODono && (
                           <button
                             type="button"
                             onClick={() => reenviar(naFila.id, FetchReq)}
@@ -612,7 +656,7 @@ const Messages = () => {
             // trocando a profundidade da árvore ao entrar e sair do modo de
             // seleção, o React desmontava tudo e a mídia que estava tocando
             // reiniciava do zero.
-            return (
+            const linha = (
               <div
                 key={msg.id}
                 className={classNames(
@@ -649,7 +693,30 @@ const Messages = () => {
                 {conteudoMensagem}
               </div>
             );
+
+            if (!eventosAntes.length) return linha;
+
+            return (
+              <Fragment key={msg.id}>
+                {eventosAntes.map((evento) => (
+                  <EventoAtendimento
+                    key={evento.id}
+                    evento={evento}
+                  />
+                ))}
+                {linha}
+              </Fragment>
+            );
           })}
+
+          {/* Os eventos posteriores à última mensagem - o caso comum, já que
+              transferir logo depois de responder é o fluxo normal. */}
+          {eventosDepoisDaUltima.map((evento) => (
+            <EventoAtendimento
+              key={evento.id}
+              evento={evento}
+            />
+          ))}
         </div>
 
         <div

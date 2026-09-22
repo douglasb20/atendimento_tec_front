@@ -22,7 +22,7 @@ export const useSelecaoMensagens = create<SelecaoMensagens>()((set, get) => ({
   ativo: false,
   selecionadas: [],
 
-  // Entrar pelo menu de uma mensagem já a marca — foi ela que o atendente
+  // Entrar pelo menu de uma mensagem já a marca - foi ela que o atendente
   // tinha em mãos ao escolher "Selecionar".
   entrarModoSelecao: (messageId) =>
     set({ ativo: true, selecionadas: messageId ? [messageId] : [] }),

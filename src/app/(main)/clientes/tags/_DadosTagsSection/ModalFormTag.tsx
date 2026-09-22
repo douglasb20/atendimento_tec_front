@@ -12,6 +12,7 @@ import ChipTag from '@/components/ChipTag';
 import LabelPlus from '@/components/LabelPlus';
 import { Shape, TagResponse } from '@/Interfaces';
 import { corDoTextoSobre, getFormErrorMessage, msgRequired } from '@/service/Util';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 type FormTag = { id?: number; name: string; color: string; text_color: 'light' | 'dark' };
 
@@ -53,6 +54,11 @@ const comCerquilha = (cor?: string) => {
 };
 
 function ModalFormTag({ visible, onHide, data, onConfirm }: ModalProps) {
+  const { podeAdicionar, podeEditar, semPermissao } = usePermissoesModulo('tag');
+
+  // Editar exige `:update`; criar, `:add`. Sem a permissão do caso, o
+  // formulário abre em somente leitura - quem tem `:view` consulta o cadastro.
+  const somenteLeitura = data?.id ? !podeEditar : !podeAdicionar;
   const { control, handleSubmit, reset, watch, setValue } = useForm<FormTag>({
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
@@ -84,6 +90,8 @@ function ModalFormTag({ visible, onHide, data, onConfirm }: ModalProps) {
       />
       <Button
         label="Salvar"
+        disabled={somenteLeitura}
+        title={somenteLeitura ? semPermissao : undefined}
         onClick={() => handleSubmit(onSubmitForm)()}
       />
     </div>
@@ -117,6 +125,7 @@ function ModalFormTag({ visible, onHide, data, onConfirm }: ModalProps) {
                 value={field?.value || ''}
                 placeholder="Premium, Contrato anual…"
                 autoFocus
+                disabled={somenteLeitura}
               />
               {getFormErrorMessage(fieldState)}
             </div>
@@ -146,6 +155,7 @@ function ModalFormTag({ visible, onHide, data, onConfirm }: ModalProps) {
                     setValue('text_color', sugereCorDoTexto(String(e.value ?? '')));
                   }}
                   format="hex"
+                  disabled={somenteLeitura}
                 />
                 <ChipTag tag={previa} />
               </div>

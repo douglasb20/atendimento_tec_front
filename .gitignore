@@ -34,3 +34,7 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# Temas compilados por scripts/build-temas.mjs (derivados, ~5 MB).
+# O `prebuild` os gera; versioná-los daria conflito a cada merge.
+public/theme/gerados/

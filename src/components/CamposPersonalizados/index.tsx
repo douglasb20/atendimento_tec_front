@@ -19,7 +19,7 @@ import { getFormErrorMessage } from '@/service/Util';
  *
  * O catálogo diz quais campos **podem** ser usados; quem edita escolhe, linha
  * por linha, quais este registro terá. Cadastrar um campo não o faz aparecer
- * em ninguém — é justamente o contrário de um formulário fixo.
+ * em ninguém - é justamente o contrário de um formulário fixo.
  *
  * ⚠️ O componente vive fora das telas porque contato e cliente usam o mesmo
  * comportamento: duplicá-lo faria as duas versões divergirem com o tempo.
@@ -204,7 +204,7 @@ const CamposPersonalizados = ({ control, aplicaA, name = 'campos' }: CamposPerso
 /**
  * O editor certo para o tipo declarado no catálogo.
  *
- * Tudo trafega como texto — é o que a API recebe e o que o banco guarda —, mas
+ * Tudo trafega como texto - é o que a API recebe e o que o banco guarda -, mas
  * o que se vê é um calendário, um número ou uma lista, conforme o campo.
  */
 const EditorDoValor = ({

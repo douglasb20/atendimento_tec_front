@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Column } from 'primereact/column';
 
 import AcoesDataTable, { BodyCNPJ } from '@/components/AcoesDataTable';
@@ -48,7 +48,7 @@ const DtClientes = ({ actions, ...props }) => {
                 ))}
               </div>
             ) : (
-              <span className="text-400">—</span>
+              <span className="text-400">-</span>
             )
           }
         />

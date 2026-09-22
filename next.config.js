@@ -2,16 +2,12 @@
 const nextConfig = {
   // Gera `.next/standalone` com um servidor Node e apenas os módulos que o
   // build realmente usa. Sem isso, a imagem de produção precisa carregar o
-  // `node_modules` inteiro — 1.7GB contra algo em torno de 200MB.
+  // `node_modules` inteiro - 1.7GB contra algo em torno de 200MB.
   output: 'standalone',
   basePath: '',
-  // O `.eslintrc.js` (formato legado) com ESLint 9 + eslint-config-next 16
-  // gera "Converting circular structure to JSON" a cada build. O aviso não
-  // impede a compilação, mas polui o log; o lint continua disponível por
-  // `npm run lint`, que é onde ele importa.
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // O bloco `eslint` saiu: o Next 16 removeu a opção (e o `next build` já não
+  // roda lint), então mantê-lo só produzia "Unrecognized key(s)" no build. O
+  // lint continua pelo `npm run lint`, que agora chama o ESLint direto.
   reactStrictMode: false,
   images: {
     remotePatterns: [

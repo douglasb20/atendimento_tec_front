@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { ContactResponse } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
-import { usePermissoes } from '@/hooks/usePermissoes';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import useApi from '@/service/Api/ApiClient';
 import { somenteDigitos } from '@/components/InputTelefone';
 import { AlertaCallback, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
@@ -26,31 +26,32 @@ export default function DadosContatosSection({ data }: DadosContatosProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
-  const { pode } = usePermissoes();
+  const { podeAdicionar, podeEditar, podeExcluir, semPermissao } =
+    usePermissoesModulo('contact');
   const { FetchReq } = useApi();
 
   // Sem permissão de criar, o botão não aparece: a chamada seria recusada
   // pelo backend de qualquer forma.
-  const ButtonsHeader: IButtonsOthers[] = pode('contact:add')
-    ? [
+  const ButtonsHeader: IButtonsOthers[] = [
     {
       label: 'Adicionar contato',
       icon: 'pi pi-user-plus',
       action: () => onOpenModalForm(null),
+      disabled: !podeAdicionar,
+      tooltip: podeAdicionar ? undefined : semPermissao,
     },
-      ]
-    : [];
+  ];
 
   const acoesTable: IActionTable<ContactResponse>[] = [
     {
-      isHidden: () => !pode('contact:update'),
-      label: 'Editar contato',
-      tooltip: 'Editar contato',
-      icon: 'pi pi-fw pi-user-edit',
+      // Sempre visível: sem `:update` o cadastro abre em somente leitura.
+      label: podeEditar ? 'Editar contato' : 'Visualizar contato',
+      tooltip: podeEditar ? 'Editar contato' : 'Ver contato',
+      icon: podeEditar ? 'pi pi-fw pi-user-edit' : 'pi pi-fw pi-eye',
       command: (data) => onOpenModalForm(data),
     },
     {
-      isHidden: () => !pode('contact:delete'),
+      isHidden: () => !podeExcluir,
       label: 'Excluir contato',
       tooltip: 'Excluir contato',
       icon: 'pi pi-fw pi-times',
@@ -99,6 +100,8 @@ export default function DadosContatosSection({ data }: DadosContatosProps) {
       // DDI já vem embutido pelo seletor de país.
       const body = {
         name: fields.name,
+        // Vazio vira null: o banco distingue "sem sobrenome" de string vazia.
+        last_name: fields.last_name?.trim() || null,
         phone: somenteDigitos(fields.phone) || undefined,
         // Sempre enviado, mesmo vazio: array vazio remove os que existiam, e
         // omitir preservaria - quem apagou todas as linhas quis limpar.

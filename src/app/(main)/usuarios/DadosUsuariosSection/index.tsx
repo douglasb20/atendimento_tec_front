@@ -1,8 +1,8 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useService } from '@/contexts/ServicesContext';
-import { usePermissoes } from '@/hooks/usePermissoes';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { IActionTable } from '@/components/AcoesDataTable';
 import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
@@ -22,13 +22,13 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
   const [rendered, setRendered] = useState(false);
   const [modalForm, setModalForm] = useState(false);
   const { setLoading } = useService();
-  const { pode } = usePermissoes();
+  const { podeAdicionar, podeEditar, podeExcluir, semPermissao } =
+    usePermissoesModulo('user');
   const { FetchReq } = ApiClient();
 
   // Sem permissão de criar, o botão não aparece: a chamada seria recusada
   // pelo backend de qualquer forma.
-  const ButtonsHeader: IButtonsOthers[] = pode('user:add')
-    ? [
+  const ButtonsHeader: IButtonsOthers[] = [
         {
           label: 'Adicionar usuário',
           icon: 'pi pi-user-plus',
@@ -36,22 +36,23 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
             setUsuarioSelecionado(null);
             setModalForm(true);
           },
+          disabled: !podeAdicionar,
+          tooltip: podeAdicionar ? undefined : semPermissao,
         },
-      ]
-    : [];
+  ];
 
   const acoesTable: IActionTable<IUsuariosResponse>[] = [
     {
-      isHidden: () => !pode('user:update'),
-      label: 'Editar usuário',
-      tooltip: 'Editar usuário',
-      icon: 'pi pi-fw pi-user-edit',
+      // Sempre visível: sem `:update` o cadastro abre em somente leitura.
+      label: podeEditar ? 'Editar usuário' : 'Visualizar usuário',
+      tooltip: podeEditar ? 'Editar usuário' : 'Ver usuário',
+      icon: podeEditar ? 'pi pi-fw pi-user-edit' : 'pi pi-fw pi-eye',
       command: (data) => {
         GetUserById(data.id);
       },
     },
     {
-      isHidden: () => !pode('user:delete'),
+      isHidden: () => !podeExcluir,
       label: 'Excluir usuário',
       tooltip: 'Excluir usuário',
       icon: 'pi pi-fw pi-times',

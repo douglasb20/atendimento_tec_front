@@ -1,14 +1,14 @@
 /** Uma permissão do catálogo, no formato `modulo:acao`. */
 export type PermissionResponse = {
   id: number;
-  /** O identificador usado nas checagens — ex.: `client:delete`. */
+  /** O identificador usado nas checagens - ex.: `client:delete`. */
   name: string;
-  /** Texto legível, para a tela — ex.: "Remover cliente". */
+  /** Texto legível, para a tela - ex.: "Remover cliente". */
   label: string;
   permission_module_id: number;
 };
 
-/** Agrupador de permissões na tela de cadastro — ex.: "Clientes". */
+/** Agrupador de permissões na tela de cadastro - ex.: "Clientes". */
 export type PermissionModuleResponse = {
   id: number;
   nome: string;

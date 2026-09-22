@@ -9,8 +9,12 @@
     "build:prod": "env-cmd -f .env.production next build",
     "start": "next start",
     "export": "next build && next export",
-    "lint": "next lint",
-    "format": "prettier --write \"**/**/*.{js,ts,tsx}\""
+    "lint": "eslint src --fix",
+    "format": "prettier --write \"**/**/*.{js,ts,tsx}\"",
+    "build:temas": "node scripts/build-temas.mjs",
+    "prebuild:hom": "node scripts/build-temas.mjs",
+    "prebuild:prod": "node scripts/build-temas.mjs",
+    "predev": "node scripts/build-temas.mjs"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.16",
@@ -32,7 +36,7 @@
     "interweave-emoji": "^7.0.1",
     "jwt-decode": "^4.0.0",
     "lottie-react": "^2.3.1",
-    "next": "^15.5.9",
+    "next": "^16.3.0",
     "nookies": "^2.5.2",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
@@ -48,7 +52,7 @@
     "socket.io-client": "^4.8.1",
     "sweetalert2": "^11.13.2",
     "sweetalert2-react-content": "^5.0.7",
-    "uuid": "^9.0.1",
+    "uuid": "^14.0.0",
     "validator": "^13.12.0",
     "yup": "^1.4.0",
     "zustand": "^5.0.8"

@@ -72,3 +72,32 @@ export const listaParaAplicaA = (lista?: Exclude<AplicaA, 'ambos'>[]): AplicaA =
 
   return marcados[0] ?? 'contato';
 };
+
+/**
+ * O valor cru, como o atendente deve lê-lo.
+ *
+ * O banco guarda tudo como texto e o `tipo` diz como interpretar - então
+ * `booleano` chega como `"true"` e `data` como ISO, nenhum dos dois legível
+ * numa tela de consulta.
+ *
+ * ⚠️ A data é formatada sem fuso: o valor é uma data civil ("15/03/1985"),
+ * não um instante. Passá-la por `new Date()` a deslocaria um dia para trás em
+ * fusos negativos, que é o nosso caso.
+ */
+export const formataValorCampo = (valor: string, tipo?: TipoCampo): string => {
+  if (!valor?.trim()) return '-';
+
+  if (tipo === 'booleano') return valor === 'true' || valor === '1' ? 'Sim' : 'Não';
+
+  if (tipo === 'data') {
+    const [ano, mes, dia] = valor.slice(0, 10).split('-');
+    return dia && mes && ano ? `${dia}/${mes}/${ano}` : valor;
+  }
+
+  if (tipo === 'numero') {
+    const n = Number(valor);
+    return Number.isFinite(n) ? n.toLocaleString('pt-BR') : valor;
+  }
+
+  return valor;
+};

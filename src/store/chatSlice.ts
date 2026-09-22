@@ -33,7 +33,7 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
 
       // O contador tem evento próprio (`whatsapp:unread_count`) e não deve vir
       // daqui: os handlers de edição e revogação emitem a conversa como a
-      // carregaram, com o valor anterior ao incremento — e uma mensagem nova
+      // carregaram, com o valor anterior ao incremento - e uma mensagem nova
       // dispara os dois eventos, com o `chat_state` chegando por último e
       // zerando o que o outro acabou de somar.
       const mesclar = (atual: SupportChatsResponse) => {
@@ -51,10 +51,33 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
 
       const ehAConversaAberta = activeChat && mesmoId(activeChat.id, chat.id);
 
+      // ⚠️ **Encerrada, a conversa sai da tela**, não só da lista.
+      //
+      // Antes ela continuava como `activeChat` para o header mostrar o estado
+      // final - mas o painel aberto em somente leitura sugere que ainda há o
+      // que fazer ali. Pior: o `fecharConversa` da finalização era desfeito
+      // por este `updateChat`, que chega pelo socket logo depois e repunha a
+      // conversa na tela.
+      //
+      // O histórico continua acessível pela URL.
+      if (ehAConversaAberta && encerrado) {
+        // A URL volta junto: sem isto um F5 reabriria a conversa encerrada,
+        // que é o estado de onde acabamos de sair. `replaceState` como no
+        // `fecharConversa`, para não encher o histórico do navegador.
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(null, '', '/chat');
+        }
+
+        return {
+          chats: novosChats,
+          activeChat: null,
+          messages: [],
+          quoted: { message: null, mode: null },
+        };
+      }
+
       return {
         chats: novosChats,
-        // Mesmo encerrada, continua sendo a conversa aberta: o atendente ainda
-        // está na tela, e o header precisa mostrar o estado final.
         activeChat: ehAConversaAberta
           ? {
               ...mesclar(activeChat),
@@ -108,7 +131,7 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
   /**
    * Volta à tela sem conversa selecionada.
    *
-   * Desfaz o que a seleção fez: a conversa ativa, as mensagens e a URL — que é
+   * Desfaz o que a seleção fez: a conversa ativa, as mensagens e a URL - que é
    * trocada por `replaceState` ao abrir, e volta pela mesma via para não encher
    * o histórico do navegador. Vive no store porque tanto o Esc quanto a
    * finalização do atendimento precisam dela.

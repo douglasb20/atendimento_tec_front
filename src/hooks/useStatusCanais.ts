@@ -18,7 +18,7 @@ export enum ChannelStatusId {
 
 export type ResumoCanais = {
   canais: ChannelResponse[];
-  /** Canais que não estão excluídos — os que o atendente de fato usa. */
+  /** Canais que não estão excluídos - os que o atendente de fato usa. */
   ativos: ChannelResponse[];
   conectados: number;
   /** true quando todo canal ativo está conectado. */
@@ -36,7 +36,7 @@ const estaExcluido = (canal: ChannelResponse) =>
  * Mantém o status dos canais de WhatsApp para exibição no topbar.
  *
  * Recarrega por HTTP a cada `whatsapp:channel_status`, porque o evento traz
- * apenas o `channel_id` — não o estado novo. É o mesmo caminho que a tela de
+ * apenas o `channel_id` - não o estado novo. É o mesmo caminho que a tela de
  * canais usa.
  */
 export function useStatusCanais(): ResumoCanais {
@@ -81,7 +81,7 @@ export function useStatusCanais(): ResumoCanais {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
 
-  // O socket só existe dentro de `/chat` — o layout do chat o conecta ao montar
+  // O socket só existe dentro de `/chat` - o layout do chat o conecta ao montar
   // e o desconecta ao sair. Como o topbar é global, nas demais telas o badge
   // ficaria congelado; o polling cobre esse intervalo e para assim que há
   // socket, para não duplicar requisição.

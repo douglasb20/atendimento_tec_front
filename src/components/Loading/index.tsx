@@ -1,5 +1,4 @@
 'use client';
-import React from 'react';
 import dynamic from 'next/dynamic';
 // import Lottie from 'lottie-react';
 import * as animationData from '@/assets/loading.json';

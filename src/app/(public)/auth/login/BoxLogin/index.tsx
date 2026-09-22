@@ -1,5 +1,4 @@
 'use client';
-import React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -132,7 +131,7 @@ export default function BoxLoginSection() {
         />
 
         {/* Depois do botão, e não antes: a ordem do Tab segue a do DOM, e com o
-            link no meio quem saía da senha caía nele — o Enter abria a
+            link no meio quem saía da senha caía nele - o Enter abria a
             recuperação em vez de entrar. */}
         <div className="mt-3 flex justify-content-center">
           <Link

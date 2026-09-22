@@ -18,7 +18,7 @@ type EtiquetasDoClienteProps = {
 /**
  * Etiquetas do cliente no painel do chat, editáveis ali mesmo.
  *
- * Classificar o cliente costuma acontecer *durante* o atendimento — mandar o
+ * Classificar o cliente costuma acontecer *durante* o atendimento - mandar o
  * atendente até o cadastro quebraria o fluxo da conversa.
  */
 const EtiquetasDoCliente = ({ cliente, onAtualizado }: EtiquetasDoClienteProps) => {

@@ -6,20 +6,36 @@ import useApi from '@/service/Api/ApiClient';
 import {
   ContactResponse,
   ehAtendimentoFinalizado,
+  podeAgirNoAtendimento,
   SupportChatsResponse,
   SupportChatStatusId,
 } from '@/Interfaces';
 import { CatchAlerta } from '@/service/Util';
+import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 import { useChatStore } from '@/store/useChatStore';
 import ModalContatoChat from '../_components/ModalContatoChat';
 import SidebarDetalhesContato from '../_components/SidebarDetalhesContato';
 import ModalFinalizarAtendimento from '../_components/ModalFinalizarAtendimento';
+import ModalTransferirAtendimento from '../_components/ModalTransferirAtendimento';
 import AcoesAtendimento from './_Header/AcoesAtendimento';
+import AtendenteAtual from './_Header/AtendenteAtual';
 import BadgeProtocolo from './_Header/BadgeProtocolo';
 import Cronometro from './_Header/Cronometro';
 import IdentificacaoContato from './_Header/IdentificacaoContato';
+import { useSelecaoMensagens } from '@/store/useSelecaoMensagens';
 
-type ModalAberto = 'finalizar' | 'contato' | null;
+type ModalAberto = 'finalizar' | 'contato' | 'transferir' | null;
+
+/** O modo com que o diálogo de encerramento abre. */
+type ModoFinalizar = 'normal' | 'sem-despedida' | 'sem-atendimento';
+
+/** Fio fino entre os metadados do cabeçalho. */
+const Divisor = () => (
+  <span
+    className="surface-300 flex-none"
+    style={{ width: 1, height: '1rem' }}
+  />
+);
 
 /**
  * Cabeçalho da conversa, com o estado do atendimento e suas ações.
@@ -33,8 +49,13 @@ const Header = () => {
   const activeChat = useChatStore((s) => s.activeChat);
   const patchActiveChat = useChatStore((s) => s.patchActiveChat);
   const fecharConversa = useChatStore((s) => s.fecharConversa);
+  const { usuarioId } = useUsuarioLogado();
+  // Sem argumento: entra no modo com a lista vazia, para o atendente escolher
+  // as mensagens. Pelo menu de uma bolha, ela já entra marcada.
+  const entrarModoSelecao = useSelecaoMensagens((s) => s.entrarModoSelecao);
 
   const [modalAberto, setModalAberto] = useState<ModalAberto>(null);
+  const [modoFinalizar, setModoFinalizar] = useState<ModoFinalizar>('normal');
   const [iniciando, setIniciando] = useState(false);
   const [detalhesAberto, setDetalhesAberto] = useState(false);
 
@@ -46,6 +67,34 @@ const Header = () => {
   const aguardando =
     !finalizado &&
     (status === SupportChatStatusId.AGUARDANDO || status === SupportChatStatusId.EM_FILA);
+  // Finalizar e transferir são do dono: o backend recusa de qualquer forma, e
+  // oferecer o botão só para vê-lo falhar é pior do que não mostrá-lo.
+  const souODono = podeAgirNoAtendimento(activeChat, usuarioId);
+
+  /** Abre o diálogo de encerramento no modo pedido. */
+  const abrirFinalizacao = (modo: ModoFinalizar) => {
+    setModoFinalizar(modo);
+    setModalAberto('finalizar');
+  };
+
+  /**
+   * Devolve a conversa à lista como não lida.
+   *
+   * Não fecha a conversa: o atendente segue lendo, e o badge fica na lista
+   * lateral como lembrete. Uma mensagem nova soma a partir daqui.
+   */
+  const marcarComoNaoLida = async () => {
+    try {
+      const atualizado = await FetchReq<SupportChatsResponse>({
+        endpoint: 'MarcarConversaNaoLida',
+        variables: [activeChat.id],
+      });
+
+      patchActiveChat(atualizado);
+    } catch (erro) {
+      CatchAlerta(erro, 'Não foi possível marcar como não lida');
+    }
+  };
 
   const iniciarAtendimento = async () => {
     try {
@@ -69,7 +118,7 @@ const Header = () => {
 
   return (
     <>
-      <div className="flex align-items-center gap-3 surface-100 border-1 border-primary-300 border-round-top px-3 py-3">
+      <div className="flex align-items-center gap-3 surface-100 border-1 border-primary-700 border-round-top px-3 py-3">
         <IdentificacaoContato
           contato={activeChat.contact}
           ultimaInteracao={activeChat.updated_at ?? activeChat.created_at}
@@ -84,11 +133,17 @@ const Header = () => {
 
           {emAndamento && activeChat.answered_at && (
             <>
-              <span
-                className="surface-300 flex-none"
-                style={{ width: 1, height: '1rem' }}
-              />
+              <Divisor />
               <Cronometro inicio={activeChat.answered_at} />
+            </>
+          )}
+
+          {/* Depois do tempo, e não antes: a pergunta "isto é meu?" só existe
+              quando alguém já assumiu. */}
+          {emAndamento && activeChat.user && (
+            <>
+              <Divisor />
+              <AtendenteAtual atendente={activeChat.user} />
             </>
           )}
         </div>
@@ -96,11 +151,17 @@ const Header = () => {
         <AcoesAtendimento
           aguardando={aguardando}
           emAndamento={emAndamento}
+          souODono={souODono}
           finalizado={finalizado}
           processando={iniciando}
           onIniciar={iniciarAtendimento}
-          onFinalizar={() => setModalAberto('finalizar')}
+          onFinalizar={() => abrirFinalizacao('normal')}
+          onFinalizarSemDespedida={() => abrirFinalizacao('sem-despedida')}
+          onFinalizarSemAtendimento={() => abrirFinalizacao('sem-atendimento')}
+          onMarcarNaoLida={marcarComoNaoLida}
+          onSelecionarMensagens={entrarModoSelecao}
           onEditarContato={() => setModalAberto('contato')}
+          onTransferir={() => setModalAberto('transferir')}
         />
       </div>
 
@@ -108,11 +169,22 @@ const Header = () => {
         visible={modalAberto === 'finalizar'}
         onHide={() => setModalAberto(null)}
         chat={activeChat}
+        modo={modoFinalizar}
         // Encerrado o atendimento, o painel volta ao estado inicial: manter o
         // histórico aberto em somente leitura sugere que ainda há o que fazer
         // ali. A conversa continua acessível pela URL, se precisar consultar.
         onFinalizado={fecharConversa}
         onContatoAtualizado={aoSalvarContato}
+      />
+
+      <ModalTransferirAtendimento
+        visible={modalAberto === 'transferir'}
+        onHide={() => setModalAberto(null)}
+        chat={activeChat}
+        // A conversa continua aberta: o atendente pode querer ler o que
+        // escreveu antes de sair dela. O socket avisa os outros clientes, e o
+        // header já reflete o dono novo.
+        onTransferido={patchActiveChat}
       />
 
       <SidebarDetalhesContato

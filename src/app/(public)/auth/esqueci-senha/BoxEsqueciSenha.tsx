@@ -56,7 +56,7 @@ export default function BoxEsqueciSenha() {
     }
   };
 
-  // Confirmação no lugar do formulário — não volta para o login sozinho, senão
+  // Confirmação no lugar do formulário - não volta para o login sozinho, senão
   // o usuário fica sem saber se o pedido foi aceito.
   if (enviado) {
     return (

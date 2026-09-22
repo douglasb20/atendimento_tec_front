@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { useService } from '@/contexts/ServicesContext';
-import { usePermissoes } from '@/hooks/usePermissoes';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import {
   PermissionGroupResponse,
   PermissionModuleResponse,
@@ -30,7 +30,7 @@ export default function DadosGruposSection({ data, permissoes, modulos }: Props)
   /**
    * Distingue "editar este grupo" de "criar um a partir dele".
    *
-   * O modal recebe o mesmo objeto nos dois casos — a diferença é só o que
+   * O modal recebe o mesmo objeto nos dois casos - a diferença é só o que
    * acontece ao salvar: editar manda PATCH, clonar manda POST.
    */
   const [clonando, setClonando] = useState(false);
@@ -38,18 +38,26 @@ export default function DadosGruposSection({ data, permissoes, modulos }: Props)
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
-  const { pode } = usePermissoes();
+  const { podeAdicionar, podeEditar, podeExcluir, semPermissao } =
+    usePermissoesModulo('permission_group');
 
-  const ButtonsHeader: IButtonsOthers[] = pode('permission_group:add')
-    ? [{ label: 'Novo grupo', icon: PrimeIcons.PLUS, action: () => AbrirModal(null) }]
-    : [];
+  // Desabilitado, não ausente: cinza diz "existe e você não pode".
+  const ButtonsHeader: IButtonsOthers[] = [
+    {
+      label: 'Novo grupo',
+      icon: PrimeIcons.PLUS,
+      action: () => AbrirModal(null),
+      disabled: !podeAdicionar,
+      tooltip: podeAdicionar ? undefined : semPermissao,
+    },
+  ];
 
   const acoesTable: IActionTable<PermissionGroupResponse>[] = [
     {
-      label: 'Editar',
-      tooltip: 'Editar grupo de permissão',
-      icon: PrimeIcons.PENCIL,
-      isHidden: () => !pode('permission_group:update'),
+      // Sempre visível: sem `:update` o cadastro abre em somente leitura.
+      label: podeEditar ? 'Editar' : 'Visualizar',
+      tooltip: podeEditar ? 'Editar grupo de permissão' : 'Ver grupo de permissão',
+      icon: podeEditar ? PrimeIcons.PENCIL : PrimeIcons.EYE,
       command: (grupo) => AbrirModal(grupo),
     },
     {
@@ -59,7 +67,7 @@ export default function DadosGruposSection({ data, permissoes, modulos }: Props)
       label: 'Duplicar',
       tooltip: 'Criar um grupo novo a partir deste',
       icon: PrimeIcons.COPY,
-      isHidden: () => !pode('permission_group:add'),
+      isHidden: () => !podeAdicionar,
       command: (grupo) => AbrirModal(grupo, true),
     },
     {
@@ -68,8 +76,8 @@ export default function DadosGruposSection({ data, permissoes, modulos }: Props)
       icon: PrimeIcons.TRASH,
       bgcolor: 'danger',
       // Grupo do sistema não é removível, e a etiqueta na listagem já diz por
-      // quê — oferecer o botão só para ele falhar seria pior.
-      isHidden: (grupo) => !pode('permission_group:delete') || grupo.is_system,
+      // quê - oferecer o botão só para ele falhar seria pior.
+      isHidden: (grupo) => !podeExcluir || grupo.is_system,
       command: (grupo) =>
         ConfirmaAcao(
           `O grupo "${grupo.name}" será removido.`,

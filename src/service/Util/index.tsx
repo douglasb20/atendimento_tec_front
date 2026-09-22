@@ -39,6 +39,17 @@ const MySwal = withReactContent(
     showCloseButton: true,
     showConfirmButton: false,
     allowOutsideClick: false,
+    // O SweetAlert injeta o CSS dele em runtime, depois do nosso `<link>`, e
+    // renderiza fora da árvore do React - então nem o tema nem as variáveis
+    // `--swal2-*` o alcançam: o diálogo saía branco com texto claro no modo
+    // escuro. Vestir o popup com as classes do tema resolve pelo caminho que a
+    // própria biblioteca oferece, sem disputa de especificidade.
+    customClass: {
+      popup: 'surface-card',
+      title: 'text-color',
+      htmlContainer: 'text-color',
+      closeButton: 'text-color-secondary',
+    },
   }),
 );
 
@@ -454,7 +465,7 @@ export function debounce(fn, delay) {
  *
  * As etiquetas têm cor livre, escolhida no ColorPicker: texto branco sobre
  * amarelo some, e preto sobre azul-marinho também. A luminância relativa decide
- * qual dos dois usar — o limiar 0.6 foi ajustado para as cores médias caírem no
+ * qual dos dois usar - o limiar 0.6 foi ajustado para as cores médias caírem no
  * texto escuro, que lê melhor.
  */
 export const corDoTextoSobre = (corDeFundo?: string): string => {
@@ -470,11 +481,27 @@ export const corDoTextoSobre = (corDeFundo?: string): string => {
   return luminancia > 0.6 ? '#1f2937' : '#ffffff';
 };
 
+/**
+ * O nome completo a partir das duas colunas.
+ *
+ * `name` e `last_name` são separados desde a migration `1789530000000`. Esta
+ * função existe para a concatenação viver num lugar só: o sobrenome nulo é o
+ * caso comum (contato de empresa, `pushName` de uma palavra), e montar
+ * `` `${name} ${last_name}` `` na mão produz um espaço solto no fim.
+ *
+ * ⚠️ Tolera `undefined` inteiro: em `JWTToken` o `last_name` não existe nos
+ * tokens emitidos antes da separação, que seguem válidos até expirar.
+ */
+export const nomeCompleto = (
+  pessoa?: { name?: string | null; last_name?: string | null } | null,
+): string => [pessoa?.name, pessoa?.last_name].filter(Boolean).join(' ').trim();
+
 export const nomeExibicao = (contato?: {
   name?: string;
+  last_name?: string | null;
   client?: { nome?: string } | null;
 }): string => {
-  const contatoNome = contato?.name?.trim() || 'Contato';
+  const contatoNome = nomeCompleto(contato) || 'Contato';
   const clienteNome = contato?.client?.nome?.trim();
 
   return clienteNome ? `${clienteNome} - ${contatoNome}` : contatoNome;

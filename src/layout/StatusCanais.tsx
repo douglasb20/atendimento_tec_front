@@ -28,7 +28,7 @@ const Ponto = ({ statusId }: { statusId: number }) => (
 /**
  * Resumo do estado das conexões de WhatsApp, no topbar.
  *
- * Sem canal conectado nenhuma mensagem entra ou sai — é a informação que o
+ * Sem canal conectado nenhuma mensagem entra ou sai - é a informação que o
  * atendente precisa ver sem procurar. Escolher um canal abre a configuração
  * dele.
  *
@@ -40,7 +40,7 @@ const StatusCanais = () => {
   const menuRef = useRef<Menu>(null);
   const { ativos, conectados, tudoConectado, carregando } = useStatusCanais();
 
-  // Nada a mostrar enquanto carrega ou sem canal cadastrado — um badge vazio
+  // Nada a mostrar enquanto carrega ou sem canal cadastrado - um badge vazio
   // só ocuparia espaço.
   if (carregando || ativos.length === 0) return null;
 
@@ -62,7 +62,7 @@ const StatusCanais = () => {
 
   const itensMenu: MenuItem[] = ativos.map((canal) => ({
     label: canal.name,
-    // O `icon` do MenuItem é só uma string de classe — as utilitárias de forma
+    // O `icon` do MenuItem é só uma string de classe - as utilitárias de forma
     // e cor transformam o espaço do ícone na bolinha de status.
     icon: classNames('border-circle w-1rem h-1rem', corDe(canal.channel_status_id).ponto),
     // A configuração é um modal dentro de /canais, não uma rota própria; o

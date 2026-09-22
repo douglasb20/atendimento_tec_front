@@ -22,7 +22,7 @@ const JANELA_EDICAO_MIN = 15;
 
 /**
  * O conteúdo guardado traz o prefixo `*Nome:*` que o backend acrescenta no
- * envio. Editar deve mexer só no que o atendente escreveu — o prefixo é
+ * envio. Editar deve mexer só no que o atendente escreveu - o prefixo é
  * reposto do outro lado.
  */
 const semPrefixo = (conteudo?: string) => (conteudo ?? '').replace(/^\*[^*]+:\*\n/, '');

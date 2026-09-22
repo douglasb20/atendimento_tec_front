@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { useService } from '@/contexts/ServicesContext';
-import { usePermissoes } from '@/hooks/usePermissoes';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import { TagResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import { AlertaCallback, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
@@ -27,30 +27,31 @@ export default function DadosTagsSection({ data }: DadosTagsProps) {
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
-  const { pode } = usePermissoes();
+  const { podeAdicionar, podeEditar, podeExcluir, semPermissao } =
+    usePermissoesModulo('tag');
 
-  // Sem permissão de criar, o botão não aparece: a chamada seria recusada
-  // pelo backend de qualquer forma.
-  const ButtonsHeader: IButtonsOthers[] = pode('tag:add')
-    ? [
+  // Desabilitado, não ausente: cinza diz "existe e você não pode".
+  const ButtonsHeader: IButtonsOthers[] = [
     {
       label: 'Nova etiqueta',
       icon: PrimeIcons.PLUS,
       action: () => AbrirModal(null),
+      disabled: !podeAdicionar,
+      tooltip: podeAdicionar ? undefined : semPermissao,
     },
-      ]
-    : [];
+  ];
 
   const acoesTable: IActionTable<TagResponse>[] = [
     {
-      isHidden: () => !pode('tag:update'),
-      label: 'Editar',
-      tooltip: 'Editar etiqueta',
-      icon: PrimeIcons.PENCIL,
+      // Sempre visível: sem `:update` o cadastro abre em somente leitura, que
+      // é o que `:view` dá direito de fazer.
+      label: podeEditar ? 'Editar' : 'Visualizar',
+      tooltip: podeEditar ? 'Editar etiqueta' : 'Ver etiqueta',
+      icon: podeEditar ? PrimeIcons.PENCIL : PrimeIcons.EYE,
       command: (tag) => AbrirModal(tag),
     },
     {
-      isHidden: () => !pode('tag:delete'),
+      isHidden: () => !podeExcluir,
       label: 'Remover',
       tooltip: 'Remover etiqueta',
       icon: PrimeIcons.TRASH,

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { useService } from '@/contexts/ServicesContext';
-import { usePermissoes } from '@/hooks/usePermissoes';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import { CustomFieldResponse, listaParaAplicaA } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import { AlertaCallback, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
@@ -23,29 +23,30 @@ export default function DadosCamposSection({ data }: DadosCamposProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
-  const { pode } = usePermissoes();
+  const { podeAdicionar, podeEditar, podeExcluir, semPermissao } =
+    usePermissoesModulo('custom.field');
   const { FetchReq } = useApi();
 
-  const ButtonsHeader: IButtonsOthers[] = pode('custom.field:add')
-    ? [
+  const ButtonsHeader: IButtonsOthers[] = [
         {
           label: 'Adicionar campo',
           icon: 'pi pi-plus',
           action: () => AbrirModal(null),
+          disabled: !podeAdicionar,
+          tooltip: podeAdicionar ? undefined : semPermissao,
         },
-      ]
-    : [];
+  ];
 
   const acoesTable: IActionTable<CustomFieldResponse>[] = [
     {
-      isHidden: () => !pode('custom.field:update'),
-      label: 'Editar campo',
-      tooltip: 'Editar campo',
-      icon: 'pi pi-fw pi-pencil',
+      // Sempre visível: sem `:update` o cadastro abre em somente leitura.
+      label: podeEditar ? 'Editar campo' : 'Visualizar campo',
+      tooltip: podeEditar ? 'Editar campo' : 'Ver campo',
+      icon: podeEditar ? 'pi pi-fw pi-pencil' : 'pi pi-fw pi-eye',
       command: (campo) => AbrirModal(campo),
     },
     {
-      isHidden: () => !pode('custom.field:delete'),
+      isHidden: () => !podeExcluir,
       label: 'Remover campo',
       tooltip: 'Remover campo',
       icon: 'pi pi-fw pi-trash',
@@ -116,7 +117,7 @@ export default function DadosCamposSection({ data }: DadosCamposProps) {
       AlertaCallback('Campo salvo com sucesso!', () => {}, 'success');
     } catch (err) {
       // Nome repetido volta 409, e trocar o tipo de um campo em uso volta 400
-      // com a contagem — as duas mensagens vêm do backend e são exibidas como
+      // com a contagem - as duas mensagens vêm do backend e são exibidas como
       // estão.
       CatchAlerta(err, 'Erro ao salvar campo');
     } finally {

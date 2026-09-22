@@ -21,6 +21,7 @@ import {
 } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import { getFormErrorMessage, msgRequired } from '@/service/Util';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 export type FormIntegracao = {
   integration_provider_id: number;
@@ -62,7 +63,7 @@ const schema = yup.object<
 /**
  * Sugere a URL de webhook a partir de onde a API está publicada.
  *
- * É o valor certo na maioria dos casos, mas não em todos — daí ser sugestão e
+ * É o valor certo na maioria dos casos, mas não em todos - daí ser sugestão e
  * não imposição: com a Evolution em container e o backend no host, `localhost`
  * dentro do container é o próprio container, e o endereço tem de ser o IP do
  * gateway Docker.
@@ -73,6 +74,12 @@ const webhookSugerido = () => {
 };
 
 function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: ModalProps) {
+  const { podeAdicionar, podeEditar, semPermissao } = usePermissoesModulo('integration');
+
+  // Editar exige `:update`; criar, `:add`. Sem a permissão do caso, o
+  // formulário abre em somente leitura - quem tem `:view` consulta o cadastro.
+  const somenteLeitura = data?.id ? !podeEditar : !podeAdicionar;
+
   const { control, handleSubmit, reset, watch, setValue } = useForm<FormIntegracao>({
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
@@ -119,7 +126,7 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
    * Vem de um endpoint próprio (`/:id/credenciais`, exigindo
    * `integration:update`) e não da listagem: assim a chave sai do banco só ao
    * abrir a edição, e o acesso fica no log de auditoria. Falhar aqui não é
-   * erro de tela — sem permissão, o campo simplesmente segue vazio e continua
+   * erro de tela - sem permissão, o campo simplesmente segue vazio e continua
    * valendo a regra de "preencha para substituir".
    */
   const carregarCredencial = async (id: number) => {
@@ -142,7 +149,7 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
    * Testa antes de salvar, com o que está digitado no formulário.
    *
    * Descobrir a apikey errada aqui evita o caminho longo: salvar, criar canal,
-   * tentar conectar e só então ver a falha — sem saber se o problema é a
+   * tentar conectar e só então ver a falha - sem saber se o problema é a
    * credencial, o endereço ou o canal.
    */
   const testarConexao = async () => {
@@ -159,7 +166,7 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
           ...(slugSelecionado && { slug: slugSelecionado }),
           ...(watch('base_url')?.trim() && { base_url: watch('base_url').trim() }),
           // Sem chave digitada numa integração existente, o backend usa a
-          // gravada — é o caso de conferir uma integração já cadastrada.
+          // gravada - é o caso de conferir uma integração já cadastrada.
           ...(apiKey && { credentials: { apiKey } }),
         },
       });
@@ -197,6 +204,8 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
         />
         <Button
           label="Salvar"
+          disabled={somenteLeitura}
+          title={somenteLeitura ? semPermissao : undefined}
           icon="fa-regular fa-check"
           onClick={handleSubmit(onConfirm)}
         />
@@ -257,6 +266,7 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
                   {...field}
                   placeholder="Ex.: Evolution principal"
                   className={fieldState.error ? 'p-invalid' : ''}
+                  disabled={somenteLeitura}
                 />
                 {getFormErrorMessage(fieldState)}
               </>
@@ -273,6 +283,7 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
               <InputText
                 {...field}
                 placeholder="http://172.17.0.1:8080"
+                disabled={somenteLeitura}
               />
             )}
           />
@@ -311,6 +322,7 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
                   placeholder={
                     carregandoChave ? 'Carregando…' : 'Chave global do provider'
                   }
+                  disabled={somenteLeitura}
                 />
               </IconField>
             )}
@@ -323,7 +335,7 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
         <div className="field col-12">
           <LabelPlus
             text="URL de webhook"
-            textHelp="Precisa ser alcançável de onde o provider roda. Uma Evolution em container não enxerga o localhost deste servidor — nesse caso use o IP do gateway Docker (172.17.0.1)."
+            textHelp="Precisa ser alcançável de onde o provider roda. Uma Evolution em container não enxerga o localhost deste servidor - nesse caso use o IP do gateway Docker (172.17.0.1)."
           />
           <Controller
             control={control}
@@ -332,6 +344,7 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
               <InputText
                 {...field}
                 placeholder="https://api.exemplo.com.br/api/whatsapp/webhook"
+                disabled={somenteLeitura}
               />
             )}
           />
@@ -345,6 +358,7 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
               <InputSwitch
                 checked={field.value}
                 onChange={(e) => field.onChange(e.value)}
+                disabled={somenteLeitura}
               />
             )}
           />
@@ -359,6 +373,7 @@ function ModalFormIntegracao({ visible, onHide, data, providers, onConfirm }: Mo
               <InputSwitch
                 checked={field.value}
                 onChange={(e) => field.onChange(e.value)}
+                disabled={somenteLeitura}
               />
             )}
           />

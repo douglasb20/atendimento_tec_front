@@ -3,7 +3,7 @@
  *
  * Existe por causa da troca de identidade da mensagem própria: a bolha otimista
  * nasce com o id da fila (`envio-…`) e, quando o webhook chega, é substituída
- * pela definitiva, com o id do WhatsApp. São dois ids para a mesma mensagem — e
+ * pela definitiva, com o id do WhatsApp. São dois ids para a mesma mensagem - e
  * sem este registro ela animaria duas vezes, uma ao ser enviada e outra ao ser
  * confirmada, que é o efeito estranho de a bolha "pular" sozinha depois.
  *

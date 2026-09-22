@@ -11,6 +11,7 @@ import { ContactResponse, ValorCampoForm } from '@/Interfaces';
 import CamposPersonalizados from '@/components/CamposPersonalizados';
 import InputTelefone, { paraE164 } from '@/components/InputTelefone';
 import LabelPlus from '@/components/LabelPlus';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 /**
  * O que o formulário edita - subconjunto do contato.
@@ -18,7 +19,7 @@ import LabelPlus from '@/components/LabelPlus';
  * Nomeado em vez de usar `ContactResponse` inteiro: quem recebe o `onConfirm`
  * precisa saber que só estes campos chegam preenchidos.
  */
-export type ContactFormFields = Pick<ContactResponse, 'id' | 'name' | 'phone'> & {
+export type ContactFormFields = Pick<ContactResponse, 'id' | 'name' | 'last_name' | 'phone'> & {
   /** Campos personalizados escolhidos para este contato. */
   campos?: ValorCampoForm[];
 };
@@ -33,12 +34,15 @@ type ModalProps = {
 const defaultForm: ContactFormFields = {
   id: null,
   name: '',
+  last_name: '',
   phone: '',
   campos: [],
 };
 
 const schema = yup.object({
   name: yup.string().required(msgRequired),
+  // Opcional: muito contato é empresa ou chega do WhatsApp com uma palavra só.
+  last_name: yup.string().notRequired(),
   phone: yup.string().notRequired(),
   // Adicionou a linha, tem que preencher: uma linha pela metade não significa
   // nada, e o backend a recusaria.
@@ -52,6 +56,13 @@ const schema = yup.object({
 
 function ModalFormulario(props: ModalProps) {
   const { visible, onHide, data, onConfirm } = props;
+
+  const { podeAdicionar, podeEditar, semPermissao } = usePermissoesModulo('contact');
+
+  // Editar exige `:update`; criar, `:add`. Sem a permissão do caso, o
+  // formulário abre em somente leitura - quem tem `:view` consulta o cadastro.
+  const somenteLeitura = data?.id ? !podeEditar : !podeAdicionar;
+
   const { control, handleSubmit, reset } = useForm<ContactFormFields>({
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
@@ -68,6 +79,8 @@ function ModalFormulario(props: ModalProps) {
         />
         <Button
           label="Salvar"
+          disabled={somenteLeitura}
+          title={somenteLeitura ? semPermissao : undefined}
           onClick={() => handleSubmit(onSubmitForm)()}
         />
       </div>
@@ -122,6 +135,30 @@ function ModalFormulario(props: ModalProps) {
                   value={field?.value || ''}
                   placeholder="Nome do contato"
                   autoComplete="off"
+                  disabled={somenteLeitura}
+                />
+                {getFormErrorMessage(fieldState)}
+              </>
+            )}
+          />
+        </div>
+        <div className="col-6">
+          <Controller
+            control={control}
+            name="last_name"
+            render={({ field, fieldState }) => (
+              <>
+                <LabelPlus
+                  htmlFor={field.name}
+                  text="Sobrenome"
+                />
+                <InputText
+                  id={field.name}
+                  {...field}
+                  value={field?.value || ''}
+                  placeholder="Sobrenome do contato"
+                  autoComplete="off"
+                  disabled={somenteLeitura}
                 />
                 {getFormErrorMessage(fieldState)}
               </>
@@ -152,6 +189,7 @@ function ModalFormulario(props: ModalProps) {
                   onChange={(valor) => field.onChange(valor ?? '')}
                   onBlur={field.onBlur}
                   invalido={!!fieldState.error}
+                  disabled={somenteLeitura}
                 />
                 {getFormErrorMessage(fieldState)}
               </>

@@ -10,7 +10,7 @@ type ShowAvatarComponentProps = {
 const ShowAvatarComponent = ({ message, activeChat }: ShowAvatarComponentProps) => {
   // `undefined` em vez do caminho padrão: o `Avatar` já resolve a ausência, e
   // deixar isso com ele é o que garante o mesmo desfecho quando a URL existe
-  // mas falha ao carregar — o caso comum, já que a foto vem do WhatsApp com
+  // mas falha ao carregar - o caso comum, já que a foto vem do WhatsApp com
   // assinatura de validade.
   const avatarUrl = message.from_me
     ? activeChat?.user?.avatar_url

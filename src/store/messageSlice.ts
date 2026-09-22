@@ -44,7 +44,7 @@ export const createMessageSlice: StateCreator<MessageSlice & ChatSlice, [], [], 
 
       return {
         // No início: os anteriores ficam acima, e o mais antigo no topo de
-        // todos — a mesma ordem cronológica das mensagens abaixo.
+        // todos - a mesma ordem cronológica das mensagens abaixo.
         anteriores: [protocolo, ...anteriores],
         totalAnteriores: Math.max(0, totalAnteriores - 1),
       };

@@ -54,7 +54,7 @@ const DtCanais = ({ actions, ...props }) => {
           className="w-10rem"
           body={({ integration }: ChannelResponse) =>
             integration?.name ?? (
-              // Sem vínculo o canal segue a integração padrão — dizer "padrão"
+              // Sem vínculo o canal segue a integração padrão - dizer "padrão"
               // é mais útil que um traço, que leria como "nenhuma".
               <span className="text-500 text-sm font-italic">Padrão</span>
             )

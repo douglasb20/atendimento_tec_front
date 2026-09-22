@@ -1,9 +1,9 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useService } from '@/contexts/ServicesContext';
-import { usePermissoes } from '@/hooks/usePermissoes';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { ClientResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
@@ -19,7 +19,7 @@ export default function DadosClientesSection({ data }: DadosClientesProps) {
   const [clients, setClients] = useState(data || []);
 
   /**
-   * Acrescenta `tags_busca` — os nomes das etiquetas num texto só.
+   * Acrescenta `tags_busca` - os nomes das etiquetas num texto só.
    *
    * O filtro global da tabela compara valores simples; um array de objetos
    * nunca casaria com o termo digitado. Derivado aqui para valer tanto no
@@ -35,32 +35,33 @@ export default function DadosClientesSection({ data }: DadosClientesProps) {
   );
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
-  const { pode } = usePermissoes();
+  const { podeAdicionar, podeEditar, podeExcluir, semPermissao } =
+    usePermissoesModulo('client');
   const { FetchReq } = useApi();
   const router = useRouter();
 
   // Sem permissão de criar, o botão não aparece: a chamada seria recusada
   // pelo backend de qualquer forma.
-  const ButtonsHeader: IButtonsOthers[] = pode('client:add')
-    ? [
+  const ButtonsHeader: IButtonsOthers[] = [
     {
       label: 'Adicionar cliente',
       icon: 'pi pi-user-plus',
       action: () => router.push('/clientes/form/'),
+      disabled: !podeAdicionar,
+      tooltip: podeAdicionar ? undefined : semPermissao,
     },
-      ]
-    : [];
+  ];
 
   const acoesTable: IActionTable<ClientResponse>[] = [
     {
-      isHidden: () => !pode('client:update'),
-      label: 'Editar cliente',
-      tooltip: 'Editar cliente',
-      icon: 'pi pi-fw pi-user-edit',
+      // Sempre visível: sem `:update` o cadastro abre em somente leitura.
+      label: podeEditar ? 'Editar cliente' : 'Visualizar cliente',
+      tooltip: podeEditar ? 'Editar cliente' : 'Ver cliente',
+      icon: podeEditar ? 'pi pi-fw pi-user-edit' : 'pi pi-fw pi-eye',
       command: (data) => router.push('/clientes/form/' + data.id),
     },
     {
-      isHidden: () => !pode('client:delete'),
+      isHidden: () => !podeExcluir,
       label: 'Excluir cliente',
       tooltip: 'Excluir cliente',
       icon: 'pi pi-fw pi-times',

@@ -8,7 +8,7 @@ import { CustomFieldResponse, ROTULO_APLICA_A, ROTULO_TIPO } from '@/Interfaces'
 
 /** As opções em linha, para a lista ser conferível sem abrir a edição. */
 const BodyOpcoes = (campo: CustomFieldResponse) => {
-  if (campo.tipo !== 'lista') return <span className="text-400">—</span>;
+  if (campo.tipo !== 'lista') return <span className="text-400">-</span>;
 
   return (
     <div className="flex flex-wrap gap-1 justify-content-center">

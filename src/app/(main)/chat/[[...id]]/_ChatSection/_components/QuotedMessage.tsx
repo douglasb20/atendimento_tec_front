@@ -1,6 +1,6 @@
 import { useChatStore } from '@/store/useChatStore';
 import Interweave from '@/components/Interweave';
-import { descreveMidia, fixHeartEmoji } from '@/service/Util';
+import { descreveMidia, fixHeartEmoji, nomeCompleto } from '@/service/Util';
 import { ModeQuoted } from '@/Interfaces';
 
 export default function QuotedMessage() {
@@ -27,7 +27,7 @@ export default function QuotedMessage() {
         <div className="fadeindown border-left-3 relative bg-gray-200 border-round-lg border-gray-500 p-2 overflow-hidden my-2 flex align-items-center gap-2">
           <div className="flex-1 overflow-hidden">
             <p className={`font-bold ${mensagem.from_me ? 'text-blue-600' : 'text-green-600'}`}>
-              {mensagem.from_me ? 'Você' : activeChat?.contact?.name}
+              {mensagem.from_me ? 'Você' : nomeCompleto(activeChat?.contact)}
             </p>
 
             {/* Mídia sem legenda tem `content` vazio: sem o rótulo, a faixa

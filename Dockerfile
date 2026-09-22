@@ -1,5 +1,5 @@
 # O Next embute as variáveis do bloco `env` do next.config.js no bundle durante
-# a compilação — elas não são lidas em runtime. Por isso chegam como ARG, e não
+# a compilação - elas não são lidas em runtime. Por isso chegam como ARG, e não
 # como variável de ambiente do container: definidas só na execução, o front
 # subiria apontando para `undefined`.
 FROM node:22-alpine AS build
@@ -36,7 +36,7 @@ ENV TZ=America/Sao_Paulo
 
 # Com `output: 'standalone'` o build já resolve as dependências: a pasta
 # `.next/standalone` traz um servidor Node e só os módulos alcançados pelo
-# código. Não há `npm ci` aqui — é o que derruba a imagem de ~1.7GB para
+# código. Não há `npm ci` aqui - é o que derruba a imagem de ~1.7GB para
 # algumas centenas de MB.
 COPY --from=build /app/.next/standalone ./
 # O standalone não inclui os assets estáticos nem o `public`: o servidor espera

@@ -11,10 +11,22 @@ import { ContactResponse, SupportChatsResponse } from '@/Interfaces';
 import { Alerta, CatchAlerta, formatDuracao, nomeExibicao } from '@/service/Util';
 import ModalContatoChat from './ModalContatoChat';
 
+/**
+ * As três formas de encerrar, que mudam o endpoint e as exigências:
+ *
+ * - `normal` envia a despedida do canal e exige cliente associado;
+ * - `sem-despedida` é igual, mas pula o texto de despedida;
+ * - `sem-atendimento` encerra de Aguardando, **sem exigir cliente** e sem
+ *   despedida - é o descarte de spam ou de contato que não será atendido.
+ */
+export type ModoFinalizacao = 'normal' | 'sem-despedida' | 'sem-atendimento';
+
 type ModalFinalizarAtendimentoProps = {
   visible: boolean;
   onHide: () => void;
   chat: SupportChatsResponse;
+  /** Padrão `normal`. */
+  modo?: ModoFinalizacao;
   /** Chamado com a conversa finalizada e, antes disso, com o contato salvo. */
   onFinalizado: (chat: SupportChatsResponse) => void;
   onContatoAtualizado: (contato: ContactResponse) => void;
@@ -34,6 +46,7 @@ const ModalFinalizarAtendimento = ({
   visible,
   onHide,
   chat,
+  modo = 'normal',
   onFinalizado,
   onContatoAtualizado,
 }: ModalFinalizarAtendimentoProps) => {
@@ -46,7 +59,11 @@ const ModalFinalizarAtendimento = ({
     if (visible) setRelato('');
   }, [visible]);
 
-  const semCliente = !chat?.contact?.client_id;
+  const descarte = modo === 'sem-atendimento';
+
+  // O descarte não exige cliente: encerrar spam não pode dar mais trabalho do
+  // que atender. Nos outros dois o vínculo continua obrigatório.
+  const semCliente = !descarte && !chat?.contact?.client_id;
 
   const duracao = chat?.answered_at
     ? formatDuracao(Math.floor((Date.now() - parseISO(chat.answered_at).getTime()) / 1000))
@@ -57,14 +74,22 @@ const ModalFinalizarAtendimento = ({
       setFinalizando(true);
 
       const atualizado = await FetchReq<SupportChatsResponse>({
-        endpoint: 'FinalizarAtendimentoChat',
+        endpoint: descarte ? 'FinalizarSemAtendimento' : 'FinalizarAtendimentoChat',
         variables: [chat.id],
-        body: { observation_user: relato.trim() || undefined },
+        body: {
+          observation_user: relato.trim() || undefined,
+          // Só no fluxo normal: a rota do descarte nunca envia despedida.
+          ...(descarte ? {} : { sem_despedida: modo === 'sem-despedida' }),
+        },
       });
 
       onFinalizado(atualizado);
       onHide();
-      Alerta('Atendimento finalizado com sucesso!', 'Aviso', 'success');
+      Alerta(
+        descarte ? 'Conversa encerrada sem atendimento.' : 'Atendimento finalizado com sucesso!',
+        'Aviso',
+        'success',
+      );
     } catch (erro) {
       CatchAlerta(erro, 'Não foi possível finalizar o atendimento');
     } finally {
@@ -82,7 +107,7 @@ const ModalFinalizarAtendimento = ({
         disabled={finalizando}
       />
       <Button
-        label="Concluir atendimento"
+        label={descarte ? 'Encerrar sem atender' : 'Concluir atendimento'}
         icon="fa-regular fa-check"
         severity="success"
         loading={finalizando}
@@ -102,7 +127,13 @@ const ModalFinalizarAtendimento = ({
         style={{ width: '42rem' }}
         breakpoints={{ '640px': '95vw' }}
         visible={visible}
-        header="Finalizar atendimento"
+        header={
+          descarte
+            ? 'Encerrar sem atendimento'
+            : modo === 'sem-despedida'
+              ? 'Finalizar sem despedida'
+              : 'Finalizar atendimento'
+        }
         onHide={onHide}
         footer={rodape}
       >
@@ -156,7 +187,7 @@ const ModalFinalizarAtendimento = ({
               htmlFor="relato"
               className="block mb-2 font-medium"
             >
-              Relato do atendimento
+              {descarte ? 'Motivo' : 'Relato do atendimento'}
             </label>
             <InputTextarea
               id="relato"
@@ -166,7 +197,11 @@ const ModalFinalizarAtendimento = ({
               maxLength={LIMITE_RELATO}
               value={relato}
               onChange={(e) => setRelato(e.target.value)}
-              placeholder="Descreva brevemente o que foi resolvido (opcional)"
+              placeholder={
+                descarte
+                  ? 'Por que esta conversa não será atendida? (opcional)'
+                  : 'Descreva brevemente o que foi resolvido (opcional)'
+              }
             />
             <small className="block mt-1 text-right text-500">
               {relato.length}/{LIMITE_RELATO}

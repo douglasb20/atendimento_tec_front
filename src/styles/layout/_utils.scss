@@ -93,8 +93,18 @@
 }
 
 .message-box {
+  // O véu sobre a marca-d'água usa a cor da página em vez de um cinza cravado:
+  // antes era `rgba(249, 250, 251, 0.85)`, e no modo escuro o chat ficava um
+  // retângulo claro no meio da tela.
+  //
+  // A imagem continua a original, opaca - por isso o véu precisa ser quase
+  // sólido (95%): é ele que dá a cor, e a arte aparece só como textura por
+  // baixo. Menos que isso e o branco da imagem vaza.
   background-image:
-    linear-gradient(rgba(249, 250, 251, 0.85), /* cor + opacidade */ rgba(249, 250, 251, 0.85)),
+    linear-gradient(
+      color-mix(in srgb, var(--surface-ground) 95%, transparent),
+      color-mix(in srgb, var(--surface-ground) 95%, transparent)
+    ),
     url('/images/bg-chat.png') !important;
   background-size: 250px 250px;
   background-position: center;
@@ -102,9 +112,6 @@
   position: relative;
 }
 
-.message-balloon:hover .message-chevron {
-  display: block !important;
-}
 
 .message-content:hover .box-reaction {
   display: flex !important;
@@ -119,7 +126,7 @@
  * Entrada da mensagem nova na conversa.
  *
  * Sobe poucos pixels em vez de deslizar de lado. O `fadeinright`/`fadeinleft` do
- * PrimeFlex usa `translateX(100%)` — a bolha entra vindo de uma largura inteira
+ * PrimeFlex usa `translateX(100%)` - a bolha entra vindo de uma largura inteira
  * dela mesma, então um "ok" dava um saltinho e um texto longo atravessava meia
  * tela. Com deslocamento fixo, toda mensagem entra igual, independente do
  * tamanho.
@@ -265,4 +272,87 @@
    dos demais campos. */
 .input-telefone:has(.p-invalid) {
   border-color: var(--red-500);
+}
+
+// Conversa aberta na lista lateral. `--highlight-bg` é o realce do tema: um
+// pastel da cor primária no claro, a mesma cor rebaixada no escuro.
+.conversa-ativa {
+  background-color: var(--highlight-bg);
+}
+
+// Texto sobre a cor primária.
+//
+// Não existe utilitário do PrimeFlex para isto, e `text-white` cravado não
+// serve: nos modos escuros a primária é **clara** (lilás, verde-água), e o
+// branco por cima dela não tem contraste. A variável do tema já resolve -
+// `#ffffff` no claro, `#030712` nos escuros.
+.text-primary-contrast {
+  color: var(--primary-color-text) !important;
+}
+
+// Ações da conversa na lista lateral, no modelo do Gmail.
+//
+// Com o mouse sobre o item, a hora e o contador **somem** e o botão de ações
+// toma o lugar deles. Não é um bloco sobreposto: os elementos de baixo
+// desaparecem de fato, como a data de um e-mail no Gmail.
+//
+// ⚠️ **Todo o posicionamento vive aqui, não em utilitários do PrimeFlex.**
+// Aquele marca tudo com `!important` (`.absolute`, `.flex`, `.h-full`), e
+// combiná-los com as regras de visibilidade tornava imprevisível quem vencia.
+//
+// A visibilidade é CSS puro, e não estado de React: com dezenas de conversas,
+// um `onMouseEnter` por item re-renderizaria a lista a cada passagem do mouse.
+.acoes-conversa {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  // A folga à esquerda é onde o degradê dissolve; sem ela o desfoque começaria
+  // colado no botão e apareceria como uma borda dura.
+  padding: 0 0.5rem 0 3rem;
+
+  opacity: 0;
+  // Junto da `opacity`: invisível mas presente, o bloco roubaria o clique que
+  // abre a conversa na faixa que ocupa.
+  visibility: hidden;
+  transition: opacity 0.15s;
+
+  // Desfoca o que passa por baixo e dissolve para a esquerda.
+  //
+  // `mask-image` recorta o próprio desfoque: sem ela o `backdrop-filter`
+  // terminaria numa linha reta no meio do cartão. Com ela, o efeito nasce
+  // transparente e ganha corpo até o botão.
+  //
+  // O prefixo `-webkit-` continua necessário no Safari, que ainda não
+  // implementa a propriedade sem ele.
+  // ⚠️ O prefixo vem **antes** da propriedade padrão: o autoprefixer do Next
+  // reordena e, na ordem inversa, descartava a versão sem prefixo - o efeito
+  // sumia no Firefox sem erro nenhum.
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 2.5rem);
+  mask-image: linear-gradient(to right, transparent, #000 2.5rem);
+}
+
+// O que o botão substitui. A hora e o contador saem por `visibility`, e não
+// por `display: none`: assim a linha não muda de altura nem reposiciona o
+// texto ao lado quando o mouse entra e sai.
+//
+// O `:has` cobre o menu aberto: ali o ponteiro está fora do cartão, e só o
+// `:hover` traria a hora de volta por baixo do menu.
+.acoes-hover:hover .conversa-meta,
+.acoes-hover:has(.acoes-conversa--fixa) .conversa-meta {
+  visibility: hidden;
+}
+
+// Com o menu aberto o ponteiro sai do cartão, e só o `:hover` faria o botão
+// sumir por baixo do próprio menu que acabou de abrir.
+.acoes-hover:hover .acoes-conversa,
+.acoes-conversa--fixa {
+  opacity: 1;
+  visibility: visible;
 }

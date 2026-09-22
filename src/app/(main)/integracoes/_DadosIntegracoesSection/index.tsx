@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { useService } from '@/contexts/ServicesContext';
-import { usePermissoes } from '@/hooks/usePermissoes';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import {
   IntegrationProviderResponse,
   IntegrationResponse,
@@ -30,19 +30,20 @@ export default function DadosIntegracoesSection({ data }: DadosIntegracoesProps)
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
-  const { pode } = usePermissoes();
+  const { podeAdicionar, podeEditar, podeExcluir, semPermissao } =
+    usePermissoesModulo('integration');
 
   // Sem permissão de criar, o botão não aparece: a chamada seria recusada
   // pelo backend de qualquer forma.
-  const ButtonsHeader: IButtonsOthers[] = pode('integration:add')
-    ? [
+  const ButtonsHeader: IButtonsOthers[] = [
     {
       label: 'Nova integração',
       icon: PrimeIcons.PLUS,
       action: () => AbrirModal(null),
+      disabled: !podeAdicionar,
+      tooltip: podeAdicionar ? undefined : semPermissao,
     },
-      ]
-    : [];
+  ];
 
   const acoesTable: IActionTable<IntegrationResponse>[] = [
     {
@@ -52,14 +53,14 @@ export default function DadosIntegracoesSection({ data }: DadosIntegracoesProps)
       command: (integracao) => TestarConexao(integracao),
     },
     {
-      isHidden: () => !pode('integration:update'),
-      label: 'Editar',
-      tooltip: 'Editar integração',
-      icon: PrimeIcons.PENCIL,
+      // Sempre visível: sem `:update` o cadastro abre em somente leitura.
+      label: podeEditar ? 'Editar' : 'Visualizar',
+      tooltip: podeEditar ? 'Editar integração' : 'Ver integração',
+      icon: podeEditar ? PrimeIcons.PENCIL : PrimeIcons.EYE,
       command: (integracao) => AbrirModal(integracao),
     },
     {
-      isHidden: () => !pode('integration:delete'),
+      isHidden: () => !podeExcluir,
       label: 'Remover',
       tooltip: 'Remover integração',
       icon: PrimeIcons.TRASH,
@@ -146,7 +147,7 @@ export default function DadosIntegracoesSection({ data }: DadosIntegracoesProps)
         is_active: fields.is_active,
         // Omitir preserva a credencial gravada (contrato do backend). O campo
         // agora vem preenchido com a chave atual, então só cai aqui quem a
-        // apagou de propósito — e nesse caso manter a anterior é melhor que
+        // apagou de propósito - e nesse caso manter a anterior é melhor que
         // gravar vazio e derrubar a integração por um apagão acidental.
         ...(apiKey && { credentials: { apiKey } }),
       };

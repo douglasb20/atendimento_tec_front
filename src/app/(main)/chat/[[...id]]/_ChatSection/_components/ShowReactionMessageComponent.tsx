@@ -7,7 +7,7 @@ import { SupportChatMessageResponse } from '@/Interfaces';
  * Agrupa as reações por emoji, preservando a ordem em que apareceram.
  *
  * O banco guarda um emoji por pessoa (`{ jid: emoji }`); na bolha o que importa
- * é quantos reagiram com cada um — duas pessoas com 👍 viram um só, com "2".
+ * é quantos reagiram com cada um - duas pessoas com 👍 viram um só, com "2".
  */
 const agrupaPorEmoji = (reacoes: Record<string, string>) => {
   const contagem = new Map<string, number>();

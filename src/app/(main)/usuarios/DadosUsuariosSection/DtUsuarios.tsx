@@ -4,6 +4,7 @@ import { Column } from 'primereact/column';
 import AcoesDataTable, { BodyDateAndTime } from '@/components/AcoesDataTable';
 import DataTableCustom from '@/components/DataTableCustom';
 import { IUsuariosResponse } from '@/Interfaces';
+import { nomeCompleto } from '@/service/Util';
 
 const DtUsuarios = ({ actions, ...props }) => {
   return (
@@ -22,6 +23,7 @@ const DtUsuarios = ({ actions, ...props }) => {
           field="name"
           header="Nome"
           alignHeader="center"
+          body={(usuario: IUsuariosResponse) => nomeCompleto(usuario)}
         />
         <Column
           field="email"

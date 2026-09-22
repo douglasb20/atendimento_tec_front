@@ -1,5 +1,9 @@
 'use client';
 import React, { useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { createPortal } from 'react-dom';
+import { autoUpdate, flip, offset, shift, useFloating } from '@floating-ui/react';
+import { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Menu } from 'primereact/menu';
 import { MenuItem } from 'primereact/menuitem';
@@ -11,8 +15,49 @@ import useApi from '@/service/Api/ApiClient';
 import { useChatStore } from '@/store/useChatStore';
 import { useOutboxStore } from '@/store/useOutboxStore';
 import { processarItem, registrarArquivo } from '@/service/Outbox';
-import { ehAtendimentoAtivo, ehAtendimentoFinalizado, ModeQuoted, UserInfo } from '@/Interfaces';
-import { Alerta } from '@/service/Util';
+import {
+  ehAtendimentoAtivo,
+  ehAtendimentoFinalizado,
+  ModeQuoted,
+  podeAgirNoAtendimento,
+  UserInfo,
+} from '@/Interfaces';
+import { Alerta, CatchAlerta, nomeCompleto } from '@/service/Util';
+import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
+import { useRespostasRapidas } from '@/hooks/useRespostasRapidas';
+import { useSalvarRespostaRapida } from '@/hooks/useSalvarRespostaRapida';
+import { QuickReplyForm, QuickReplyResponse } from '@/Interfaces';
+import ModalFormResposta from '@/app/(main)/atendimentos/respostas-rapidas/_DadosRespostasSection/ModalFormResposta';
+import ListaRespostasRapidas from '../_components/ListaRespostasRapidas';
+
+/** `emoji-picker-react` toca em `window` no import; sem `ssr: false` quebra o build. */
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
+
+/**
+ * Os botões redondos da barra: anexo, respostas rápidas e emoji.
+ *
+ * Numa constante para que a próxima mudança de tamanho ou cor não precise
+ * acertar três lugares - foi assim que eles chegaram a 3rem enquanto o campo
+ * ao lado encolhia.
+ *
+ * O alinhamento vertical vem do contêiner (`align-items-center`), não daqui.
+ */
+const CLASSE_BOTAO_BARRA =
+  'flex cursor-pointer justify-content-center align-items-center border-circle border-1 border-primary bg-transparent hover:bg-primary-50 flex-shrink-0';
+
+/**
+ * `line-height: 1` centra o glifo no círculo; sem ele o ícone monta alto.
+ *
+ * ⚠️ **Sem margem negativa.** Houve aqui um `marginBottom: -0.25rem` para
+ * cancelar o `py-1` do contêiner quando o campo tinha uma linha só - mas ele
+ * vale sempre, e com o textarea crescido empurrava os botões para fora da
+ * caixa. O alinhamento é problema do contêiner, não de cada botão.
+ */
+const ESTILO_BOTAO_BARRA = {
+  width: '2.5rem',
+  height: '2.5rem',
+  lineHeight: 1,
+};
 
 import QuotedMessage from '../_components/QuotedMessage';
 import PreviewAnexos, { AnexoSelecionado } from '../_components/PreviewAnexos';
@@ -63,7 +108,8 @@ export default function SendMessageBox() {
   const quoted = useChatStore((s) => s.quoted);
   const setQuotedMessage = useChatStore((s) => s.setQuotedMessage);
   const enfileirar = useOutboxStore((s) => s.enfileirar);
-  const { control, handleSubmit, reset } = useForm<{ messageText: string }>({
+  const { usuarioId, carregado } = useUsuarioLogado();
+  const { control, handleSubmit, reset, setValue } = useForm<{ messageText: string }>({
     defaultValues: { messageText: '' },
   });
   // `useWatch` em vez de `watch()` no corpo: este re-renderizava o componente
@@ -84,9 +130,182 @@ export default function SendMessageBox() {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
+  // Respostas rápidas: a lista abre ao digitar `/` no início de uma palavra.
+  const { filtrar, resolveVariaveis, recarregar } = useRespostasRapidas(activeChat);
+  const { salvar: salvarRespostaRapida } = useSalvarRespostaRapida();
+  const [modalRespostaVisivel, setModalRespostaVisivel] = useState(false);
+
+  // Emoji: o picker vai para um portal no `body`, como no `EditorMensagem` - a
+  // caixa de mensagem tem recorte arredondado e o cortaria por dentro.
+  const [emojiAberto, setEmojiAberto] = useState(false);
+  const { refs, floatingStyles } = useFloating({
+    open: emojiAberto,
+    placement: 'top-start',
+    middleware: [offset(6), flip(), shift({ padding: 8 })],
+    whileElementsMounted: autoUpdate,
+  });
+  const campoRef = useRef<HTMLTextAreaElement>(null);
+  const caixaRef = useRef<HTMLDivElement>(null);
+  const [buscaAtalho, setBuscaAtalho] = useState<string | null>(null);
+  const [indiceAtivo, setIndiceAtivo] = useState(0);
+
+  // `null` distingue "fechada" de "aberta sem filtro": a busca vazia logo após
+  // o `/` deve mostrar tudo.
+  const listaAberta = buscaAtalho !== null;
+  const respostasFiltradas = listaAberta ? filtrar(buscaAtalho) : [];
+
+  const fecharLista = () => {
+    setBuscaAtalho(null);
+    setIndiceAtivo(0);
+  };
+
+  /**
+   * Cadastra a resposta e devolve o atendente à conversa com a lista atualizada.
+   *
+   * A lista flutuante fecha ao abrir o modal: as duas camadas disputariam o
+   * clique, e a lista fica por cima de tudo (`zIndex` 99999).
+   */
+  const salvarRespostaDoChat = async (
+    fields: QuickReplyForm,
+    arquivoNovo: File | null,
+    removeuAnexo: boolean,
+  ) => {
+    try {
+      await salvarRespostaRapida(fields, arquivoNovo, removeuAnexo);
+      setModalRespostaVisivel(false);
+      await recarregar();
+      Alerta('Resposta rápida salva com sucesso!', 'Sucesso', 'success');
+    } catch (err) {
+      // Atalho repetido volta 409 com mensagem própria.
+      CatchAlerta(err, 'Erro ao salvar a resposta rápida');
+    }
+  };
+
   const menuAnexoRef = useRef<Menu>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tipoAnexoRef = useRef<TipoAnexo>('document');
+
+  /**
+   * O token `/algo` imediatamente antes do cursor, se houver.
+   *
+   * A barra só conta como **primeiro caractere da mensagem**. Aceitá-la depois
+   * de qualquer espaço fazia a lista pular na cara de quem escreve texto
+   * normal - uma data (`vence 10/05`), uma URL colada, um `e/ou`. Uma resposta
+   * rápida substitui a mensagem inteira, então não há caso real de invocá-la
+   * no meio de um texto já digitado.
+   *
+   * O token termina no espaço: `/bom dia` deixa de ser atalho ali, que é onde
+   * o atendente passou a escrever texto normal.
+   */
+  const tokenAntesDoCursor = (texto: string, cursor: number) => {
+    const ateCursor = texto.slice(0, cursor);
+    const casou = /^\/([\w.-]*)$/.exec(ateCursor);
+
+    if (!casou) return null;
+
+    return { termo: casou[1], inicio: 0 };
+  };
+
+  /** Reavalia a lista a cada tecla e a cada clique que mova o cursor. */
+  const avaliaAtalho = (texto: string, cursor: number) => {
+    const token = tokenAntesDoCursor(texto, cursor);
+
+    if (!token) {
+      if (buscaAtalho !== null) fecharLista();
+      return;
+    }
+
+    setBuscaAtalho(token.termo);
+    setIndiceAtivo(0);
+  };
+
+  /**
+   * Escreve o emoji onde o cursor está e devolve o foco ao campo.
+   *
+   * O foco é o detalhe que faz a barra ser utilizável: sem ele, o clique no
+   * botão tira o cursor do textarea e o emoji seguinte cairia no fim do texto.
+   */
+  const inserirEmoji = (emoji: string) => {
+    const campo = campoRef.current;
+    const textoAtual = campo?.value ?? '';
+    const inicio = campo?.selectionStart ?? textoAtual.length;
+    const fim = campo?.selectionEnd ?? textoAtual.length;
+
+    const novoTexto = textoAtual.slice(0, inicio) + emoji + textoAtual.slice(fim);
+    setValue('messageText', novoTexto, { shouldDirty: true });
+
+    // Depois do render: mexer na seleção antes dele seria desfeito pelo React.
+    requestAnimationFrame(() => {
+      campo?.focus();
+      const posicao = inicio + emoji.length;
+      campo?.setSelectionRange(posicao, posicao);
+    });
+  };
+
+  /**
+   * Põe o texto da resposta na caixa, com as variáveis resolvidas.
+   *
+   * **Substitui a mensagem inteira**, não só o `/atalho`. Pelo `/` o campo tem
+   * apenas o atalho mesmo (é o primeiro caractere, e o token vai até o
+   * cursor), então dá no mesmo; pelo botão da barra, enxertar a resposta no
+   * meio do que já estava escrito produzia frases emendadas. Uma resposta
+   * rápida é a mensagem, não um pedaço dela.
+   *
+   * O anexo, quando há, é enfileirado à parte: o backend copia o arquivo do
+   * cadastro para `chat/media/` e devolve a key da cópia, que é o que a
+   * mensagem referencia. Sem a cópia, o cron de retenção apagaria o arquivo do
+   * cadastro alguns meses depois do primeiro uso.
+   */
+  const inserirResposta = async (resposta: QuickReplyResponse) => {
+    const campo = campoRef.current;
+    const texto = resolveVariaveis(resposta.mensagem);
+
+    setValue('messageText', texto, { shouldDirty: true });
+    fecharLista();
+
+    // Depois do render: mexer na seleção antes dele seria desfeito pelo React.
+    requestAnimationFrame(() => {
+      campo?.focus();
+      campo?.setSelectionRange(texto.length, texto.length);
+    });
+
+    if (resposta.anexo_key) {
+      await enviarAnexoDaResposta(resposta);
+    }
+  };
+
+  /** Enfileira o anexo da resposta, sem passar por upload. */
+  const enviarAnexoDaResposta = async (resposta: QuickReplyResponse) => {
+    try {
+      const copia = await FetchReq<{
+        media_key: string;
+        media_type: string;
+        mimetype: string;
+        file_name: string;
+      }>({ endpoint: 'PrepararAnexoRespostaRapida', variables: [resposta.id] });
+
+      const item = {
+        id: `envio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        supportChatId: String(activeChat?.id),
+        chatId: activeChat?.contact?.remote_jid,
+        enviadoEm: new Date().toISOString(),
+        tipo: 'midia' as const,
+        conteudo: '',
+        autor: nomeDoAtendente(),
+        // Já nasce com a key: o `subirArquivo` do Outbox devolve na primeira
+        // linha quando ela existe, e o envio vai direto ao provider.
+        mediaKey: copia.media_key,
+        mediaType: copia.media_type as TipoAnexo,
+        mimetype: copia.mimetype,
+        fileName: copia.file_name,
+      };
+
+      enfileirar(item);
+      processarItem({ ...item, status: 'pendente', tentativas: 0 }, FetchReq);
+    } catch (erro) {
+      Alerta('Não foi possível anexar o arquivo da resposta rápida.', 'Aviso', 'warning');
+    }
+  };
 
   const handleSendMessage = (field: { messageText: string }) => {
     const texto = field.messageText.trim();
@@ -369,21 +588,32 @@ export default function SendMessageBox() {
   ];
 
   const finalizado = ehAtendimentoFinalizado(activeChat?.support_chat_status_id);
-  // `ehAtendimentoAtivo` é a mesma regra usada pela reação e pelo menu de
-  // mensagem: uma só definição de "posso escrever nesta conversa".
   const naoAssumido = !finalizado && !ehAtendimentoAtivo(activeChat?.support_chat_status_id);
+  // `podeAgirNoAtendimento` é a mesma regra usada pela reação e pelo menu de
+  // mensagem: uma só definição de "posso escrever nesta conversa".
+  const deOutroAtendente =
+    !finalizado && !naoAssumido && !podeAgirNoAtendimento(activeChat, usuarioId);
+
+  // Enquanto o cookie não foi lido, `usuarioId` é nulo e todo atendimento
+  // pareceria alheio - o rodapé piscaria bloqueado para o próprio dono.
+  if (!carregado && !finalizado && !naoAssumido) return null;
 
   // Sem alguém responsável não há o que registrar: o `answered_at` nasce do
   // botão Iniciar, e responder antes disso deixaria o atendimento sem dono e
-  // sem tempo contado.
-  if (naoAssumido || finalizado) {
+  // sem tempo contado. Já com outro dono, escrever faria o cliente ouvir duas
+  // vozes no mesmo atendimento.
+  if (naoAssumido || finalizado || deOutroAtendente) {
+    const icone = finalizado ? 'fa-circle-check' : deOutroAtendente ? 'fa-eye' : 'fa-lock';
+
     return (
       <div className="flex align-items-center justify-content-center gap-2 border-1 border-300 surface-100 border-round-lg p-3 mt-2 text-600">
-        <i className={`fa-regular ${finalizado ? 'fa-circle-check' : 'fa-lock'}`} />
+        <i className={`fa-regular ${icone}`} />
         <span className="text-sm">
           {finalizado
             ? 'Atendimento finalizado - este histórico é somente leitura.'
-            : 'Inicie o atendimento para responder.'}
+            : deOutroAtendente
+              ? `Atendimento de ${nomeCompleto(activeChat?.user) || 'outro atendente'} - somente leitura.`
+              : 'Inicie o atendimento para responder.'}
         </span>
       </div>
     );
@@ -413,7 +643,9 @@ export default function SendMessageBox() {
       <div
         className={classNames(
           { hidden: anexos.length > 0 },
-          'flex flex-column border-1 border-300 surface-border border-round-lg bg-white dark:bg-gray-700 px-2 mt-2',
+          // `surface-0`: o `bg-white dark:bg-gray-700` era sintaxe do Tailwind, que
+          // este projeto não usa - o `dark:` nunca valeu, e sobrava o branco fixo.
+          'flex flex-column border-1 border-300 surface-border border-round-lg surface-0 px-2 mt-2',
         )}
       >
         <QuotedMessage />
@@ -429,7 +661,17 @@ export default function SendMessageBox() {
           />
         )}
         {statusRecording === 'idle' && anexos.length === 0 && (
-          <div className="flex flex-row w-full p-fluid gap-2 py-1">
+          <div
+            ref={caixaRef}
+            // `align-items-center`: os botões ficam centrados em relação ao
+            // campo, que é como a barra sempre foi. Alinhá-los à base os
+            // deixava colados na borda de baixo da caixa.
+            //
+            // ⚠️ Nada de margem negativa nos botões: houve aqui um
+            // `marginBottom: -0.25rem` para compensar um `py-1` do contêiner, e
+            // com o textarea crescido ele os empurrava para fora da caixa.
+            className="flex flex-row w-full p-fluid gap-2 align-items-center"
+          >
             <Menu
               ref={menuAnexoRef}
               model={menuAnexos}
@@ -440,9 +682,45 @@ export default function SendMessageBox() {
               type="button"
               aria-label="Anexar arquivo"
               onClick={(e) => menuAnexoRef.current?.toggle(e)}
-              className="flex cursor-pointer justify-content-center align-items-center w-3rem h-3rem align-self-end border-circle border-1 border-primary bg-transparent hover:bg-primary-50 flex-shrink-0"
+              className={CLASSE_BOTAO_BARRA}
+              style={ESTILO_BOTAO_BARRA}
             >
-              <i className="text-xl fa-regular fa-paperclip text-primary" />
+              <i className="text-lg fa-regular fa-paperclip text-primary" />
+            </button>
+
+            {/* Para quem não conhece o `/`: abre a mesma lista, sem filtro. */}
+            <button
+              type="button"
+              aria-label="Respostas rápidas"
+              title="Respostas rápidas"
+              onClick={() => {
+                if (listaAberta) {
+                  fecharLista();
+                  return;
+                }
+                setBuscaAtalho('');
+                setIndiceAtivo(0);
+                campoRef.current?.focus();
+              }}
+              className={CLASSE_BOTAO_BARRA}
+              style={ESTILO_BOTAO_BARRA}
+            >
+              <i className="text-lg fa-regular fa-bolt text-primary" />
+            </button>
+
+            {/* Âncora do picker: `refs.setReference` no próprio botão faz o
+                floating-ui posicioná-lo acima, que é onde há espaço - a caixa
+                de mensagem fica no rodapé da tela. */}
+            <button
+              ref={refs.setReference}
+              type="button"
+              aria-label="Emojis"
+              title="Emojis"
+              onClick={() => setEmojiAberto((aberto) => !aberto)}
+              className={CLASSE_BOTAO_BARRA}
+              style={ESTILO_BOTAO_BARRA}
+            >
+              <i className="text-lg fa-regular fa-face-smile text-primary" />
             </button>
             <Controller
               control={control}
@@ -451,6 +729,39 @@ export default function SendMessageBox() {
                 <InputTextarea
                   autoResize
                   onKeyDown={(e) => {
+                    // ⚠️ A lista de respostas rápidas vem **antes** do Enter que
+                    // envia: com ela aberta, Enter escolhe o item destacado.
+                    // Sem esta precedência, escolher uma resposta mandaria a
+                    // conversa pela metade.
+                    if (listaAberta && respostasFiltradas.length) {
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setIndiceAtivo((i) => (i + 1) % respostasFiltradas.length);
+                        return;
+                      }
+                      if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setIndiceAtivo(
+                          (i) => (i - 1 + respostasFiltradas.length) % respostasFiltradas.length,
+                        );
+                        return;
+                      }
+                      if ((e.key === 'Enter' && !e.shiftKey) || e.key === 'Tab') {
+                        e.preventDefault();
+                        inserirResposta(respostasFiltradas[indiceAtivo]);
+                        return;
+                      }
+                    }
+
+                    // Esc fecha a lista sem inserir. O `stopPropagation` evita
+                    // que o mesmo Esc feche a conversa, que é o atalho global.
+                    if (e.key === 'Escape' && listaAberta) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      fecharLista();
+                      return;
+                    }
+
                     // Verifica se a tecla é 'Enter' E se a tecla Shift NÃO está pressionada.
                     if (e.key === 'Enter' && !e.shiftKey) {
                       // 1. Previne o comportamento padrão do Enter (que é criar uma nova linha).
@@ -469,8 +780,22 @@ export default function SendMessageBox() {
                   placeholder="Digite sua mensagem..."
                   rows={1}
                   value={field.value}
-                  onChange={field.onChange}
-                  ref={field.ref}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    avaliaAtalho(e.target.value, e.target.selectionStart ?? 0);
+                  }}
+                  // Clicar noutro ponto do texto pode tirar o cursor de um
+                  // `/atalho`, ou colocá-lo dentro de um: a lista reage a isso.
+                  onClick={(e) => {
+                    const alvo = e.currentTarget;
+                    avaliaAtalho(alvo.value, alvo.selectionStart ?? 0);
+                  }}
+                  // A ref do RHF e a nossa: ele precisa dela para o foco em
+                  // erro de validação, nós para mexer na seleção.
+                  ref={(el) => {
+                    field.ref(el);
+                    campoRef.current = el;
+                  }}
                 />
               )}
             />
@@ -480,8 +805,16 @@ export default function SendMessageBox() {
                   'border-none bg-primary-500 hover:bg-primary-600 ': temTexto,
                   'border-1 border-primary bg-transparent hover:bg-primary-50 ': !temTexto,
                 },
-                'flex cursor-pointer justify-content-center align-items-center w-3rem h-3rem align-self-end border-circle ',
+                // ⚠️ `flex-shrink-0`: sem ele o flex comprime o botão na
+                // horizontal e o círculo vira uma elipse.
+                //
+                // As classes são escritas aqui, e não vindas de
+                // `CLASSE_BOTAO_BARRA`: aquela crava `border-1 border-primary`,
+                // e este botão troca a borda conforme haja texto (vira sólido
+                // ao enviar). Só o tamanho é compartilhado.
+                'flex cursor-pointer justify-content-center align-items-center border-circle flex-shrink-0',
               )}
+              style={ESTILO_BOTAO_BARRA}
               // Campo vazio grava áudio; com texto, envia.
               onClick={() => (temTexto ? handleSubmit(handleSendMessage)() : startRecording())}
             >
@@ -489,7 +822,9 @@ export default function SendMessageBox() {
                 className={classNames(
                   {
                     'fa-microphone text-primary': !temTexto,
-                    'fa-send text-white': temTexto,
+                    // O fundo é `bg-primary-500`, que nos modos escuros é
+                    // claro - o branco sumia dentro do botão.
+                    'fa-send text-primary-contrast': temTexto,
                   },
                   'text-xl fa-regular ',
                 )}
@@ -498,6 +833,65 @@ export default function SendMessageBox() {
           </div>
         )}
       </div>
+
+      {/* Ancorada na caixa de mensagem, em portal: o `border-round-lg` dela
+          recorta o que transborda, e a lista ficaria cortada por dentro. */}
+      <ListaRespostasRapidas
+        aberta={listaAberta}
+        respostas={respostasFiltradas}
+        indiceAtivo={indiceAtivo}
+        ancora={caixaRef.current}
+        onEscolher={inserirResposta}
+        onFechar={fecharLista}
+        onAdicionar={() => {
+          fecharLista();
+          setModalRespostaVisivel(true);
+        }}
+      />
+
+      <ModalFormResposta
+        visible={modalRespostaVisivel}
+        onHide={() => setModalRespostaVisivel(false)}
+        data={null}
+        onConfirm={salvarRespostaDoChat}
+      />
+
+      {emojiAberto &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <>
+            {/* `mousedown` e não `click`: o clique no emoji dispara depois, e
+                com `click` esta camada fecharia o picker antes da escolha. */}
+            <div
+              className="fixed top-0 left-0 w-full h-full"
+              style={{ zIndex: 99998 }}
+              onMouseDown={() => setEmojiAberto(false)}
+            />
+            <div
+              ref={refs.setFloating}
+              style={{ ...floatingStyles, zIndex: 99999 }}
+            >
+              <EmojiPicker
+                onEmojiClick={(dados: EmojiClickData) => {
+                  inserirEmoji(dados.emoji);
+                  setEmojiAberto(false);
+                }}
+                emojiStyle={EmojiStyle.NATIVE}
+                theme={Theme.AUTO}
+                searchPlaceHolder="Pesquisar"
+                previewConfig={{ showPreview: false }}
+                width={320}
+                height={380}
+                // ⚠️ Sem seletor de tom de pele: o histórico de recentes da
+                // biblioteca não distingue as variações, e escolher um tom
+                // embaralha a lista de usados.
+                skinTonesDisabled
+                lazyLoadEmojis
+              />
+            </div>
+          </>,
+          document.body,
+        )}
     </>
   );
 }

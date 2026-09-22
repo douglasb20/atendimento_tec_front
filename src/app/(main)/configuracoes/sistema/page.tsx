@@ -12,7 +12,7 @@ export default async function ConfiguracoesSistemaPage() {
   const { FetchReq } = await ApiService();
 
   // Sem `try`: quem não é o usuário master recebe 403 e a página deve falhar
-  // mesmo — o item nem aparece no menu para ele, e chegar aqui é acesso direto
+  // mesmo - o item nem aparece no menu para ele, e chegar aqui é acesso direto
   // pela URL.
   const ajustes = await FetchReq<AjusteSistema[]>('ListarAjustesSistema');
 

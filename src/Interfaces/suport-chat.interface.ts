@@ -33,6 +33,31 @@ export const ehAtendimentoFinalizado = (statusId?: number): boolean =>
 export const ehAtendimentoAtivo = (statusId?: number): boolean =>
   statusId === SupportChatStatusId.EM_ANDAMENTO;
 
+/**
+ * Se **este** atendente pode agir na conversa.
+ *
+ * Estar em andamento não basta: a conversa pode estar com outro atendente, e aí
+ * ela é só leitura - responder ali faria o cliente ouvir duas vozes no mesmo
+ * atendimento, e a mensagem sairia assinada por quem não o conduz.
+ *
+ * `String()` na comparação porque os ids chegam ora number, ora string,
+ * conforme o caminho (cookie, socket, resposta HTTP).
+ *
+ * ⚠️ Prefira este a `ehAtendimentoAtivo` em qualquer coisa que escreva. O outro
+ * segue existindo para o que depende só do estado da conversa.
+ */
+export const podeAgirNoAtendimento = (
+  chat?: Pick<SupportChatsResponse, 'support_chat_status_id' | 'user_id'> | null,
+  usuarioLogadoId?: number | null,
+): boolean => {
+  if (!chat || !ehAtendimentoAtivo(chat.support_chat_status_id)) return false;
+  if (chat.user_id === null || usuarioLogadoId === null || usuarioLogadoId === undefined) {
+    return false;
+  }
+
+  return String(chat.user_id) === String(usuarioLogadoId);
+};
+
 export interface SupportChatsResponse {
   id: string;
   /** Atendente que assumiu; nulo enquanto a conversa aguarda. */
@@ -57,6 +82,25 @@ export interface SupportChatsResponse {
   contact?: ContactResponse;
   supportChatMessages?: SupportChatMessageResponse[];
   user?: UserResponse;
+  /** Só na rota que abre a conversa; os payloads de socket não os trazem. */
+  supportChatEvents?: SupportChatEventResponse[];
+}
+
+/**
+ * O que aconteceu com a conversa, fora as mensagens.
+ *
+ * Vem da tabela `support_chat_events`, separada de `support_chat_messages`
+ * porque aquela espelha o WhatsApp e um evento interno não tem remetente.
+ */
+export interface SupportChatEventResponse {
+  id: string;
+  support_chat_id: string;
+  tipo: 'transferencia';
+  motivo: string | null;
+  created_at: string;
+  userOrigem: UserResponse | null;
+  /** ⚠️ Nulo significa **devolvido para a espera**, não ausência de dado. */
+  userDestino: UserResponse | null;
 }
 
 export interface SupportChatMessageResponse {

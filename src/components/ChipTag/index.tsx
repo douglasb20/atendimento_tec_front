@@ -15,7 +15,7 @@ const CORES_DE_TEXTO = { light: '#ffffff', dark: '#1f2937' } as const;
 /**
  * Etiqueta colorida.
  *
- * Aparece na listagem de clientes, no formulário e no painel do chat — daí viver
+ * Aparece na listagem de clientes, no formulário e no painel do chat - daí viver
  * em `components/`. A cor do texto vem do cadastro, não de cálculo: o automático
  * por luminância erra nas cores médias, e às vezes a escolha é estética.
  */

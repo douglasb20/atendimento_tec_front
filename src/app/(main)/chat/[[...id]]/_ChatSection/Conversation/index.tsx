@@ -7,12 +7,13 @@ import Interweave from '@/components/Interweave';
 import { SupportChatsResponse } from '@/Interfaces';
 import { useLayoutStore } from '@/layout/context/layoutcontext';
 import useApi from '@/service/Api/ApiClient';
-import { fixHeartEmoji } from '@/service/Util';
+import { fixHeartEmoji, nomeCompleto } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import { Breadcrumb } from '@/types';
 import { Badge } from 'primereact/badge';
 import { classNames } from 'primereact/utils';
 
+import AcoesConversa from './AcoesConversa';
 import FiltroAtendimentos, {
   filtraPorGrupo,
   grupoDaConversa,
@@ -20,7 +21,7 @@ import FiltroAtendimentos, {
 } from './FiltroAtendimentos';
 
 /**
- * Hora quando foi hoje, data quando foi antes — o mesmo critério dos
+ * Hora quando foi hoje, data quando foi antes - o mesmo critério dos
  * mensageiros: para o que é recente importa a hora, para o resto o dia.
  */
 const horaDaConversa = (iso: string) => {
@@ -164,7 +165,7 @@ const ConversationSection = () => {
 
     return () => {
       // `chat_state` também sai aqui: sem isso o `.off()` no início do efeito
-      // era a única proteção contra duplicar o handler — e handler duplicado
+      // era a única proteção contra duplicar o handler - e handler duplicado
       // toca o som de notificação duas vezes.
       socket.off('whatsapp:unread_count');
       socket.off('whatsapp:chat_state');
@@ -205,14 +206,27 @@ const ConversationSection = () => {
               key={conversation?.id}
               className={classNames(
                 {
-                  'surface-50 border-200 hover:surface-100':
+                  // `surface-100` e não `surface-50`: nos modos escuros a
+                  // `surface-50` tem o mesmo valor do `surface-card` do painel,
+                  // e o cartão da conversa desaparecia no fundo. Um tom acima
+                  // o destaca nos três modos.
+                  'surface-100 border-200 hover:surface-200':
                     activeChat?.id !== String(conversation?.id),
-                  'bg-primary-50 border-primary-200': activeChat?.id === String(conversation?.id),
+                  // `conversa-ativa` em vez de `bg-primary-50`: a escala
+                  // `--primary-*` é sempre clareada, nos dois modos, e o tom
+                  // 50 deixava a conversa aberta como um retângulo branco no
+                  // tema escuro. A classe usa `--highlight-bg`, que o tema
+                  // resolve por modo.
+                  'conversa-ativa border-primary-200':
+                    activeChat?.id === String(conversation?.id),
                 },
                 // Cada conversa é um cartão: borda e fundo próprio dão a
-                // separação que só o espaçamento não dava — sem eles os itens
+                // separação que só o espaçamento não dava - sem eles os itens
                 // liam como texto corrido numa coluna.
-                'flex cursor-pointer align-items-center gap-3 border-1 border-round-lg p-2 mb-2 overflow-hidden transition-colors transition-duration-150',
+                // `relative` ancora o overlay das ações; `acoes-hover` é o
+                // grupo que o revela ao passar o mouse (a regra está em
+                // `styles/layout/_chat.scss`).
+                'acoes-hover relative flex cursor-pointer align-items-center gap-3 border-1 border-round-lg p-2 mb-2 overflow-hidden transition-colors transition-duration-150',
               )}
               style={{
                 // A faixa à esquerda reforça a seleção sem trocar a espessura
@@ -229,12 +243,12 @@ const ConversationSection = () => {
               <div className="relative flex flex-none">
                 {/* `Avatar`, e não um `<img>` cru: a foto vem do
                     `pps.whatsapp.net`, com assinatura que vence. Quando a URL
-                    existe mas não carrega, o `||` não socorre — só o `onError`
+                    existe mas não carrega, o `||` não socorre - só o `onError`
                     do componente troca pelo padrão. Sem ele ficava o buraco
                     circular que parecia um avatar genérico. */}
                 <Avatar
                   src={conversation?.contact?.avatar_url}
-                  alt={conversation?.contact?.name ?? 'Contato'}
+                  alt={nomeCompleto(conversation?.contact) || 'Contato'}
                   width={48}
                   height={48}
                   className="border-circle"
@@ -260,16 +274,20 @@ const ConversationSection = () => {
               <div className="flex flex-1 flex-column min-w-0">
                 <div className="flex align-items-baseline gap-2 min-w-0">
                   <span className="flex-1 text-base font-semibold text-900 white-space-nowrap overflow-hidden text-overflow-ellipsis">
-                    {conversation?.contact?.client?.nome ?? conversation?.contact?.name}
+                    {conversation?.contact?.client?.nome ?? nomeCompleto(conversation?.contact)}
                   </span>
 
                   {/* A hora fica alinhada à direita, como em qualquer
                       mensageiro: é por ela que se varre a lista. */}
                   {conversation?.updated_at && (
-                    <span className="flex-none text-xs text-500">
+                    // `conversa-meta`: some quando o mouse entra no item, para
+                    // o botão de ações tomar o lugar - como a data de um
+                    // e-mail no Gmail.
+                    <span className="conversa-meta flex-none text-xs text-500">
                       {horaDaConversa(conversation.updated_at)}
                     </span>
                   )}
+
                 </div>
 
                 {/* O contato só aparece quando há cliente: sem ele, o nome do
@@ -281,7 +299,7 @@ const ConversationSection = () => {
                     // devem ler como um bloco só, separados da prévia abaixo.
                     style={{ marginTop: '-0.15rem' }}
                   >
-                    {conversation?.contact?.name}
+                    {nomeCompleto(conversation?.contact)}
                   </span>
                 )}
                 <div className="flex align-items-center gap-2 mt-1 min-w-0">
@@ -302,12 +320,18 @@ const ConversationSection = () => {
                       ocupado quando há o que contar. */}
                   {Number(conversation?.unread_count) > 0 && (
                     <Badge
-                      className="flex-none bg-primary-500"
+                      className="conversa-meta flex-none bg-primary-500"
                       value={conversation?.unread_count}
                     />
                   )}
                 </div>
               </div>
+
+              {/* Em overlay, e não no fluxo: ocupando espaço próprio ele
+                  empurrava a hora e ficava aceso em todos os itens de uma vez.
+                  Aqui aparece só no item sob o mouse, e o degradê à esquerda
+                  impede que ele caia sobre o texto da prévia. */}
+              <AcoesConversa conversa={conversation} />
             </li>
           ))
         )}

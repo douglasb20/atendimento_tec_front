@@ -1,13 +1,17 @@
 'use client';
 
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import Link from 'next/link';
 import { parseCookies } from 'nookies';
 import { Sidebar } from 'primereact/sidebar';
 
 import { usePermissoes } from '@/hooks/usePermissoes';
-import { UserInfo } from '@/Interfaces';
+import { IUsuariosResponse, UserInfo } from '@/Interfaces';
+import useApi from '@/service/Api/ApiClient';
+import { CatchAlerta, nomeCompleto } from '@/service/Util';
+import ModalFormUser from '@/app/(main)/usuarios/DadosUsuariosSection/ModalFormUser';
 import { LayoutContext } from './context/layoutcontext';
+import ModalTema from './ModalTema';
 
 /** Nome e e-mail de quem está logado, do cookie `userInfo`. */
 const usuarioLogado = (): { nome: string; email: string } => {
@@ -16,7 +20,10 @@ const usuarioLogado = (): { nome: string; email: string } => {
     if (!cru) return { nome: '', email: '' };
 
     const info = JSON.parse(cru) as UserInfo;
-    return { nome: info?.name ?? '', email: info?.email ?? '' };
+
+    // `nomeCompleto` tolera o cookie antigo, sem `last_name`: ele sobrevive ao
+    // deploy da separação e só é reescrito no próximo login.
+    return { nome: nomeCompleto(info), email: info?.email ?? '' };
   } catch {
     return { nome: '', email: '' };
   }
@@ -27,8 +34,24 @@ const ITEM_CLASSE =
 
 const AppProfileSidebar = () => {
   const { layoutState, setLayoutState } = useContext(LayoutContext);
-  const { ehSuperusuario } = usePermissoes();
+  const { ehSuperusuario, pode } = usePermissoes();
   const { nome, email } = usuarioLogado();
+  const { FetchReq } = useApi();
+  const [modalTemaAberto, setModalTemaAberto] = useState(false);
+
+  // O cadastro completo, buscado ao abrir: o cookie `userInfo` é enxuto (não
+  // traz grupo nem avatar cru) e o formulário precisa do registro inteiro.
+  const [perfil, setPerfil] = useState<IUsuariosResponse | null>(null);
+
+  const abrirPerfil = async () => {
+    try {
+      // Rota própria, que resolve o alvo pelo token: `GET /users/:id` exige
+      // `user:view`, a permissão de ver *qualquer* usuário.
+      setPerfil(await FetchReq<IUsuariosResponse>('MeuPerfil'));
+    } catch (err) {
+      CatchAlerta(err, 'Não foi possível abrir o perfil');
+    }
+  };
 
   const onProfileSidebarHide = () => {
     setLayoutState((prevState) => ({
@@ -48,7 +71,7 @@ const AppProfileSidebar = () => {
         <span className="mb-2 font-semibold">Olá</span>
         {/* Nome e e-mail reais. Este painel vinha do template com "Isabella
             Andolini" cravado, três notificações falsas e itens que não levavam
-            a lugar nenhum — tudo isso saiu. */}
+            a lugar nenhum - tudo isso saiu. */}
         <span className="text-color-secondary font-medium">{nome || 'Usuário'}</span>
         <span className="text-color-secondary text-sm mb-5">{email}</span>
 
@@ -73,6 +96,46 @@ const AppProfileSidebar = () => {
             </li>
           )}
 
+          {/* `user:profile_view` é ver o **próprio** cadastro; `user:view` é a
+              da tela de gerenciamento, que mostra todos. Salvar depende de
+              `user:profile_update`, que o próprio modal verifica. */}
+          {pode('user:profile_view') && (
+            <li>
+              <button
+                type="button"
+                onClick={abrirPerfil}
+                className={`${ITEM_CLASSE} w-full bg-transparent text-left`}
+              >
+                <span>
+                  <i className="pi pi-user text-xl text-primary"></i>
+                </span>
+                <div className="ml-3">
+                  <span className="mb-2 font-semibold">Perfil</span>
+                  <p className="text-color-secondary m-0">Seus dados, avatar e senha</p>
+                </div>
+              </button>
+            </li>
+          )}
+
+          <li>
+            {/* Um `button`, não um `Link`: é preferência de quem está usando, e
+                abre aqui mesmo - mandar para outra tela faria perder de vista
+                o que se está mudando. */}
+            <button
+              type="button"
+              onClick={() => setModalTemaAberto(true)}
+              className={`${ITEM_CLASSE} w-full bg-transparent text-left`}
+            >
+              <span>
+                <i className="pi pi-palette text-xl text-primary"></i>
+              </span>
+              <div className="ml-3">
+                <span className="mb-2 font-semibold">Tema e cores</span>
+                <p className="text-color-secondary m-0">Escolha as cores e o modo da interface</p>
+              </div>
+            </button>
+          </li>
+
           <li>
             <Link
               href={'/auth/logout'}
@@ -89,6 +152,25 @@ const AppProfileSidebar = () => {
           </li>
         </ul>
       </div>
+
+      {/* Dentro da Sidebar de propósito: o PrimeReact renderiza o Dialog num
+          portal, então ele não é recortado pelo painel - e fechar o painel
+          fechando o modal junto é o comportamento certo. */}
+      <ModalTema
+        visible={modalTemaAberto}
+        onHide={() => setModalTemaAberto(false)}
+      />
+
+      {/* Só monta com os dados em mãos: o formulário lê `data` na montagem
+          para preencher os campos. */}
+      {perfil && (
+        <ModalFormUser
+          visible={!!perfil}
+          onHide={() => setPerfil(null)}
+          data={perfil}
+          onConfirm={() => setPerfil(null)}
+        />
+      )}
     </Sidebar>
   );
 };

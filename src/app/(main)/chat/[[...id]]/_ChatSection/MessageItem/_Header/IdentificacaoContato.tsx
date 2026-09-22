@@ -7,7 +7,7 @@ import { classNames } from 'primereact/utils';
 
 import Avatar from '@/components/Avatar';
 import { ContactResponse } from '@/Interfaces';
-import { DateToBR, Mask, nomeExibicao } from '@/service/Util';
+import { DateToBR, Mask, nomeCompleto, nomeExibicao } from '@/service/Util';
 
 type IdentificacaoContatoProps = {
   contato?: ContactResponse;
@@ -21,7 +21,7 @@ type IdentificacaoContatoProps = {
  * Formata o telefone que vem do WhatsApp.
  *
  * O número chega no formato do JID (`556492698043`): código do país colado no
- * DDD. Mascarar direto faria o `55` virar DDD — daí o corte do prefixo antes.
+ * DDD. Mascarar direto faria o `55` virar DDD - daí o corte do prefixo antes.
  * Com o nono dígito são 11 números; sem ele, 10.
  */
 const mascaraTelefone = (telefone?: string) => {
@@ -56,10 +56,10 @@ const IdentificacaoContato = ({
   const semCliente = !contato?.client_id;
 
   // Mesma hierarquia da lista lateral: o cliente é quem nomeia a conversa, e o
-  // contato vira subtítulo. Sem cliente, o contato sobe para o título — repetir
+  // contato vira subtítulo. Sem cliente, o contato sobe para o título - repetir
   // o mesmo nome nas duas linhas seria ruído.
   const cliente = contato?.client?.nome?.trim();
-  const nomeContato = contato?.name?.trim() || 'Contato';
+  const nomeContato = nomeCompleto(contato) || 'Contato';
   const titulo = cliente || nomeContato;
 
   return (
@@ -72,12 +72,13 @@ const IdentificacaoContato = ({
       title={onAbrirDetalhes ? 'Ver dados do cliente e do contato' : undefined}
       className={classNames(
         'flex flex-1 align-items-center gap-3 min-w-0 p-link text-left border-round p-1',
-        onAbrirDetalhes && 'cursor-pointer hover:surface-hover transition-colors transition-duration-150',
+        onAbrirDetalhes &&
+          'cursor-pointer hover:surface-hover transition-colors transition-duration-150',
       )}
     >
       <Avatar
         src={contato?.avatar_url}
-        alt={contato?.name ?? 'Contato'}
+        alt={nomeContato}
         width={60}
         height={60}
         className="border-circle flex-none"

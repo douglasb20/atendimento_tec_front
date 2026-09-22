@@ -1,7 +1,12 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 
-import { SupportChatsWithMessagesResponse, SupportChatMessageResponse } from '@/Interfaces';
+import {
+  podeAgirNoAtendimento,
+  SupportChatMessageResponse,
+  SupportChatsWithMessagesResponse,
+} from '@/Interfaces';
+import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 import useApi from '@/service/Api/ApiClient';
 import { Alerta, ConfirmaAcao } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
@@ -19,6 +24,7 @@ export default function MessageItem() {
   const socket = useChatStore((s) => s.socket);
   const updateMessage = useChatStore((s) => s.updateMessage);
   const activeChat = useChatStore((s) => s.activeChat);
+  const { usuarioId } = useUsuarioLogado();
   const loadMessages = useChatStore((s) => s.loadMessages);
   const chatNotFound = useChatStore((s) => s.chatNotFound);
   const messages = useChatStore((s) => s.messages);
@@ -33,8 +39,8 @@ export default function MessageItem() {
   /**
    * Apaga as mensagens marcadas, escolhendo o caminho por mensagem.
    *
-   * O WhatsApp só aceita revogar mensagem própria dentro de 60h. As demais —
-   * recebidas do contato, ou antigas demais — são apenas ocultadas do portal:
+   * O WhatsApp só aceita revogar mensagem própria dentro de 60h. As demais -
+   * recebidas do contato, ou antigas demais - são apenas ocultadas do portal:
    * somem daqui e continuam no aparelho do cliente, como o "apagar para mim".
    */
   const apagarSelecionadas = async () => {
@@ -43,7 +49,7 @@ export default function MessageItem() {
     // `messages` não contém os itens da fila de envio, e é de propósito: o que
     // ainda não chegou ao provider não tem o que revogar nem ocultar. A lista
     // já impede selecioná-los (`selecionavel` exclui `pending`), e o filtro
-    // aqui é a segunda barreira — se as duas divergirem, a contagem do aviso
+    // aqui é a segunda barreira - se as duas divergirem, a contagem do aviso
     // final é a que denuncia.
     const mensagens = messages.filter((m) => selecionadas.includes(m.message_id));
     const paraRevogar = mensagens.filter(podeApagar);
@@ -117,7 +123,7 @@ export default function MessageItem() {
       ocultaveis === 0
         ? 'Será apagada para todos na conversa.'
         : revogaveis === 0
-          ? 'Será removida apenas do sistema — no WhatsApp do contato ela continua.'
+          ? 'Será removida apenas do sistema - no WhatsApp do contato ela continua.'
           : `${revogaveis} ${revogaveis === 1 ? 'será apagada' : 'serão apagadas'} para todos e ` +
             `${ocultaveis} ${ocultaveis === 1 ? 'será removida' : 'serão removidas'} apenas do sistema.`;
 
@@ -153,7 +159,7 @@ export default function MessageItem() {
 
     return () => {
       // Os dois saem juntos: `message_ack` ficava registrado após o cleanup, e
-      // o próximo efeito o duplicava — dois `updateMessage` por ack.
+      // o próximo efeito o duplicava - dois `updateMessage` por ack.
       socket.off('whatsapp:messages');
       socket.off('whatsapp:message_ack');
     };
@@ -163,12 +169,18 @@ export default function MessageItem() {
     activeChatRef.current = activeChat;
   }, [activeChat]);
 
+  const souODono = podeAgirNoAtendimento(activeChat, usuarioId);
+
   // Trocar de conversa encerra a seleção: os ids marcados são de mensagens que
   // já não estão na tela.
+  //
+  // O dono entra na dependência pelo mesmo motivo, com um gatilho diferente:
+  // a conversa pode ser transferida pelo socket com a seleção aberta, e a
+  // barra de apagar continuaria no rodapé de um atendimento que já não é meu.
   useEffect(() => {
     sairModoSelecao();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeChat?.id]);
+  }, [activeChat?.id, souODono]);
 
   return (
     <>

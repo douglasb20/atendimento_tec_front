@@ -24,10 +24,16 @@ type ModalContatoChatProps = {
   onConfirm: (contato: ContactResponse) => void;
 };
 
-type FormContato = { name: string; phone?: string; client_id?: number | null };
+type FormContato = {
+  name: string;
+  last_name?: string | null;
+  phone?: string;
+  client_id?: number | null;
+};
 
 const schema = yup.object({
   name: yup.string().required(msgRequired),
+  last_name: yup.string().notRequired(),
   phone: yup.string().notRequired(),
   client_id: yup.number().nullable().notRequired(),
 });
@@ -56,6 +62,7 @@ const ModalContatoChat = ({ visible, onHide, contato, onConfirm }: ModalContatoC
 
     reset({
       name: contato?.name ?? '',
+      last_name: contato?.last_name ?? '',
       phone: contato?.phone ?? '',
       client_id: contato?.client_id ?? null,
     });
@@ -80,6 +87,7 @@ const ModalContatoChat = ({ visible, onHide, contato, onConfirm }: ModalContatoC
         variables: [contato.id],
         body: {
           name: campos.name.trim(),
+          last_name: campos.last_name?.trim() || null,
           phone: campos.phone?.replace(/\D/g, '') || null,
           ...(campos.client_id && { client_id: campos.client_id }),
         },
@@ -124,7 +132,7 @@ const ModalContatoChat = ({ visible, onHide, contato, onConfirm }: ModalContatoC
         footer={rodape}
       >
         <div className="grid">
-          <div className="col-12 md:col-7">
+          <div className="col-12 md:col-4">
             <Controller
               control={control}
               name="name"
@@ -140,6 +148,29 @@ const ModalContatoChat = ({ visible, onHide, contato, onConfirm }: ModalContatoC
                     {...field}
                     value={field?.value || ''}
                     placeholder="Nome do contato"
+                    autoComplete="off"
+                  />
+                  {getFormErrorMessage(fieldState)}
+                </>
+              )}
+            />
+          </div>
+
+          <div className="col-12 md:col-3">
+            <Controller
+              control={control}
+              name="last_name"
+              render={({ field, fieldState }) => (
+                <>
+                  <LabelPlus
+                    htmlFor={field.name}
+                    text="Sobrenome"
+                  />
+                  <InputText
+                    id={field.name}
+                    {...field}
+                    value={field?.value || ''}
+                    placeholder="Sobrenome"
                     autoComplete="off"
                   />
                   {getFormErrorMessage(fieldState)}

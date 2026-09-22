@@ -15,7 +15,7 @@ export class SimpleFormatMatcher extends Matcher {
     const size = Math.min(props.start.length, props.end.length);
 
     // O Interweave devolve um array de nós, e cada elemento criado aqui é um
-    // item dessa lista. O `props.key` nem sempre vem preenchido — e sem ele o
+    // item dessa lista. O `props.key` nem sempre vem preenchido - e sem ele o
     // React avisa a cada mensagem formatada, que no chat é praticamente toda
     // uma, já que o texto começa com `*Nome:*`. O índice do match serve como
     // identidade estável dentro da mesma string.

@@ -8,7 +8,7 @@ export type AjusteSistema = {
   unidade?: string;
   min?: number;
   max?: number;
-  /** Ausente nas chaves de senha — estas nunca saem da API. */
+  /** Ausente nas chaves de senha - estas nunca saem da API. */
   valor?: string | number;
   /** Só para senhas: se há algo gravado, sem revelar o quê. */
   definido?: boolean;

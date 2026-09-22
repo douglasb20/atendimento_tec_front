@@ -1,7 +1,8 @@
 import { classNames } from 'primereact/utils';
 
-import { ehAtendimentoAtivo, SupportChatMessageResponse } from '@/Interfaces';
+import { podeAgirNoAtendimento, SupportChatMessageResponse } from '@/Interfaces';
 import { useChatStore } from '@/store/useChatStore';
+import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 
 type ShowReactionComponentProps = {
   message: SupportChatMessageResponse;
@@ -11,7 +12,9 @@ type ShowReactionComponentProps = {
 const ShowReactionPickerComponent = ({ message, bottomEl }: ShowReactionComponentProps) => {
   const setReactionState = useChatStore((s) => s.setReactionState);
   const reactionState = useChatStore((s) => s.reactionState);
-  const statusDaConversa = useChatStore((s) => s.activeChat?.support_chat_status_id);
+  // O chat inteiro, e não só o status: a decisão agora também depende do dono.
+  const activeChat = useChatStore((s) => s.activeChat);
+  const { usuarioId } = useUsuarioLogado();
 
   const handleReactionState = (event: React.MouseEvent<HTMLButtonElement>) => {
     const isSameButton = reactionState.anchorEl === event.currentTarget;
@@ -39,7 +42,9 @@ const ShowReactionPickerComponent = ({ message, bottomEl }: ShowReactionComponen
   // A reação chega ao WhatsApp do cliente como qualquer resposta: sem alguém
   // ter assumido a conversa, ela sairia sem dono - a mesma razão pela qual a
   // caixa de mensagem fica bloqueada. Em atendimento finalizado é histórico.
-  if (!ehAtendimentoAtivo(statusDaConversa)) return null;
+  // Reagir chega ao WhatsApp do cliente, então vale a mesma regra do envio:
+  // atendimento de outro atendente é só leitura.
+  if (!podeAgirNoAtendimento(activeChat, usuarioId)) return null;
 
   return (
     <>

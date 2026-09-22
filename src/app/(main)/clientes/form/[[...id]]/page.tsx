@@ -32,6 +32,7 @@ import { MultiSelect } from 'primereact/multiselect';
 
 import ChipTag from '@/components/ChipTag';
 import { useService } from '@/contexts/ServicesContext';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 type FormType = {
   nome: string;
@@ -90,6 +91,12 @@ export default function FormClient() {
   const params = useParams();
   const { id } = params as { id: string[] } | null;
 
+  const { podeAdicionar, podeEditar, semPermissao } = usePermissoesModulo('client');
+
+  // Editar exige `:update`; criar, `:add`. Sem a permissão do caso, a tela
+  // abre em somente leitura - quem tem `:view` consulta o cadastro.
+  const somenteLeitura = id?.[0] ? !podeEditar : !podeAdicionar;
+
   const onSubmitForm = async (fields) => {
     try {
       setLoading(true);
@@ -125,7 +132,7 @@ export default function FormClient() {
 
   /**
    * Opções do MultiSelect. Carregadas aqui, e não no server component, porque o
-   * formulário inteiro é client — é o mesmo caminho que o resto da tela usa.
+   * formulário inteiro é client - é o mesmo caminho que o resto da tela usa.
    */
   const ListarTags = async () => {
     try {
@@ -201,6 +208,7 @@ export default function FormClient() {
                           id={field.name}
                           {...field}
                           placeholder="Nome da empresa"
+                          disabled={somenteLeitura}
                         />
                         {getFormErrorMessage(fieldState)}
                       </>
@@ -222,6 +230,7 @@ export default function FormClient() {
                           {...field}
                           placeholder="00.000.000/0000-00"
                           mask={Masks.CNPJ}
+                          disabled={somenteLeitura}
                         />
                         {getFormErrorMessage(fieldState)}
                       </>
@@ -241,6 +250,7 @@ export default function FormClient() {
                         />
                         <MultiSelect
                           id={field.name}
+                          disabled={somenteLeitura}
                           value={field.value}
                           onChange={(e) => field.onChange(e.value)}
                           options={tags}
@@ -328,6 +338,8 @@ export default function FormClient() {
               />
               <Button
                 label="Salvar"
+                disabled={somenteLeitura}
+                title={somenteLeitura ? semPermissao : undefined}
                 onClick={() => handleSubmit(onSubmitForm)()}
               />
             </div>

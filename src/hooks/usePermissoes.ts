@@ -8,8 +8,8 @@ import { UserInfo } from '@/Interfaces';
 /**
  * O que o usuário logado pode fazer.
  *
- * ⚠️ **Isto não é segurança.** O cookie `userInfo` não é `httpOnly` — precisa
- * ser legível para a interface montar o menu —, e portanto qualquer pessoa o
+ * ⚠️ **Isto não é segurança.** O cookie `userInfo` não é `httpOnly` - precisa
+ * ser legível para a interface montar o menu -, e portanto qualquer pessoa o
  * edita pelo navegador. Quem fizer isso consegue fazer botões aparecerem, e
  * nada além: o backend confere a permissão de novo em toda chamada, pelo papel
  * gravado no banco, e recusa o que não for permitido.
@@ -23,7 +23,7 @@ import { UserInfo } from '@/Interfaces';
  *
  * O `parseCookies()` sem contexto não enxerga nada no servidor, e enxerga tudo
  * no cliente. Lendo direto no render, o servidor produzia um menu vazio e o
- * cliente um menu cheio — e o React derrubava a árvore inteira com erro de
+ * cliente um menu cheio - e o React derrubava a árvore inteira com erro de
  * hidratação.
  *
  * Lendo no `useEffect`, os dois primeiros renders são iguais (sem permissão) e
@@ -69,8 +69,10 @@ export const usePermissoes = () => {
       pode,
       podeAlguma,
       ehSuperusuario,
+      /** Quem está logado. Serve para distinguir auto-edição de editar outro. */
+      usuarioId: info?.id ?? null,
       permissoes: nomes,
-      /** `false` até o cookie ser lido — evita piscar o estado "sem acesso". */
+      /** `false` até o cookie ser lido - evita piscar o estado "sem acesso". */
       carregado: cru !== null,
     };
   }, [cru]);
