@@ -11,6 +11,7 @@ import {
   SupportChatsResponse,
   SupportChatStatusId,
 } from '@/Interfaces';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
@@ -46,6 +47,12 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
   const { FetchReq } = useApi();
   const { usuarioId } = useUsuarioLogado();
   const updateChat = useChatStore((s) => s.updateChat);
+
+  // As mesmas permissões que o backend exige em cada rota. Oferecer a ação e
+  // deixar o 403 aparecer depois é pior do que não mostrá-la.
+  const { podeEditar: podeAgir, podeAcao } = usePermissoesModulo('support.chat');
+  const podeTransferir = podeAcao('transfer');
+  const { podeEditar: podeEditarContato } = usePermissoesModulo('contact');
 
   const [modalFinalizar, setModalFinalizar] = useState<ModoFinalizacao | null>(null);
   const [transferirAberto, setTransferirAberto] = useState(false);
@@ -95,7 +102,7 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
 
   /** As ações possíveis no estado atual. Vazio esconde o botão. */
   const itens: MenuItem[] = [
-    ...(aguardando
+    ...(aguardando && podeAgir
       ? [
           {
             label: 'Iniciar atendimento',
@@ -111,7 +118,7 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
         ]
       : []),
 
-    ...(emAndamento && souODono
+    ...(emAndamento && souODono && podeAgir
       ? [
           {
             label: 'Finalizar',
@@ -124,11 +131,16 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
             command: () => setModalFinalizar('sem-despedida'),
           },
           { separator: true },
-          {
-            label: 'Transferir',
-            icon: 'fa-regular fa-right-left',
-            command: () => setTransferirAberto(true),
-          },
+          // `support.chat:transfer`, permissão própria - não é a de editar.
+          ...(podeTransferir
+            ? [
+                {
+                  label: 'Transferir',
+                  icon: 'fa-regular fa-right-left',
+                  command: () => setTransferirAberto(true),
+                },
+              ]
+            : []),
         ]
       : []),
 
@@ -144,6 +156,8 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
     // edita o contato e se associa o cliente, com os campos personalizados à
     // vista. Consultar é o caso mais comum; editar vem por um botão dentro.
     {
+      // Sempre disponível: o painel é de leitura, e o botão de editar dentro
+      // dele é que depende de `contact:update`.
       label: 'Dados do contato',
       icon: 'fa-regular fa-user-pen',
       command: () => setDetalhesAberto(true),
@@ -223,12 +237,16 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
         contato={conversa.contact}
         // Esta conversa, e não a ativa: o painel foi aberto pela lista.
         onContatoAtualizado={(contato) => updateChat({ ...conversa, contact: contato })}
-        onEditar={() => {
+        onEditar={
+          podeEditarContato
+            ? () => {
           // O painel fecha antes: os dois sobrepostos disputam o foco, e o
           // formulário ficaria atrás do que o abriu.
-          setDetalhesAberto(false);
-          setContatoAberto(true);
-        }}
+                setDetalhesAberto(false);
+                setContatoAberto(true);
+              }
+            : undefined
+        }
       />
 
       <ModalContatoChat

@@ -192,7 +192,12 @@ morre com a sessão) — e no reload todo item `enviando` vira `falhou`, porque 
 
 A conexão vive no `socketSlice`, criada com `transports: ['websocket']` (pula o
 long-polling) e um guard que evita reconectar por cima de um socket já aberto,
-deixando o anterior órfão. O ciclo de vida está em `chat/layout.tsx`.
+deixando o anterior órfão. O ciclo de vida está em **`(main)/layout.tsx`** —
+subiu de `chat/layout.tsx` quando o chat interno passou a precisar receber
+mensagem em qualquer tela. Como o layout não desmonta ao navegar, a conexão
+deixou de ser refeita a cada entrada e saída de `/chat`. O `<audio>` de
+notificação subiu junto, pelo mesmo motivo. Em `chat/layout.tsx` ficaram só os
+resets das stores, que são estado *da tela* de atendimento.
 
 Eventos escutados: `whatsapp:unread_count` e `whatsapp:chat_state`
 (`Conversation`), `whatsapp:messages` e `whatsapp:message_ack` (`MessageItem`),
@@ -303,6 +308,37 @@ listeners.
 
 `noUnusedLocals: true` mesmo com `strict: false`: variável não usada quebra o
 type-check.
+
+## Notificações do navegador
+
+`useNotificacaoDispositivo` tenta **o construtor `new Notification(...)` primeiro**
+e o service worker (`public/sw-notificacoes.js`) como alternativa. A ordem veio
+de medição, não de suposição: com a aba em foco, o `showNotification` do worker
+cria a notificação (o navegador a lista em `getNotifications()`) e **não a
+exibe** no Opera, enquanto o construtor aparece.
+
+⚠️ **O Opera suprime o aviso enquanto qualquer aba da mesma origem estiver
+visível** - não só a que disparou. O `onshow` dispara e nada aparece; mudando
+para uma aba de outra origem, aparece. Chrome e Firefox não fazem isso. Não há
+correção possível no código: a decisão é do navegador, depois de a API confirmar.
+
+O service worker **não faz push** - não há `push` listener nem chaves VAPID.
+Serve só para exibir, e só com o portal aberto em alguma aba.
+
+Quem decide *se* notificar é `useAvisarEvento`, num lugar só. O silêncio tem
+três causas: sem permissão do navegador, preferência desligada, ou **a mensagem
+chegou na conversa que está aberta** com a aba em foco - e esta última só vale
+com `notif_com_portal_aberto` desligada (o padrão é ligada).
+
+⚠️ Estar na tela de chat **não** basta para o silêncio: é preciso que seja a
+conversa aberta. Generalizar isso deixou o portal mudo com a lista aberta e
+nenhuma conversa selecionada. É também a regra do Whaticket, conferida no código
+dele (`NotificationsPopOver`): `ticketId === atual && visibilityState ===
+'visible'`.
+
+As preferências vêm da **store** `usePreferenciasStore`, carregada da API - não
+do cookie `userInfo`. O cookie é gravado no login e não traz preferência criada
+depois, o que fazia a tela mostrar um valor e o disparo usar outro.
 
 ## Pontas soltas conhecidas
 

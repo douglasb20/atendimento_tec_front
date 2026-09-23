@@ -23,6 +23,7 @@ import BadgeProtocolo from './_Header/BadgeProtocolo';
 import Cronometro from './_Header/Cronometro';
 import IdentificacaoContato from './_Header/IdentificacaoContato';
 import { useSelecaoMensagens } from '@/store/useSelecaoMensagens';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 type ModalAberto = 'finalizar' | 'contato' | 'transferir' | null;
 
@@ -53,6 +54,11 @@ const Header = () => {
   // Sem argumento: entra no modo com a lista vazia, para o atendente escolher
   // as mensagens. Pelo menu de uma bolha, ela já entra marcada.
   const entrarModoSelecao = useSelecaoMensagens((s) => s.entrarModoSelecao);
+
+  // As mesmas permissões que o backend exige nas rotas correspondentes.
+  const { podeEditar: podeAgir, podeAcao } = usePermissoesModulo('support.chat');
+  const podeTransferir = podeAcao('transfer');
+  const { podeEditar: podeEditarContato } = usePermissoesModulo('contact');
 
   const [modalAberto, setModalAberto] = useState<ModalAberto>(null);
   const [modoFinalizar, setModoFinalizar] = useState<ModoFinalizar>('normal');
@@ -162,6 +168,9 @@ const Header = () => {
           onSelecionarMensagens={entrarModoSelecao}
           onEditarContato={() => setModalAberto('contato')}
           onTransferir={() => setModalAberto('transferir')}
+          podeAgir={podeAgir}
+          podeTransferir={podeTransferir}
+          podeEditarContato={podeEditarContato}
         />
       </div>
 
@@ -191,10 +200,15 @@ const Header = () => {
         visible={detalhesAberto}
         onHide={() => setDetalhesAberto(false)}
         contato={activeChat.contact}
-        onEditar={() => {
-          setDetalhesAberto(false);
-          setModalAberto('contato');
-        }}
+        // Sem `contact:update` o painel abre em leitura, sem o botão de editar.
+        onEditar={
+          podeEditarContato
+            ? () => {
+                setDetalhesAberto(false);
+                setModalAberto('contato');
+              }
+            : undefined
+        }
       />
 
       <ModalContatoChat

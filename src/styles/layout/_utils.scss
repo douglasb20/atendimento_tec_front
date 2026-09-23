@@ -356,3 +356,105 @@
   opacity: 1;
   visibility: visible;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Chat interno: a janela flutuante
+//
+// O bloco inteiro vive aqui, sem utilitários do PrimeFlex misturados. Todo
+// utilitário de lá carrega `!important` (`.fixed`, `.flex`, `.h-full`), e
+// combinar as duas fontes num elemento posicionado torna imprevisível quem
+// vence - o mesmo motivo de `.acoes-conversa` acima.
+// ─────────────────────────────────────────────────────────────────────────────
+
+.chat-interno-popup {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 0;
+  z-index: 1100;
+
+  display: flex;
+  flex-direction: column;
+
+  width: 22rem;
+  // Teto em `vh` para a janela nunca passar da tela em monitor baixo, onde
+  // uma altura fixa esconderia a caixa de envio atrás da barra do navegador.
+  height: 27rem;
+  max-height: calc(100vh - 6rem);
+
+  background: var(--surface-0);
+  border: 1px solid var(--surface-border);
+  border-bottom: none;
+  border-radius: 0.5rem 0.5rem 0 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+
+  // ⚠️ Só `height`: animar `all` arrastaria junto a sombra e as bordas, e o
+  // recolher ficava borrado.
+  transition: height 0.18s ease;
+}
+
+// Minimizada sobra a barra de título. `height: auto` deixaria a altura
+// depender do conteúdo escondido; o valor fixo é o da própria barra.
+.chat-interno-popup--minimizado {
+  height: 2.75rem;
+}
+
+.chat-interno-popup__titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  padding: 0.5rem 0.625rem;
+  background: var(--primary-color);
+  color: var(--primary-color-text);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.chat-interno-botao-janela:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.chat-interno-popup__corpo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  // Sem isto o conteúdo empurra o contêiner e a rolagem interna nunca aparece:
+  // um item flex tem `min-height: auto` por padrão.
+  min-height: 0;
+  overflow: hidden;
+}
+
+// Em telas estreitas a janela ocupa a largura toda - com 22rem fixos ela
+// sairia pela direita no celular.
+@media screen and (max-width: 576px) {
+  .chat-interno-popup {
+    right: 0;
+    left: 0;
+    width: auto;
+    border-radius: 0;
+  }
+}
+
+// O botão de destacar aparece só no hover do item, como no Gmail. Fora do
+// hover ele some por `opacity`, e não `display: none`: assim a linha não muda
+// de largura quando o mouse entra e sai.
+.colega-destacar {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s;
+}
+
+.colega-item:hover .colega-destacar,
+// `focus-within` para quem navega por teclado: sem isto o botão receberia o
+// foco invisível e o Tab pareceria pular para lugar nenhum.
+.colega-item:focus-within .colega-destacar {
+  opacity: 1;
+  visibility: visible;
+}
+
+.colega-destacar:hover {
+  background: var(--surface-300);
+  color: var(--text-color);
+}

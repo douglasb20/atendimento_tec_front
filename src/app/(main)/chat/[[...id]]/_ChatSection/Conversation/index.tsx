@@ -4,7 +4,7 @@ import { format, isToday, parseISO } from 'date-fns';
 
 import Avatar from '@/components/Avatar';
 import Interweave from '@/components/Interweave';
-import { SupportChatsResponse } from '@/Interfaces';
+import { SupportChatsResponse, SupportChatsWithMessagesResponse } from '@/Interfaces';
 import { useLayoutStore } from '@/layout/context/layoutcontext';
 import useApi from '@/service/Api/ApiClient';
 import { fixHeartEmoji, nomeCompleto } from '@/service/Util';
@@ -14,11 +14,35 @@ import { Badge } from 'primereact/badge';
 import { classNames } from 'primereact/utils';
 
 import AcoesConversa from './AcoesConversa';
+import AbasConversa, { AbaConversa } from '../../_ChatInterno/AbasConversa';
+import ListaColegas from '../../_ChatInterno/ListaColegas';
+import { useAvisarEvento } from '@/hooks/useAvisarEvento';
+import { useChatInterno } from '@/hooks/useChatInterno';
+import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
+import { usePermissoes } from '@/hooks/usePermissoes';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
+import { useChatInternoStore } from '@/store/useChatInternoStore';
 import FiltroAtendimentos, {
   filtraPorGrupo,
   grupoDaConversa,
   GrupoAtendimento,
 } from './FiltroAtendimentos';
+
+/** O texto da notificação: mídia vira rótulo, texto aparece cortado. */
+const previaDoWhatsapp = (msg: { type?: string; content?: string }): string => {
+  const rotulos: Record<string, string> = {
+    image: '📷 Foto',
+    video: '🎥 Vídeo',
+    document: '📎 Documento',
+    audio: '🎵 Áudio',
+    ptt: '🎤 Mensagem de voz',
+    sticker: '💬 Figurinha',
+    location: '📍 Localização',
+  };
+
+  // Com legenda, ela diz mais que o rótulo do tipo.
+  return msg.content?.trim().slice(0, 120) || rotulos[msg.type ?? ''] || 'Nova mensagem';
+};
 
 /**
  * Hora quando foi hoje, data quando foi antes - o mesmo critério dos
@@ -47,6 +71,22 @@ const ConversationSection = () => {
   const [grupoAtivo, setGrupoAtivo] = useState<GrupoAtendimento>('todos');
   const windowFocusedRef = useRef(true);
   const activeChatRef = useRef(activeChat);
+
+  const { avisar } = useAvisarEvento();
+  const { usuarioId } = useUsuarioLogado();
+
+  /**
+   * Espelha a lista para o handler do socket.
+   *
+   * Ele é registrado com `[socket]` como dependência e capturaria a lista da
+   * primeira renderização - sempre vazia. É o estado *anterior* que diz se o
+   * contador subiu ou se o dono mudou.
+   */
+  const chatsRef = useRef(chats);
+
+  useEffect(() => {
+    chatsRef.current = chats;
+  }, [chats]);
 
   // Refiltra só quando a lista ou o grupo mudam; sem isto, cada mensagem nova
   // recriaria o array e re-renderizaria todos os itens.
@@ -137,6 +177,64 @@ const ConversationSection = () => {
     }
   };
 
+  /**
+   * Decide quais notificações um `chat_state` merece.
+   *
+   * Três eventos saem do mesmo payload, porque é ele que carrega o estado
+   * inteiro da conversa - o `whatsapp:messages` só chega para a conversa
+   * aberta, e as outras passariam em branco.
+   *
+   * `anterior` é o estado antes do `updateChat`: sem ele não dá para saber se
+   * algo *mudou* - toda atualização pareceria uma transferência nova.
+   */
+  const notificarEstado = (chat: SupportChatsResponse, anterior?: SupportChatsResponse) => {
+    const nome = nomeCompleto(chat?.contact) || 'Contato';
+    const abrirConversa = () => {
+      setActiveChat(chat);
+      window.history.replaceState(null, '', `/chat/${chat.id}`);
+    };
+
+    // ⚠️ **Mensagem nova não é detectada aqui.** O `chat_state` chega com o
+    // `unread_count` anterior ao incremento - é por isso que o `updateChat` o
+    // descarta -, e comparar contra ele nunca acusava aumento. Quem avisa é o
+    // `whatsapp:messages`, que carrega a mensagem inteira com `from_me`.
+
+    // 1. Conversa nova esperando na fila - só na entrada, não a cada
+    //    atualização de uma que já estava lá.
+    const entrouNaFila =
+      grupoDaConversa(chat) === 'fila' && (!anterior || grupoDaConversa(anterior) !== 'fila');
+
+    if (entrouNaFila) {
+      avisar({
+        preferencia: 'notif_fila',
+        titulo: 'Novo atendimento na fila',
+        corpo: `${nome} está aguardando atendimento.`,
+        icone: chat.contact?.avatar_url,
+        tag: `fila-${chat.id}`,
+        url: `/chat/${chat.id}`,
+        aoClicar: abrirConversa,
+      });
+    }
+
+    // 2. Transferido para mim: o dono mudou e agora sou eu.
+    const virouMinha =
+      Number(chat.user_id) === Number(usuarioId) &&
+      anterior != null &&
+      Number(anterior.user_id) !== Number(usuarioId);
+
+    if (virouMinha) {
+      avisar({
+        preferencia: 'notif_transferencia',
+        titulo: 'Atendimento transferido para você',
+        corpo: `${nome} agora é seu.`,
+        icone: chat.contact?.avatar_url,
+        tag: `transf-${chat.id}`,
+        url: `/chat/${chat.id}`,
+        aoClicar: abrirConversa,
+      });
+    }
+  };
+
   useEffect(() => {
     if (socket === null) return;
 
@@ -146,12 +244,60 @@ const ConversationSection = () => {
       setUnreadCount(chatId, unreadCount);
     });
 
+    /**
+     * Mensagem nova de cliente.
+     *
+     * Escutado **aqui**, e não só no `MessageItem`: lá o handler descarta o que
+     * não é da conversa aberta, e é justamente a mensagem de outra conversa que
+     * precisa de aviso. O evento é broadcast e carrega a mensagem inteira - com
+     * `from_me`, que distingue o que o cliente mandou do que nós respondemos.
+     */
+    // ⚠️ Handler **nomeado**, e o `off` abaixo passa a referência. O
+    // `MessageItem` escuta o mesmo evento, e um `socket.off('whatsapp:messages')`
+    // sem argumento remove *todos* os handlers - os dois componentes se
+    // derrubariam conforme a ordem de montagem.
+    const aoChegarMensagem = ({
+      supportChatMessages: msg,
+      ...chat
+    }: SupportChatsWithMessagesResponse) => {
+        // O eco do próprio envio também passa por aqui.
+        if (msg?.from_me) return;
+
+        const conversa = chatsRef.current.find(
+          (c) => String(c.id) === String(msg.support_chat_id),
+        );
+        const nome = nomeCompleto(conversa?.contact ?? chat?.contact) || 'Contato';
+
+        avisar({
+          preferencia: 'notif_mensagem_cliente',
+          titulo: nome,
+          corpo: previaDoWhatsapp(msg),
+          icone: conversa?.contact?.avatar_url ?? chat?.contact?.avatar_url,
+          // Uma por conversa: dez mensagens seguidas substituem a anterior.
+          tag: `chat-${msg.support_chat_id}`,
+          url: `/chat/${msg.support_chat_id}`,
+          conversaAberta: String(activeChatRef.current?.id) === String(msg.support_chat_id),
+          aoClicar: () => {
+            const alvo = conversa ?? (chat as SupportChatsResponse);
+            setActiveChat(alvo);
+            window.history.replaceState(null, '', `/chat/${alvo.id}`);
+          },
+        });
+    };
+
+    socket.on('whatsapp:messages', aoChegarMensagem);
+
     socket.off('whatsapp:chat_state');
     socket.on('whatsapp:chat_state', async (payload: SupportChatsResponse) => {
+      const anterior = chatsRef.current.find((c) => String(c.id) === String(payload.id));
+
       updateChat(payload);
+
       if (!windowFocusedRef.current) {
         await notificationSound?.play();
       }
+
+      notificarEstado(payload, anterior);
     });
 
     // As funções precisam ser nomeadas: `removeEventListener` compara por
@@ -168,6 +314,8 @@ const ConversationSection = () => {
       // era a única proteção contra duplicar o handler - e handler duplicado
       // toca o som de notificação duas vezes.
       socket.off('whatsapp:unread_count');
+      // Com a referência: sem ela, sairia junto o handler do `MessageItem`.
+      socket.off('whatsapp:messages', aoChegarMensagem);
       socket.off('whatsapp:chat_state');
       window.removeEventListener('blur', aoDesfocar);
       window.removeEventListener('focus', aoFocar);
@@ -178,8 +326,63 @@ const ConversationSection = () => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
 
+  const [abaAtiva, setAbaAtiva] = useState<AbaConversa>('atendimentos');
+
+  // A aba some para quem não usa o chat interno: sem a permissão, e para o
+  // superusuário, que não participa (o backend recusa todas as rotas dele).
+  const { podeVisualizar: podeChatInterno } = usePermissoesModulo('internal.chat');
+  const { ehSuperusuario } = usePermissoes();
+  const temChatInterno = podeChatInterno && !ehSuperusuario;
+
+  const conversasInternas = useChatInternoStore((s) => s.conversas);
+  const abrirCom = useChatInternoStore((s) => s.abrirCom);
+  const destacarInterno = useChatInternoStore((s) => s.destacar);
+  const naoLidasInternas = conversasInternas.reduce((soma, c) => soma + c.nao_lidas, 0);
+
+  // A carga dos dados e as assinaturas vivem em `ChatInterno`, montado no
+  // layout: aqui só se lê a store e se pede o histórico ao abrir alguém.
+  const { carregarMensagens } = useChatInterno({ ativo: false });
+
+  /** Carrega o histórico, se a conversa já existir. */
+  const carregarSeExistir = (colegaId: number) => {
+    const existente = conversasInternas.find((conversa) => conversa.outro.id === colegaId);
+
+    // Sem conversa ainda não há histórico a buscar - ela nasce no primeiro
+    // envio, do lado do backend.
+    if (existente) carregarMensagens(existente.id);
+  };
+
+  type ColegaDaLista = (typeof conversasInternas)[number]['outro'];
+
+  const abrirConversaInterna = (colega: ColegaDaLista) => {
+    abrirCom(colega);
+    carregarSeExistir(colega.id);
+  };
+
+  const destacarConversaInterna = (colega: ColegaDaLista) => {
+    destacarInterno(colega);
+    carregarSeExistir(colega.id);
+  };
+
   return (
     <div className="card flex flex-column shadow-1 h-full px-2 pt-2">
+      {temChatInterno && (
+        <AbasConversa
+          ativa={abaAtiva}
+          onTrocar={setAbaAtiva}
+          naoLidasInternas={naoLidasInternas}
+        />
+      )}
+
+      {temChatInterno && abaAtiva === 'interno' ? (
+        <div className="flex-1 overflow-hidden">
+          <ListaColegas
+            onAbrir={abrirConversaInterna}
+            onDestacar={destacarConversaInterna}
+          />
+        </div>
+      ) : (
+        <>
       <FiltroAtendimentos
         chats={chats}
         grupoAtivo={grupoAtivo}
@@ -336,6 +539,8 @@ const ConversationSection = () => {
           ))
         )}
       </ul>
+        </>
+      )}
     </div>
   );
 };

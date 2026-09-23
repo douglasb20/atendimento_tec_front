@@ -63,7 +63,8 @@ const AppMenu = () => {
               label: 'Gerenciamento',
               icon: `pi pi-pen-to-square pi-fw`,
               to: '/atendimentos',
-              visible: liberado(pode('support:view')),
+              visible: false,
+              // visible: liberado(pode('support:view')),
             },
             {
               // Junto do chat, e não em Conexões: é configuração do

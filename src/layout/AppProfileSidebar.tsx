@@ -5,13 +5,11 @@ import Link from 'next/link';
 import { parseCookies } from 'nookies';
 import { Sidebar } from 'primereact/sidebar';
 
+import ModalPerfil from '@/components/ModalPerfil';
 import { usePermissoes } from '@/hooks/usePermissoes';
-import { IUsuariosResponse, UserInfo } from '@/Interfaces';
-import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta, nomeCompleto } from '@/service/Util';
-import ModalFormUser from '@/app/(main)/usuarios/DadosUsuariosSection/ModalFormUser';
+import { UserInfo } from '@/Interfaces';
+import { nomeCompleto } from '@/service/Util';
 import { LayoutContext } from './context/layoutcontext';
-import ModalTema from './ModalTema';
 
 /** Nome e e-mail de quem está logado, do cookie `userInfo`. */
 const usuarioLogado = (): { nome: string; email: string } => {
@@ -36,22 +34,10 @@ const AppProfileSidebar = () => {
   const { layoutState, setLayoutState } = useContext(LayoutContext);
   const { ehSuperusuario, pode } = usePermissoes();
   const { nome, email } = usuarioLogado();
-  const { FetchReq } = useApi();
-  const [modalTemaAberto, setModalTemaAberto] = useState(false);
-
-  // O cadastro completo, buscado ao abrir: o cookie `userInfo` é enxuto (não
-  // traz grupo nem avatar cru) e o formulário precisa do registro inteiro.
-  const [perfil, setPerfil] = useState<IUsuariosResponse | null>(null);
-
-  const abrirPerfil = async () => {
-    try {
-      // Rota própria, que resolve o alvo pelo token: `GET /users/:id` exige
-      // `user:view`, a permissão de ver *qualquer* usuário.
-      setPerfil(await FetchReq<IUsuariosResponse>('MeuPerfil'));
-    } catch (err) {
-      CatchAlerta(err, 'Não foi possível abrir o perfil');
-    }
-  };
+  // Um estado só: o `ModalPerfil` busca o cadastro sozinho, ao abrir. Antes o
+  // sidebar carregava o perfil para só então montar o formulário, porque o
+  // modal reaproveitado era o do CRUD e lia `data` na montagem.
+  const [perfilAberto, setPerfilAberto] = useState(false);
 
   const onProfileSidebarHide = () => {
     setLayoutState((prevState) => ({
@@ -103,7 +89,7 @@ const AppProfileSidebar = () => {
             <li>
               <button
                 type="button"
-                onClick={abrirPerfil}
+                onClick={() => setPerfilAberto(true)}
                 className={`${ITEM_CLASSE} w-full bg-transparent text-left`}
               >
                 <span>
@@ -111,30 +97,14 @@ const AppProfileSidebar = () => {
                 </span>
                 <div className="ml-3">
                   <span className="mb-2 font-semibold">Perfil</span>
-                  <p className="text-color-secondary m-0">Seus dados, avatar e senha</p>
+                  <p className="text-color-secondary m-0">
+                    Seus dados, aparência e notificações
+                  </p>
                 </div>
               </button>
             </li>
           )}
 
-          <li>
-            {/* Um `button`, não um `Link`: é preferência de quem está usando, e
-                abre aqui mesmo - mandar para outra tela faria perder de vista
-                o que se está mudando. */}
-            <button
-              type="button"
-              onClick={() => setModalTemaAberto(true)}
-              className={`${ITEM_CLASSE} w-full bg-transparent text-left`}
-            >
-              <span>
-                <i className="pi pi-palette text-xl text-primary"></i>
-              </span>
-              <div className="ml-3">
-                <span className="mb-2 font-semibold">Tema e cores</span>
-                <p className="text-color-secondary m-0">Escolha as cores e o modo da interface</p>
-              </div>
-            </button>
-          </li>
 
           <li>
             <Link
@@ -156,21 +126,10 @@ const AppProfileSidebar = () => {
       {/* Dentro da Sidebar de propósito: o PrimeReact renderiza o Dialog num
           portal, então ele não é recortado pelo painel - e fechar o painel
           fechando o modal junto é o comportamento certo. */}
-      <ModalTema
-        visible={modalTemaAberto}
-        onHide={() => setModalTemaAberto(false)}
+      <ModalPerfil
+        visible={perfilAberto}
+        onHide={() => setPerfilAberto(false)}
       />
-
-      {/* Só monta com os dados em mãos: o formulário lê `data` na montagem
-          para preencher os campos. */}
-      {perfil && (
-        <ModalFormUser
-          visible={!!perfil}
-          onHide={() => setPerfil(null)}
-          data={perfil}
-          onConfirm={() => setPerfil(null)}
-        />
-      )}
     </Sidebar>
   );
 };

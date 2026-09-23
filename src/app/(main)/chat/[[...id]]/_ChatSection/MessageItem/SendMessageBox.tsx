@@ -63,6 +63,7 @@ import QuotedMessage from '../_components/QuotedMessage';
 import PreviewAnexos, { AnexoSelecionado } from '../_components/PreviewAnexos';
 import AudioComponent from '../_components/AudioComponent';
 import { classNames } from 'primereact/utils';
+import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 /**
  * Nome do atendente para a bolha provisória, lido do cookie `userInfo`.
@@ -133,6 +134,8 @@ export default function SendMessageBox() {
   // Respostas rápidas: a lista abre ao digitar `/` no início de uma palavra.
   const { filtrar, resolveVariaveis, recarregar } = useRespostasRapidas(activeChat);
   const { salvar: salvarRespostaRapida } = useSalvarRespostaRapida();
+  // O rodapé da lista de atalhos só aparece para quem pode cadastrar.
+  const { podeAdicionar: podeAdicionarResposta } = usePermissoesModulo('quick.reply');
   const [modalRespostaVisivel, setModalRespostaVisivel] = useState(false);
 
   // Emoji: o picker vai para um portal no `body`, como no `EditorMensagem` - a
@@ -843,6 +846,7 @@ export default function SendMessageBox() {
         ancora={caixaRef.current}
         onEscolher={inserirResposta}
         onFechar={fecharLista}
+        podeAdicionar={podeAdicionarResposta}
         onAdicionar={() => {
           fecharLista();
           setModalRespostaVisivel(true);

@@ -8,6 +8,9 @@ import useApi from '@/service/Api/ApiClient';
 import { useChatStore } from '@/store/useChatStore';
 import { Breadcrumb } from '@/types';
 import ConversationSection from './Conversation';
+import CabecalhoInterno from '../_ChatInterno/CabecalhoInterno';
+import JanelaInterna from '../_ChatInterno/JanelaInterna';
+import { useChatInternoStore } from '@/store/useChatInternoStore';
 import MessageItem from './MessageItem';
 
 type ChatSectionProps = {
@@ -87,6 +90,10 @@ export default function ChatSection(props: ChatSectionProps) {
     loadInit();
   }, []);
 
+  const conversaInterna = useChatInternoStore((s) => s.ativo);
+  const modoInterno = useChatInternoStore((s) => s.modo);
+  const conversaInternaNoPainel = Boolean(conversaInterna) && modoInterno === 'painel';
+
   return (
     rendered && (
       <React.Fragment>
@@ -94,7 +101,17 @@ export default function ChatSection(props: ChatSectionProps) {
           <ConversationSection />
         </div>
         <div className="col-7 md:col-8 lg:col-9 h-full">
-          <MessageItem />
+          {/* A conversa interna toma o painel, como no atendimento: é o modo
+              normal de uso. O popup existe para quem quiser falar com o colega
+              sem largar o cliente, e só aparece quando a pessoa destaca. */}
+          {conversaInternaNoPainel ? (
+            <div className="card flex flex-column shadow-1 h-full p-0 overflow-hidden">
+              <CabecalhoInterno />
+              <JanelaInterna semCabecalho />
+            </div>
+          ) : (
+            <MessageItem />
+          )}
         </div>
       </React.Fragment>
     )

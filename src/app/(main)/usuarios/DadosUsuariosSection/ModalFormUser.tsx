@@ -127,22 +127,20 @@ const ModalFormUser = (props: ModalProps) => {
     resolver: yupResolver<any>(schema),
   });
   const { setLoading } = useService();
-  const { pode, ehSuperusuario, usuarioId } = usePermissoes();
+  const { pode } = usePermissoes();
 
-  // Editando a si mesmo, as permissões granulares valem; editando outro, quem
-  // manda é `user:update`, que já governa o botão Salvar.
-  const ehProprioCadastro = !!data?.id && Number(data.id) === Number(usuarioId);
-
-  // O próprio cadastro vai por `user:profile_update` e pela rota
-  // `/users/meu-perfil`; o de outra pessoa, por `user:update` e `/users/:id`.
-  // São permissões diferentes porque administrar usuários e manter o próprio
-  // cadastro são coisas diferentes.
-  const podeSalvar = ehProprioCadastro
-    ? pode('user:profile_update')
-    : pode(data?.id ? 'user:update' : 'user:add');
-
-  const bloqueiaEmail = ehProprioCadastro && !ehSuperusuario && !pode('user:change_own_email');
-  const bloqueiaGrupo = ehProprioCadastro && !ehSuperusuario && !pode('user:change_group');
+  // ⚠️ Este modal é **só administrativo**. A auto-edição mudou de lugar: vive
+  // em `components/ModalPerfil`, aberto pelo sidebar, com `user:profile_update`
+  // e a rota `/users/meu-perfil`.
+  //
+  // Enquanto os dois casos dividiam este formulário, era preciso decidir campo
+  // a campo quem podia mexer em quê - e daí as condicionais de e-mail e grupo
+  // que viviam aqui. Separados, cada tela mostra o que lhe cabe.
+  //
+  // O backend continua validando: ele aceita a rota `/users/:id` para o próprio
+  // id, e `recusaCamposSemPermissao` é quem barra. O front deixou de oferecer
+  // o caminho, não de precisar da checagem.
+  const podeSalvar = pode(data?.id ? 'user:update' : 'user:add');
 
   const modalFooter = () => {
     return (
@@ -227,11 +225,11 @@ const ModalFormUser = (props: ModalProps) => {
         if (fields.senha !== '') {
           dataBody['password'] = fields.senha;
         }
-        await FetchReq(
-          ehProprioCadastro
-            ? { endpoint: 'AtualizarMeuPerfil', body: dataBody }
-            : { endpoint: 'AtualizarUsuario', body: dataBody, variables: [fields?.id] },
-        );
+        await FetchReq({
+          endpoint: 'AtualizarUsuario',
+          body: dataBody,
+          variables: [fields?.id],
+        });
       }
 
       if (data?.id === userInfo?.id) {
@@ -454,7 +452,7 @@ const ModalFormUser = (props: ModalProps) => {
                     id={field.name}
                     {...field}
                     placeholder="exemplo@exemplo.com"
-                    disabled={bloqueiaEmail}
+                    disabled={!podeSalvar}
                   />
                   {getFormErrorMessage(fieldState)}
                 </>
@@ -488,7 +486,7 @@ const ModalFormUser = (props: ModalProps) => {
                       placeholder="Selecione o grupo"
                       // Sem `user:change_group` ninguém muda o próprio grupo -
                       // seria promover a si mesmo. O backend recusa com 401.
-                      disabled={bloqueiaGrupo}
+                      disabled={!podeSalvar}
                     />
                   </>
                 )}

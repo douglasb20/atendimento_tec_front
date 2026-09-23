@@ -21,6 +21,12 @@ type AcoesAtendimentoProps = {
   onSelecionarMensagens: () => void;
   onEditarContato: () => void;
   onTransferir: () => void;
+  /** `support.chat:update` - iniciar e finalizar. */
+  podeAgir: boolean;
+  /** `support.chat:transfer`, permissão própria. */
+  podeTransferir: boolean;
+  /** `contact:update` - o item abre o formulário de edição direto. */
+  podeEditarContato: boolean;
 };
 
 /**
@@ -43,6 +49,9 @@ const AcoesAtendimento = ({
   onSelecionarMensagens,
   onEditarContato,
   onTransferir,
+  podeAgir,
+  podeTransferir,
+  podeEditarContato,
 }: AcoesAtendimentoProps) => {
 
   /**
@@ -73,16 +82,26 @@ const AcoesAtendimento = ({
       icon: 'fa-regular fa-list-check',
       command: onSelecionarMensagens,
     },
-    {
-      label: 'Dados do contato',
-      icon: 'fa-regular fa-user-pen',
-      command: onEditarContato,
-    },
-    {
-      label: 'Transferir',
-      icon: 'fa-regular fa-right-left',
-      command: onTransferir,
-    },
+    // Abre o formulário de edição, não um painel de leitura - por isso exige
+    // `contact:update`.
+    ...(podeEditarContato
+      ? [
+          {
+            label: 'Dados do contato',
+            icon: 'fa-regular fa-user-pen',
+            command: onEditarContato,
+          },
+        ]
+      : []),
+    ...(podeTransferir
+      ? [
+          {
+            label: 'Transferir',
+            icon: 'fa-regular fa-right-left',
+            command: onTransferir,
+          },
+        ]
+      : []),
   ];
 
   if (finalizado) {
@@ -96,7 +115,7 @@ const AcoesAtendimento = ({
 
   return (
     <div className="flex align-items-center gap-2 flex-none">
-      {aguardando && (
+      {aguardando && podeAgir && (
         <>
           <Button
             label="Iniciar atendimento"
@@ -132,7 +151,7 @@ const AcoesAtendimento = ({
       {/* O clique no corpo finaliza enviando a despedida do canal; a seta abre
           todo o resto. A ação mais comum fica em evidência, e há um gatilho só
           para as demais. */}
-      {emAndamento && souODono && (
+      {emAndamento && souODono && podeAgir && (
         <SplitButton
           label="Finalizar"
           icon="fa-regular fa-check"

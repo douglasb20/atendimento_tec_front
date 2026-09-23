@@ -16,6 +16,8 @@ type ListaRespostasRapidasProps = {
   onFechar: () => void;
   /** Abre o cadastro sem sair da conversa. */
   onAdicionar: () => void;
+  /** Sem `quick.reply:add` o rodapé some: salvar voltaria 403. */
+  podeAdicionar: boolean;
 };
 
 /**
@@ -41,6 +43,7 @@ const ListaRespostasRapidas = ({
   onEscolher,
   onFechar,
   onAdicionar,
+  podeAdicionar,
 }: ListaRespostasRapidasProps) => {
   const itensRef = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -141,7 +144,13 @@ const ListaRespostasRapidas = ({
 
         {/* Abre o modal aqui mesmo. Navegar para a tela de cadastro tiraria o
             atendente da conversa que ele está atendendo - e o motivo de estar
-            criando a resposta é justamente responder a ela. */}
+            criando a resposta é justamente responder a ela.
+            
+            Escondido sem permissão, e não desabilitado: a lista é um menu
+            rápido no meio da digitação, e um item cinza aqui é ruído. O modal
+            também bloqueia o Salvar, mas deixar abrir para só então recusar é
+            pedir que a pessoa preencha o formulário à toa. */}
+        {podeAdicionar && (
         <button
           type="button"
           onMouseDown={(e) => {
@@ -153,6 +162,7 @@ const ListaRespostasRapidas = ({
           <i className="fa-regular fa-plus text-xs" />
           Adicionar resposta rápida
         </button>
+        )}
       </div>
     </>,
     document.body,

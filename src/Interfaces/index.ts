@@ -15,6 +15,8 @@ export * from './permission-group.interface';
 export * from './quick-reply.interface';
 export * from './service-alert.interface';
 export * from './system-settings.interface';
+export * from './internal-chat.interface';
+export * from './user-config.interface';
 
 export enum Masks {
   DATEBR = '99/99/9999',

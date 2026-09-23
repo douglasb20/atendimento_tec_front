@@ -140,28 +140,33 @@ export default function MessageItem() {
   useEffect(() => {
     if (socket == null) return;
 
-    socket.off('whatsapp:messages');
-    socket.on(
-      'whatsapp:messages',
-      ({ supportChatMessages: msg, ...supportChats }: SupportChatsWithMessagesResponse) => {
-        if (String(activeChatRef.current?.id) !== String(msg.support_chat_id)) return;
+    // ⚠️ Handlers **nomeados**, e os `off` abaixo passam a referência.
+    // `socket.off('evento')` sem argumento remove *todos* os handlers, e a
+    // `Conversation` escuta `whatsapp:messages` para notificar as conversas que
+    // não estão abertas - sem a referência, um componente derrubava o outro
+    // conforme a ordem de montagem.
+    const aoChegarMensagem = ({
+      supportChatMessages: msg,
+    }: SupportChatsWithMessagesResponse) => {
+      if (String(activeChatRef.current?.id) !== String(msg.support_chat_id)) return;
 
-        updateMessage(msg);
-      },
-    );
+      updateMessage(msg);
+    };
 
-    socket.off('whatsapp:message_ack');
-    socket.on('whatsapp:message_ack', (message: SupportChatMessageResponse) => {
+    const aoChegarAck = (message: SupportChatMessageResponse) => {
       if (String(activeChatRef.current?.id) !== String(message.support_chat_id)) return;
 
       updateMessage(message);
-    });
+    };
+
+    socket.on('whatsapp:messages', aoChegarMensagem);
+    socket.on('whatsapp:message_ack', aoChegarAck);
 
     return () => {
       // Os dois saem juntos: `message_ack` ficava registrado após o cleanup, e
       // o próximo efeito o duplicava - dois `updateMessage` por ack.
-      socket.off('whatsapp:messages');
-      socket.off('whatsapp:message_ack');
+      socket.off('whatsapp:messages', aoChegarMensagem);
+      socket.off('whatsapp:message_ack', aoChegarAck);
     };
   }, [socket]);
 

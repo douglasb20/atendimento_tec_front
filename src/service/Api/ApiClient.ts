@@ -167,6 +167,30 @@ export const ListUrl = {
   AtualizarAjustesSistema: { url: '/system-settings', method: 'PATCH' },
   TestarEmailSistema: { url: '/system-settings/testar-email', method: 'POST' },
 
+  // Preferências do próprio usuário (tema e notificações). O alvo vem sempre
+  // do token - não há id na URL.
+  ListarPreferencias: { url: '/user-config', method: 'GET' },
+  AtualizarPreferencias: { url: '/user-config', method: 'PATCH' },
+
+  // Chat interno. `ListarColegas` existe em vez de reusar `ListarUsuarios`
+  // porque aquela rota exige `user:view`, que é administrativa - o atendente
+  // comum não a tem e ficaria sem lista de colegas.
+  ListarColegas: { url: '/internal-chats/colegas', method: 'GET' },
+  ListarConversasInternas: { url: '/internal-chats', method: 'GET' },
+  ContarNaoLidasInternas: { url: '/internal-chats/nao-lidas', method: 'GET' },
+  // O `limite` vai no template, não concatenado no id: o `AjeitaUrl` troca os
+  // placeholders por posição e não monta query - juntar os dois produzia
+  // `/internal-chats/2?limite=50/messages`.
+  ListarMensagensInternas: {
+    url: '/internal-chats/{{chat_id}}/messages?limite={{limite}}',
+    method: 'GET',
+  },
+  // O parâmetro é o id do **destinatário**, não o da conversa: ela nasce no
+  // primeiro envio, do lado do backend.
+  EnviarMensagemInterna: { url: '/internal-chats/{{user_id}}/messages', method: 'POST' },
+  AssinarMidiaInterna: { url: '/internal-chats/sign-media', method: 'POST' },
+  MarcarConversaInternaLida: { url: '/internal-chats/{{chat_id}}/read', method: 'PATCH' },
+
   EsqueciSenha: { url: '/auth/esqueci-senha', method: 'POST' },
   ValidarTokenSenha: { url: '/auth/redefinir-senha/{{token}}/valido', method: 'GET' },
   RedefinirSenha: { url: '/auth/redefinir-senha', method: 'POST' },

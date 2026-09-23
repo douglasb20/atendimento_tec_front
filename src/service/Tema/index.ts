@@ -90,12 +90,42 @@ export const urlDoTema = (cor: string, modo: string) => caminhoDoTema(cor, modo)
  * ela resolvia na hora, e quem usava `await` não esperava nada) e tratar o
  * `error`, para um CSS que falhe não deixar a interface em promessa pendente.
  */
+/**
+ * Põe no `<html>` a classe do modo em vigor.
+ *
+ * ⚠️ **O CSS sozinho não basta.** A classe `layout-${modo}` é o que define
+ * `--menu-bg` e as superfícies do shell (sidebar, topbar), e ela é escrita no
+ * servidor, em `app/layout.tsx`. Sem atualizá-la aqui, trocar para um tema
+ * escuro deixava o CSS escuro e a **barra lateral branca** - some ao recarregar,
+ * porque aí o servidor reescreve a classe certa.
+ *
+ * `layout-colorscheme-menu` não é tocada: ela não depende do modo.
+ */
+const aplicaClasseDoModo = (modo: string) => {
+  if (typeof document === 'undefined') return;
+
+  const html = document.documentElement;
+
+  // Remove o modo anterior antes de pôr o novo: as três classes juntas fariam
+  // a última do CSS vencer, que não é necessariamente a escolhida.
+  //
+  // `MODOS_TEMA` traz objetos (`{ id, rotulo, descricao }`), não strings - daí
+  // o `.id`. Sem ele a classe sairia como `layout-[object Object]`.
+  MODOS_TEMA.forEach((m) => html.classList.remove(`layout-${m.id}`));
+  html.classList.add(`layout-${modo}`);
+};
+
 export const aplicaTema = (cor: string, modo: string): Promise<void> =>
   new Promise((resolve) => {
     if (typeof document === 'undefined') return resolve();
 
     const link = document.getElementById('theme-link') as HTMLLinkElement | null;
     const novoHref = urlDoTema(cor, modo);
+
+    // Antes de tudo, e fora do `if` abaixo: trocar só o modo dentro da mesma
+    // cor mantém o mesmo href em alguns casos, e a classe precisa mudar
+    // mesmo assim.
+    aplicaClasseDoModo(modo);
 
     if (!link || link.getAttribute('href') === novoHref) return resolve();
 
