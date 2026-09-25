@@ -11,11 +11,14 @@ import { ChavePreferencia, PreferenciasUsuario } from '@/Interfaces';
 export const PREFERENCIAS_PADRAO: PreferenciasUsuario = {
   tema: 'automatec',
   modo_tema: 'claro',
-  notif_chat_interno: true,
-  notif_mensagem_cliente: true,
+  notif_habilitadas: true,
   notif_fila: false,
+  notif_mensagem_cliente: true,
+  notif_chat_interno: true,
   notif_transferencia: true,
-  notif_com_portal_aberto: true,
+  notif_som: true,
+  notif_alerta_tela: true,
+  notif_navegador: true,
 };
 
 type PreferenciasStore = {
@@ -33,7 +36,7 @@ type PreferenciasStore = {
  * login e só traz as preferências que existiam naquele momento - uma
  * preferência nova ficaria ausente até a pessoa sair e entrar de novo, caindo
  * no padrão do código em vez do que está no banco. Foi exatamente o que
- * aconteceu com `notif_com_portal_aberto`: a tela mostrava ligada (lia da API)
+ * aconteceu com uma opção nova: a tela a mostrava ligada (lia da API)
  * e o disparo a considerava desligada (lia do cookie).
  *
  * Com a store, quem carrega é o `ChatInterno` uma vez, e quem salva no perfil

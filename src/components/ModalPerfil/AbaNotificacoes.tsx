@@ -1,70 +1,92 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from 'primereact/button';
 import { InputSwitch } from 'primereact/inputswitch';
-import { Message } from 'primereact/message';
 import { ProgressSpinner } from 'primereact/progressspinner';
+import { classNames } from 'primereact/utils';
 
 import { useNotificacaoDispositivo } from '@/hooks/useNotificacaoDispositivo';
-import { usePreferenciasStore } from '@/store/usePreferenciasStore';
-import { PreferenciaParaTela } from '@/Interfaces';
+import { PreferenciaParaTela, PreferenciasUsuario } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta } from '@/service/Util';
+import { Alerta, CatchAlerta } from '@/service/Util';
+import { usePreferenciasStore } from '@/store/usePreferenciasStore';
 
 type Props = {
   itens: PreferenciaParaTela[];
   carregando: boolean;
-  /** Recarrega o cookie `userInfo`, para as preferências valerem já. */
+  /** Recarrega o cookie `userInfo` e o catálogo depois de salvar. */
   onSalvo: () => void;
 };
 
+type Secao = NonNullable<PreferenciaParaTela['secao']>;
+
+/** Os títulos das seções, na ordem em que aparecem. */
+const SECOES: { chave: Exclude<Secao, 'geral'>; titulo: string }[] = [
+  { chave: 'mensagens', titulo: 'Mensagens' },
+  { chave: 'movimentacoes', titulo: 'Movimentações' },
+  { chave: 'entrega', titulo: 'Entrega' },
+];
+
+const ICONES: Record<string, string> = {
+  notif_habilitadas: 'fa-regular fa-bell',
+  notif_fila: 'fa-regular fa-clock',
+  notif_mensagem_cliente: 'fa-regular fa-user-check',
+  notif_chat_interno: 'fa-regular fa-users',
+  notif_transferencia: 'fa-regular fa-arrow-right-arrow-left',
+  notif_som: 'fa-regular fa-volume',
+  notif_alerta_tela: 'fa-regular fa-message',
+  notif_navegador: 'fa-regular fa-window-maximize',
+};
+
 /**
- * Onde a pessoa escolhe o que quer ser avisada.
+ * Onde a pessoa escolhe o que quer ser avisada, e como.
  *
- * ⚠️ São **duas** camadas, e a tela precisa mostrar as duas: a permissão do
- * navegador (que vale para o site inteiro) e a preferência por evento. Ligar a
- * segunda sem conceder a primeira não faz nada, e sem esta explicação pareceria
- * defeito.
+ * Separa **o que** avisa (mensagens, movimentações) de **como** avisa (entrega),
+ * com uma chave geral no topo - organização da referência que o usuário trouxe.
+ *
+ * Grava pelo botão Salvar, não a cada clique: com a chave geral, desligar e
+ * religar para experimentar faria uma chamada por toque, e o Cancelar precisa
+ * ter para onde voltar.
  */
 const AbaNotificacoes = ({ itens, carregando, onSalvo }: Props) => {
   const { FetchReq } = useApi();
-  const { permissao, permitida, bloqueada, indisponivel, pedirPermissao } =
-    useNotificacaoDispositivo();
+  const { permissao, bloqueada, indisponivel, pedirPermissao } = useNotificacaoDispositivo();
+  const definir = usePreferenciasStore((s) => s.definir);
 
-  // O disparo lê da store: sem isto, ligar uma opção só valeria na próxima
-  // carga de página.
-  const definirUma = usePreferenciasStore((s) => s.definirUma);
+  const notificacoes = useMemo(
+    () => itens.filter((item) => item.grupo === 'notificacoes'),
+    [itens],
+  );
 
-  // Otimista: o switch vira na hora e a chamada acontece atrás. Esperar a
-  // resposta deixaria o controle travado por um instante a cada clique.
-  const [valores, setValores] = useState<Record<string, boolean>>({});
-  const [salvando, setSalvando] = useState<string | null>(null);
+  // O que está gravado, e o rascunho que a tela edita.
+  const gravado = useMemo(
+    () => Object.fromEntries(notificacoes.map((i) => [i.chave, i.valor === true])),
+    [notificacoes],
+  );
+  const [rascunho, setRascunho] = useState<Record<string, boolean>>(gravado);
+  const [salvando, setSalvando] = useState(false);
 
-  const notificacoes = itens.filter((item) => item.grupo === 'notificacoes');
+  useEffect(() => setRascunho(gravado), [gravado]);
 
-  const valorDe = (item: PreferenciaParaTela) =>
-    valores[item.chave] ?? (item.valor as boolean);
+  const alterados = Object.keys(rascunho).filter((k) => rascunho[k] !== gravado[k]);
+  const habilitadas = rascunho.notif_habilitadas !== false;
 
-  const alternar = async (item: PreferenciaParaTela, ligado: boolean) => {
-    setValores((atual) => ({ ...atual, [item.chave]: ligado }));
-    setSalvando(item.chave);
+  const salvar = async () => {
+    const preferencias = Object.fromEntries(alterados.map((k) => [k, rascunho[k]]));
 
     try {
-      await FetchReq({
-        endpoint: 'AtualizarPreferencias',
-        body: { preferencias: { [item.chave]: ligado } },
-      });
+      setSalvando(true);
+      await FetchReq({ endpoint: 'AtualizarPreferencias', body: { preferencias } });
 
-      definirUma(item.chave, ligado);
+      // O disparo lê da store: sem isto, a mudança só valeria na próxima carga.
+      definir(preferencias as Partial<PreferenciasUsuario>);
       onSalvo();
+      Alerta('Preferências salvas', '', 'success');
     } catch (erro) {
-      // Desfaz o otimismo: deixar o switch na posição nova mentiria sobre o
-      // que está gravado.
-      setValores((atual) => ({ ...atual, [item.chave]: !ligado }));
-      CatchAlerta(erro, 'Não foi possível salvar a preferência');
+      CatchAlerta(erro, 'Não foi possível salvar as preferências');
     } finally {
-      setSalvando(null);
+      setSalvando(false);
     }
   };
 
@@ -76,73 +98,111 @@ const AbaNotificacoes = ({ itens, carregando, onSalvo }: Props) => {
     );
   }
 
+  // Função que desenha, e não componente: declarado aqui dentro, um
+  // componente seria "novo" a cada render e remontaria os interruptores.
+  const desenharItem = (item: PreferenciaParaTela, desabilitado = false) => (
+    <div
+      className={classNames(
+        'flex align-items-center gap-3 border-1 surface-border border-round p-3',
+        desabilitado && 'opacity-50',
+      )}
+    >
+      <span
+        className="flex align-items-center justify-content-center border-round surface-100 text-primary flex-shrink-0"
+        style={{ width: '2.25rem', height: '2.25rem' }}
+      >
+        <i className={ICONES[item.chave] ?? 'fa-regular fa-bell'} />
+      </span>
+
+      <div className="flex-1">
+        <span className="block font-medium">{item.rotulo}</span>
+        <small className="text-color-secondary">{item.descricao}</small>
+      </div>
+
+      <InputSwitch
+        checked={rascunho[item.chave] === true}
+        disabled={desabilitado || salvando}
+        onChange={(e) => setRascunho((atual) => ({ ...atual, [item.chave]: Boolean(e.value) }))}
+      />
+    </div>
+  );
+
+  const geral = notificacoes.find((i) => i.secao === 'geral');
+
   return (
     <div className="flex flex-column gap-3">
-      {indisponivel && (
-        <Message
-          severity="warn"
-          text="Este navegador não oferece notificações. O som continua funcionando."
-        />
-      )}
+      {geral && desenharItem(geral)}
 
-      {bloqueada && (
-        <Message
-          severity="error"
-          // O navegador não pergunta de novo depois de negada: só o próprio
-          // usuário reverte, e ele precisa saber onde.
-          text="As notificações estão bloqueadas para este site. Para liberar, clique no cadeado ao lado do endereço e permita as notificações."
-        />
-      )}
+      {SECOES.map(({ chave, titulo }) => {
+        const daSecao = notificacoes.filter((i) => i.secao === chave);
+        if (!daSecao.length) return null;
 
-      {permissao === 'default' && (
-        <div className="surface-100 border-round p-3 flex flex-column sm:flex-row sm:align-items-center gap-3">
-          <div className="flex-1">
-            <span className="block font-medium">Permitir notificações</span>
-            <small className="text-color-secondary">
-              O navegador vai pedir sua confirmação. Sem ela, os avisos abaixo não aparecem.
-            </small>
-          </div>
-          <Button
-            label="Permitir"
-            icon="fa-regular fa-bell"
-            onClick={pedirPermissao}
-            style={{ width: 'auto' }}
-          />
-        </div>
-      )}
-
-      {permitida && (
-        <Message
-          severity="success"
-          text="As notificações estão liberadas neste navegador."
-        />
-      )}
-
-      <p className="mt-2 mb-0 text-color-secondary">
-        Escolha o que deve chegar como aviso do sistema. Você é avisado mesmo com o portal
-        em outra aba, minimizado ou em segundo plano.
-      </p>
-
-      <div className="flex flex-column gap-2">
-        {notificacoes.map((item) => (
+        return (
           <div
-            key={item.chave}
-            className="flex align-items-center gap-3 border-1 surface-border border-round p-3"
+            key={chave}
+            className="flex flex-column gap-2"
           >
-            <div className="flex-1">
-              <span className="block font-medium">{item.rotulo}</span>
-              <small className="text-color-secondary">{item.descricao}</small>
-            </div>
+            <span className="text-xs font-bold text-color-secondary uppercase mt-2">{titulo}</span>
 
-            <InputSwitch
-              checked={valorDe(item)}
-              onChange={(e) => alternar(item, Boolean(e.value))}
-              // Desabilitar sem permissão deixaria a pessoa sem entender por
-              // quê; ela pode escolher agora e liberar depois.
-              disabled={salvando === item.chave}
-            />
+            {daSecao.map((item) => (
+              <div key={item.chave}>
+                {/* Com a chave geral desligada o resto fica apagado, mas
+                    visível: a pessoa vê o que voltaria a valer ao religá-la. */}
+                {desenharItem(item, !habilitadas)}
+
+                {/* A permissão do navegador só importa para este canal. Ligar
+                    sem concedê-la não faria nada, e sem a explicação pareceria
+                    defeito. */}
+                {item.chave === 'notif_navegador' && habilitadas && rascunho.notif_navegador && (
+                  <div className="mt-2 ml-1">
+                    {indisponivel && (
+                      <small className="text-orange-500">
+                        Este navegador não oferece notificações.
+                      </small>
+                    )}
+
+                    {bloqueada && (
+                      <small className="text-red-500">
+                        Bloqueadas neste navegador. Para liberar, clique no cadeado ao lado do
+                        endereço e permita as notificações.
+                      </small>
+                    )}
+
+                    {permissao === 'default' && (
+                      <Button
+                        label="Permitir no navegador"
+                        icon="fa-regular fa-bell"
+                        size="small"
+                        outlined
+                        onClick={pedirPermissao}
+                        style={{ width: 'auto' }}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
+        );
+      })}
+
+      <div className="flex justify-content-end gap-2 mt-2">
+        <Button
+          label="Cancelar"
+          severity="secondary"
+          outlined
+          disabled={!alterados.length || salvando}
+          onClick={() => setRascunho(gravado)}
+          style={{ width: 'auto' }}
+        />
+        <Button
+          label="Salvar"
+          icon="fa-regular fa-check"
+          loading={salvando}
+          disabled={!alterados.length}
+          onClick={salvar}
+          style={{ width: 'auto' }}
+        />
       </div>
     </div>
   );

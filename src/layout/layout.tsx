@@ -116,12 +116,16 @@ const Layout = (props: ChildContainerProps) => {
   };
 
   const changeMenuStyle = () => {
-    if (pathname.includes('/chat') && layoutConfig.menuMode !== 'overlay') {
+    // Segmento exato (`/chat` ou `/chat/...`), não substring: `.includes('/chat')`
+    // também casava com `/chatbot` e escondia o menu lá por engano.
+    const emTelaDeChat = pathname === '/chat' || pathname.startsWith('/chat/');
+
+    if (emTelaDeChat && layoutConfig.menuMode !== 'overlay') {
       setLayoutConfig((prevLayoutConfig) => ({
         ...prevLayoutConfig,
         menuMode: 'overlay',
       }));
-    } else if (!pathname.includes('/chat') && layoutConfig.menuMode !== 'drawer') {
+    } else if (!emTelaDeChat && layoutConfig.menuMode !== 'drawer') {
       setLayoutConfig((prevLayoutConfig) => ({
         ...prevLayoutConfig,
         menuMode: 'drawer',

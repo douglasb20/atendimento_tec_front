@@ -11,12 +11,14 @@ import { fixHeartEmoji, nomeCompleto } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import { Breadcrumb } from '@/types';
 import { Badge } from 'primereact/badge';
+import { Button } from 'primereact/button';
 import { classNames } from 'primereact/utils';
 
 import AcoesConversa from './AcoesConversa';
+import ModalNovoAtendimento from './ModalNovoAtendimento';
 import AbasConversa, { AbaConversa } from '../../_ChatInterno/AbasConversa';
 import ListaColegas from '../../_ChatInterno/ListaColegas';
-import { useAvisarEvento } from '@/hooks/useAvisarEvento';
+import { podeTocarSom, useAvisarEvento } from '@/hooks/useAvisarEvento';
 import { useChatInterno } from '@/hooks/useChatInterno';
 import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -69,6 +71,7 @@ const ConversationSection = () => {
   const { setBreadcrumbs } = useLayoutStore();
   const { FetchReq } = useApi();
   const [grupoAtivo, setGrupoAtivo] = useState<GrupoAtendimento>('todos');
+  const [modalNovoAberto, setModalNovoAberto] = useState(false);
   const windowFocusedRef = useRef(true);
   const activeChatRef = useRef(activeChat);
 
@@ -177,12 +180,19 @@ const ConversationSection = () => {
     }
   };
 
+  /** A conversa criada pelo modal entra na lista e abre na hora, como se o
+   * atendente tivesse clicado nela - mesmo caminho de `loadConversationMessage`. */
+  const onNovoAtendimentoCriado = (conversa: SupportChatsResponse) => {
+    updateChat(conversa);
+    loadConversationMessage(Number(conversa.id));
+  };
+
   /**
    * Decide quais notificações um `chat_state` merece.
    *
-   * Três eventos saem do mesmo payload, porque é ele que carrega o estado
-   * inteiro da conversa - o `whatsapp:messages` só chega para a conversa
-   * aberta, e as outras passariam em branco.
+   * Só a transferência sai daqui: é mudança de dono, que o `chat_state`
+   * carrega. Mensagem nova - na fila ou em atendimento - vem do
+   * `whatsapp:messages`, logo abaixo.
    *
    * `anterior` é o estado antes do `updateChat`: sem ele não dá para saber se
    * algo *mudou* - toda atualização pareceria uma transferência nova.
@@ -199,24 +209,7 @@ const ConversationSection = () => {
     // descarta -, e comparar contra ele nunca acusava aumento. Quem avisa é o
     // `whatsapp:messages`, que carrega a mensagem inteira com `from_me`.
 
-    // 1. Conversa nova esperando na fila - só na entrada, não a cada
-    //    atualização de uma que já estava lá.
-    const entrouNaFila =
-      grupoDaConversa(chat) === 'fila' && (!anterior || grupoDaConversa(anterior) !== 'fila');
-
-    if (entrouNaFila) {
-      avisar({
-        preferencia: 'notif_fila',
-        titulo: 'Novo atendimento na fila',
-        corpo: `${nome} está aguardando atendimento.`,
-        icone: chat.contact?.avatar_url,
-        tag: `fila-${chat.id}`,
-        url: `/chat/${chat.id}`,
-        aoClicar: abrirConversa,
-      });
-    }
-
-    // 2. Transferido para mim: o dono mudou e agora sou eu.
+    // Transferido para mim: o dono mudou e agora sou eu.
     const virouMinha =
       Number(chat.user_id) === Number(usuarioId) &&
       anterior != null &&
@@ -268,8 +261,18 @@ const ConversationSection = () => {
         );
         const nome = nomeCompleto(conversa?.contact ?? chat?.contact) || 'Contato';
 
+        // O status vem do payload, que é o mais recente; a da lista pode ainda
+        // não ter recebido o `chat_state` desta mesma mensagem. A primeira
+        // mensagem de um contato novo cai aqui como "na fila" - é ela que
+        // substituiu o antigo aviso de "atendimento novo na fila".
+        const estado =
+          (chat as SupportChatsResponse)?.support_chat_status_id != null
+            ? (chat as SupportChatsResponse)
+            : conversa;
+        const naFila = estado != null && grupoDaConversa(estado) === 'fila';
+
         avisar({
-          preferencia: 'notif_mensagem_cliente',
+          preferencia: naFila ? 'notif_fila' : 'notif_mensagem_cliente',
           titulo: nome,
           corpo: previaDoWhatsapp(msg),
           icone: conversa?.contact?.avatar_url ?? chat?.contact?.avatar_url,
@@ -293,7 +296,7 @@ const ConversationSection = () => {
 
       updateChat(payload);
 
-      if (!windowFocusedRef.current) {
+      if (!windowFocusedRef.current && podeTocarSom()) {
         await notificationSound?.play();
       }
 
@@ -383,10 +386,27 @@ const ConversationSection = () => {
         </div>
       ) : (
         <>
-      <FiltroAtendimentos
-        chats={chats}
-        grupoAtivo={grupoAtivo}
-        onSelecionar={setGrupoAtivo}
+      <div className="flex align-items-center justify-content-between gap-2 mb-2">
+        <FiltroAtendimentos
+          chats={chats}
+          grupoAtivo={grupoAtivo}
+          onSelecionar={setGrupoAtivo}
+        />
+        <Button
+          icon="fa-regular fa-message-plus text-lg"
+          rounded
+          text
+          style={{ padding: '0.4rem' }}
+          title="Novo atendimento"
+          aria-label="Novo atendimento"
+          onClick={() => setModalNovoAberto(true)}
+        />
+      </div>
+
+      <ModalNovoAtendimento
+        visible={modalNovoAberto}
+        onHide={() => setModalNovoAberto(false)}
+        onCriado={onNovoAtendimentoCriado}
       />
 
       <ul className="list-none flex-1 m-0 p-0 overflow-auto">

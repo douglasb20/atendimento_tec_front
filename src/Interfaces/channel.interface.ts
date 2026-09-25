@@ -38,6 +38,11 @@ export type ChannelResponse = {
   /** Enviada ao finalizar o atendimento. Mesmas regras da saudação. */
   mensagem_despedida: string | null;
   integration?: { id: number; name: string } | null;
+  /** Os setores atendidos por este canal - só vem populado por
+   * `GET /channels/:id` (`findChannelComSetores`), não na listagem. */
+  departments?: { id: number; name: string }[];
+  /** Enviado ao salvar - substitui todos os vínculos do canal com setores. */
+  department_ids?: number[];
 };
 
 type ChannelStatus = {

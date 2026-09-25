@@ -44,16 +44,14 @@ const CAMINHO_SW = '/sw-notificacoes.js';
  * navegador ignora o pedido automático, e o sintoma é a permissão nunca sair de
  * `default`, sem erro. Por isso o pedido vive num botão, na aba Notificações.
  *
- * ⚠️ **O Opera suprime o aviso enquanto qualquer aba da mesma origem está
- * visível** - não só a que disparou. Medido em 23/09/2026 com uma página de
- * diagnóstico fora do portal: o `onshow` dispara, a notificação é criada, e
- * nada aparece; saindo para uma aba de **outra** origem, ela aparece. Chrome e
- * Firefox não fazem isso, e o Whaticket enfrenta o mesmo no Opera - usa esta
- * mesma API.
+ * ⚠️ **Em `http://localhost`, o Opera não exibe o aviso enquanto uma aba da
+ * mesma origem estiver visível.** O `onshow` dispara e nada aparece; mudando
+ * para uma aba de outra origem, aparece. Em **HTTPS** (homologação) funciona
+ * normalmente com a aba na frente - confirmado em 23/09/2026. Chrome e Firefox
+ * não têm essa diferença.
  *
- * Não há correção possível: a decisão é do navegador, depois de a API
- * confirmar. Antes de investigar um relato de "não notifica", pergunte o
- * navegador e se havia outra aba do portal aberta.
+ * Ou seja: ao testar notificação no Opera, teste em homologação, não em
+ * localhost. O comportamento local engana.
  */
 export const useNotificacaoDispositivo = () => {
   const [permissao, setPermissao] = useState<PermissaoNotificacao>('default');

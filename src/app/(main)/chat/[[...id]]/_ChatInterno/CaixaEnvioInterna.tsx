@@ -131,7 +131,7 @@ const CaixaEnvioInterna = ({
 
     if (grandes.length) {
       Alerta(
-        `${grandes.map((a) => a.name).join(', ')} — o limite é ${LIMITE_MB} MB por arquivo.`,
+        `${grandes.map((a) => a.name).join(', ')} - o limite é ${LIMITE_MB} MB por arquivo.`,
         'Arquivo muito grande',
         'warning',
       );

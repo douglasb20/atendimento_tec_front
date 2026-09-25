@@ -60,7 +60,7 @@ const DtRespostas = ({ value, actions }: DtRespostasProps) => (
             </span>
           </span>
         ) : (
-          <span className="text-500">—</span>
+          <span className="text-500">-</span>
         )
       }
     />

@@ -42,6 +42,16 @@ const DtUsuarios = ({ actions, ...props }) => {
           }
         />
         <Column
+          header="Setores"
+          body={(usuario: IUsuariosResponse) =>
+            usuario.departments?.length ? (
+              usuario.departments.map((setor) => setor.name).join(', ')
+            ) : (
+              <span className="text-500 text-sm">Nenhum</span>
+            )
+          }
+        />
+        <Column
           field="lastlogin_at"
           header="Último login"
           alignHeader="center"

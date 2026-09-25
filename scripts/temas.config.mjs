@@ -177,7 +177,7 @@ export const CORES = [
   },
 ];
 
-/** `claro` é o padrão de quem nunca escolheu — é a cara atual do sistema. */
+/** `claro` é o padrão de quem nunca escolheu - é a cara atual do sistema. */
 export const TEMA_PADRAO = { cor: 'automatec', modo: 'claro' };
 
 /** O caminho que o `<link id="theme-link">` aponta. */

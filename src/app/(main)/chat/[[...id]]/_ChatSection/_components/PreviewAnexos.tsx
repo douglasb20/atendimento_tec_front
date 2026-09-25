@@ -21,6 +21,12 @@ type PreviewAnexosProps = {
   onCancelar: () => void;
   /** Legendas por anexo, indexadas pelo id - cada arquivo leva a sua. */
   onEnviar: (legendas: Record<string, string>) => void;
+  /**
+   * Pré-preenche a legenda do(s) anexo(s) já presentes na primeira
+   * montagem - usado pela resposta rápida, cujo texto vira a legenda da
+   * mídia em vez de ficar solto na caixa de mensagem.
+   */
+  legendasIniciais?: Record<string, string>;
 };
 
 const formataTamanho = (bytes: number) => {
@@ -44,9 +50,13 @@ const PreviewAnexos = ({
   onAdicionar,
   onCancelar,
   onEnviar,
+  legendasIniciais,
 }: PreviewAnexosProps) => {
   const [ativo, setAtivo] = useState(0);
-  const [legendas, setLegendas] = useState<Record<string, string>>({});
+  // Lazy init: só lida na primeira montagem - o componente só existe
+  // enquanto `anexos.length > 0`, então cada abertura da revisão já é uma
+  // montagem nova.
+  const [legendas, setLegendas] = useState<Record<string, string>>(() => legendasIniciais ?? {});
   const legendaRef = useRef<HTMLInputElement>(null);
 
   // Remover o último da lista deixaria o índice fora da faixa.

@@ -8,7 +8,7 @@
 
 export type TipoPreferencia = 'texto' | 'booleano';
 
-/** As que governam notificação - o `useAvisarEvento` só aceita estas. */
+/** Os eventos que podem gerar aviso - o `useAvisarEvento` só aceita estes. */
 export type ChavePreferenciaNotificacao =
   | 'notif_chat_interno'
   | 'notif_mensagem_cliente'
@@ -16,18 +16,22 @@ export type ChavePreferenciaNotificacao =
   | 'notif_transferencia';
 
 /**
- * Governa *quando* avisar, não *o quê*.
+ * Governam *se* e *como* avisar, não *o quê*.
  *
- * Separada das de cima porque não é um evento: nenhum disparo a passa como
- * `preferencia`, e o `useAvisarEvento` a lê por conta própria.
+ * Separadas das de cima porque não são eventos: nenhum disparo as passa como
+ * `preferencia`, e o `useAvisarEvento` as lê por conta própria.
  */
-export type ChavePreferenciaComportamento = 'notif_com_portal_aberto';
+export type ChavePreferenciaEntrega =
+  | 'notif_habilitadas'
+  | 'notif_som'
+  | 'notif_alerta_tela'
+  | 'notif_navegador';
 
 export type ChavePreferencia =
   | 'tema'
   | 'modo_tema'
   | ChavePreferenciaNotificacao
-  | ChavePreferenciaComportamento;
+  | ChavePreferenciaEntrega;
 
 /** O mapa de valores, como vem no cookie `userInfo`. */
 export type PreferenciasUsuario = Record<ChavePreferencia, string | boolean>;
@@ -39,6 +43,8 @@ export type PreferenciaParaTela = {
   descricao: string;
   tipo: TipoPreferencia;
   grupo: 'aparencia' | 'notificacoes';
+  /** Subdivisão da aba de notificações. */
+  secao?: 'geral' | 'mensagens' | 'movimentacoes' | 'entrega';
   padrao: string | boolean;
   opcoes?: readonly string[];
   valor: string | boolean;

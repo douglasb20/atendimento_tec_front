@@ -14,7 +14,7 @@ import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta } from '@/service/Util';
 import { useChatInternoStore } from '@/store/useChatInternoStore';
 import { useChatStore } from '@/store/useChatStore';
-import { useAvisarEvento } from './useAvisarEvento';
+import { podeTocarSom, useAvisarEvento } from './useAvisarEvento';
 import { useUsuarioLogado } from './useUsuarioLogado';
 
 /** Quantas mensagens o histórico carrega de uma vez. */
@@ -166,7 +166,7 @@ export const useChatInterno = ({ ativo = true }: { ativo?: boolean } = {}) => {
       const deOutraPessoa = mensagem.sender_id !== usuarioIdRef.current;
       const naConversaAberta = ativoRef.current?.id === mensagem.sender_id;
 
-      if (deOutraPessoa && !naConversaAberta) {
+      if (deOutraPessoa && !naConversaAberta && podeTocarSom()) {
         notificationSound?.play().catch(() => {
           // O navegador bloqueia áudio antes da primeira interação na página.
           // Silêncio é melhor que um erro no console a cada mensagem.

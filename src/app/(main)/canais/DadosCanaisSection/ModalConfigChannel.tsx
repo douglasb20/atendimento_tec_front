@@ -173,6 +173,16 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
                   <QRCode
                     size={254}
                     value={value?.qr_code || ''}
+                    // A margem branca em volta ("zona de silêncio") é o que o
+                    // leitor usa para achar onde o código começa. Na v3 ela
+                    // vem desligada: no tema claro o fundo branco do modal a
+                    // fazia sem ninguém notar, e no escuro os cantos pretos
+                    // encostavam no fundo escuro - o celular não lia.
+                    includeMargin
+                    // Explícitas para nenhum tema interferir: o leitor precisa
+                    // de escuro sobre claro, sempre.
+                    bgColor="#ffffff"
+                    fgColor="#000000"
                   />
                 )}
               </div>

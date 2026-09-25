@@ -4,7 +4,7 @@ import { CORES, MODOS, TEMA_PADRAO, caminhoDoTema } from '../../../scripts/temas
  * O tema da interface: catálogo, aplicação e persistência.
  *
  * O catálogo vem de `scripts/temas.config.mjs`, o mesmo arquivo que o gerador
- * de CSS lê. Duplicar a lista aqui seria garantir que um dia elas divergissem —
+ * de CSS lê. Duplicar a lista aqui seria garantir que um dia elas divergissem -
  * um card apontando para um CSS que não foi gerado.
  */
 
@@ -32,8 +32,8 @@ export const COOKIE_TEMA = 'tema';
 /**
  * Normaliza o que veio do banco ou do cookie.
  *
- * Tolerante de propósito: um valor desconhecido — de um tema removido do
- * catálogo, ou de um cookie adulterado — cai no padrão em vez de deixar a
+ * Tolerante de propósito: um valor desconhecido - de um tema removido do
+ * catálogo, ou de um cookie adulterado - cai no padrão em vez de deixar a
  * página sem folha de estilo.
  */
 export const normalizaTema = (cor?: string | null, modo?: string | null) => ({
@@ -41,7 +41,7 @@ export const normalizaTema = (cor?: string | null, modo?: string | null) => ({
   modo: MODOS_TEMA.some((m) => m.id === modo) ? modo! : PADRAO.modo,
 });
 
-/** `automatec/claro` — o formato compacto que vai no cookie. */
+/** `automatec/claro` - o formato compacto que vai no cookie. */
 export const serializaTema = (cor: string, modo: string) => `${cor}/${modo}`;
 
 /**
@@ -80,7 +80,7 @@ export const urlDoTema = (cor: string, modo: string) => caminhoDoTema(cor, modo)
  * Troca a folha de estilo do tema sem piscar.
  *
  * ⚠️ **Não altera o `href` no lugar.** Fazer isso deixa a página sem estilo
- * nenhum enquanto o CSS novo baixa — some tudo e volta, o que num arquivo de
+ * nenhum enquanto o CSS novo baixa - some tudo e volta, o que num arquivo de
  * 200 KB é bem visível. Em vez disso, clona o `<link>`, aponta o clone para o
  * CSS novo, insere ao lado e **só remove o antigo quando o novo terminou de
  * carregar**: nunca existe um instante sem folha de estilo.
@@ -154,7 +154,7 @@ export const aplicaTema = (cor: string, modo: string): Promise<void> =>
 /**
  * Grava o cookie que o servidor lê no próximo carregamento.
  *
- * Não é a fonte de verdade — essa é o banco, pelo `users.tema`. O cookie existe
+ * Não é a fonte de verdade - essa é o banco, pelo `users.tema`. O cookie existe
  * só para o `RootLayout` montar o `<link>` certo no primeiro byte e não haver
  * flash de tema errado. Um ano de validade porque é preferência, não sessão.
  *

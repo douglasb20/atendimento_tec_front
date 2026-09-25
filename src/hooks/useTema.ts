@@ -19,11 +19,11 @@ import {
  *
  * Três lugares guardam a escolha, e cada um tem um papel:
  *
- * - **banco** (`users.tema`) — a fonte de verdade, que acompanha a pessoa em
+ * - **banco** (`users.tema`) - a fonte de verdade, que acompanha a pessoa em
  *   qualquer máquina;
- * - **cookie** — espelho lido pelo servidor, para o HTML já sair com o tema
+ * - **cookie** - espelho lido pelo servidor, para o HTML já sair com o tema
  *   certo e não haver flash;
- * - **DOM** — o `<link>` efetivamente carregado.
+ * - **DOM** - o `<link>` efetivamente carregado.
  *
  * O cookie é o que o hook lê ao montar, porque é o mesmo valor que o servidor
  * usou: ler do `userInfo` aqui poderia divergir do que já está pintado e causar

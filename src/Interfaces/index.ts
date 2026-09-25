@@ -17,6 +17,8 @@ export * from './service-alert.interface';
 export * from './system-settings.interface';
 export * from './internal-chat.interface';
 export * from './user-config.interface';
+export * from './department.interface';
+export * from './chatbot.interface';
 
 export enum Masks {
   DATEBR = '99/99/9999',
@@ -82,6 +84,8 @@ export interface IUsuariosResponse {
   permission_group_id?: number | null;
   /** A relação carregada, quando o endpoint a traz - para exibir o nome. */
   permissionGroup?: { id: number; name: string } | null;
+  /** Os setores em que a pessoa atende. Vêm na listagem e no `GET /users/:id`. */
+  departments?: { id: number; name: string }[];
 }
 
 export interface IClientResponse extends ClientResponse {

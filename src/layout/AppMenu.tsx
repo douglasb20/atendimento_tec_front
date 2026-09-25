@@ -156,6 +156,29 @@ const AppMenu = () => {
                 ]),
               ),
             },
+            {
+              // Sob Usuários, junto dos grupos: setor organiza pessoas. A
+              // associação de cada um fica no cadastro do usuário.
+              label: 'Setores',
+              // @ts-ignore
+              icon: `${PrimeIcons.SITEMAP} pi-fw`,
+              to: '/usuarios/setores',
+              visible: liberado(pode('department:view')),
+            },
+          ],
+        },
+        {
+          // Perto de Conexões, de propósito: o chatbot roda em cima de um
+          // canal, e trocar de fluxo é a mesma esfera de quem mexe em canal.
+          label: 'Chatbot',
+          icon: `${PrimeIcons.COMMENTS} pi-fw`,
+          items: [
+            {
+              label: 'Fluxos',
+              icon: `${PrimeIcons.SITEMAP} pi-fw`,
+              to: '/chatbot',
+              visible: liberado(pode('chatbot:view')),
+            },
           ],
         },
         {

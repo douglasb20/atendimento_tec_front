@@ -6,6 +6,8 @@ import { Button } from 'primereact/button';
 import { Dialog as Modal } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
+import { MultiSelect } from 'primereact/multiselect';
+import { TabPanel, TabView } from 'primereact/tabview';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { parseCookies } from 'nookies';
@@ -14,6 +16,7 @@ import * as yup from 'yup';
 import { getUserInfo } from '@/actions/userInfo';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import {
+  DepartmentResponse,
   IUsuariosResponse,
   PermissionGroupResponse,
   Shape,
@@ -38,6 +41,8 @@ type UsuarioForm = Omit<IUsuariosResponse, 'is_requestpassword' | 'lastlogin_at'
   confirma_senha?: string;
   /** O grupo define o que o usuário pode fazer. Nulo é sem acesso a nada. */
   permission_group_id?: number | null;
+  /** Os setores em que a pessoa atende - pode ser mais de um. */
+  department_ids?: number[];
 };
 
 const defaultForm: UsuarioForm = {
@@ -48,6 +53,7 @@ const defaultForm: UsuarioForm = {
   confirma_senha: '',
   avatar_url: null,
   permission_group_id: null,
+  department_ids: [],
 };
 
 /** Opção que representa "sem grupo" - o usuário entra mas não acessa nada. */
@@ -99,6 +105,11 @@ const ModalFormUser = (props: ModalProps) => {
   });
   const [pointerOver, setPointerOver] = useState(false);
   const [grupos, setGrupos] = useState<PermissionGroupResponse[]>([]);
+  const [setores, setSetores] = useState<DepartmentResponse[]>([]);
+  // Distingue "não há setores" de "a lista não carregou": no segundo caso o
+  // campo não pode ir no corpo, senão salvar tiraria a pessoa de todos.
+  const [setoresCarregados, setSetoresCarregados] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState(0);
   const { FetchReq } = ApiClient();
 
   const schema = yup.object<yup.AnyObject, Shape<UsuarioForm>>({
@@ -156,7 +167,9 @@ const ModalFormUser = (props: ModalProps) => {
         <Button
           label="Salvar"
           disabled={!podeSalvar}
-          onClick={() => handleSubmit(onSubmitForm)()}
+          // Todos os campos validados estão na aba "Dados de usuário": com o
+          // erro lá e a pessoa na outra aba, o Salvar pareceria não fazer nada.
+          onClick={() => handleSubmit(onSubmitForm, () => setAbaAtiva(0))()}
         />
       </div>
     );
@@ -213,6 +226,9 @@ const ModalFormUser = (props: ModalProps) => {
         avatar_url: avatarKey,
         changed_avatar,
         permission_group_id: fields.permission_group_id ?? null,
+        // Só com a lista carregada. Ausente, o backend mantém os setores; vazio,
+        // tira a pessoa de todos - e uma falha ao carregar viraria isso.
+        ...(setoresCarregados && { department_ids: fields.department_ids ?? [] }),
       };
 
       if (!data?.id) {
@@ -308,15 +324,29 @@ const ModalFormUser = (props: ModalProps) => {
       }
     };
 
+    const carregarSetores = async () => {
+      try {
+        setSetores((await FetchReq<DepartmentResponse[]>('ListarSetores')) ?? []);
+        setSetoresCarregados(true);
+      } catch {
+        setSetores([]);
+        setSetoresCarregados(false);
+      }
+    };
+
     carregar();
+    carregarSetores();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   useEffect(() => {
     if (visible) {
+      setAbaAtiva(0);
       reset({
         ...defaultForm,
         ...data,
+        // A listagem traz os setores como objetos; o campo trabalha com ids.
+        department_ids: data?.departments?.map((setor) => setor.id) ?? [],
       });
       setAvatarConfig((prev) => ({
         ...prev,
@@ -338,207 +368,266 @@ const ModalFormUser = (props: ModalProps) => {
         onHide={onHide}
         footer={modalFooter}
       >
-        <div className="grid">
-          <div className="col-12 flex justify-content-center ">
-            <div className="relative">
-              <div
-                className="w-10rem h-10rem border-circle relative border-1 border-400 surface-border overflow-hidden flex justify-content-center align-items-center"
-                onMouseOver={() => setPointerOver(true)}
-                onMouseOut={() => setPointerOver(false)}
-              >
-                <Avatar
-                  src={avatarConfig.displayUrl}
-                  alt="Imagem de usuário"
-                  fill
-                  style={{ objectFit: 'cover' }}
-                  sizes="200"
-                  onLoad={() => setAvatarConfig((prev) => ({ ...prev, isLoading: false }))}
-                  onError={() => setAvatarConfig((prev) => ({ ...prev, isLoading: false }))}
-                />
-                <ProgressSpinner
-                  className={classNames(
-                    {
-                      hidden: !avatarConfig.isLoading,
-                    },
-                    'w-3rem',
+        <TabView
+          activeIndex={abaAtiva}
+          onTabChange={(e) => setAbaAtiva(e.index)}
+        >
+          <TabPanel
+            header="Dados de usuário"
+            leftIcon="fa-regular fa-user mr-2"
+          >
+            <div className="grid">
+              <div className="col-12 flex justify-content-center ">
+                <div className="relative">
+                  <div
+                    className="w-10rem h-10rem border-circle relative border-1 border-400 surface-border overflow-hidden flex justify-content-center align-items-center"
+                    onMouseOver={() => setPointerOver(true)}
+                    onMouseOut={() => setPointerOver(false)}
+                  >
+                    <Avatar
+                      src={avatarConfig.displayUrl}
+                      alt="Imagem de usuário"
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      sizes="200"
+                      onLoad={() => setAvatarConfig((prev) => ({ ...prev, isLoading: false }))}
+                      onError={() => setAvatarConfig((prev) => ({ ...prev, isLoading: false }))}
+                    />
+                    <ProgressSpinner
+                      className={classNames(
+                        {
+                          hidden: !avatarConfig.isLoading,
+                        },
+                        'w-3rem',
+                      )}
+                    />
+                    <Button
+                      className={classNames(
+                        {
+                          'opacity-0 cursor-auto pointer-events-none': !showRemoveButton,
+                          'opacity-100': showRemoveButton,
+                        },
+                        'btnRemoveAvatar absolute top-0 left-0 w-full h-full text-2xl transition-all transition-duration-300 ',
+                      )}
+                      icon="pi pi-times"
+                      text
+                      rounded
+                      severity="danger"
+                      pt={{
+                        icon: {
+                          className: 'text-4xl',
+                        },
+                      }}
+                      onClick={onRemoveAvatar}
+                    />
+                  </div>
+                  <Button
+                    className="absolute bottom-0 right-0 border-circle p-2 z-5 shadow-none"
+                    icon="pi pi-camera"
+                    severity="secondary"
+                    rounded
+                    onClick={handleClick}
+                  />
+                </div>
+              </div>
+              {/* Nome e sobrenome dividem a linha; e-mail e senha, as seguintes. O
+              grupo e os setores ficam na aba Configuração. */}
+              <div className="col-6">
+                <Controller
+                  control={control}
+                  name="name"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <LabelPlus
+                        htmlFor={field.name}
+                        text="Nome"
+                        required
+                      />
+                      <InputText
+                        id={field.name}
+                        {...field}
+                        disabled={!podeSalvar}
+                      />
+                      {getFormErrorMessage(fieldState)}
+                    </>
                   )}
-                />
-                <Button
-                  className={classNames(
-                    {
-                      'opacity-0 cursor-auto pointer-events-none': !showRemoveButton,
-                      'opacity-100': showRemoveButton,
-                    },
-                    'btnRemoveAvatar absolute top-0 left-0 w-full h-full text-2xl transition-all transition-duration-300 ',
-                  )}
-                  icon="pi pi-times"
-                  text
-                  rounded
-                  severity="danger"
-                  pt={{
-                    icon: {
-                      className: 'text-4xl',
-                    },
-                  }}
-                  onClick={onRemoveAvatar}
                 />
               </div>
-              <Button
-                className="absolute bottom-0 right-0 border-circle p-2 z-5 shadow-none"
-                icon="pi pi-camera"
-                severity="secondary"
-                rounded
-                onClick={handleClick}
-              />
-            </div>
-          </div>
-          {/* Nome e sobrenome dividem a linha; o grupo, quando existe, fica na
-              de baixo. Antes o nome dividia com o grupo. */}
-          <div className="col-6">
-            <Controller
-              control={control}
-              name="name"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Nome"
-                    required
-                  />
-                  <InputText
-                    id={field.name}
-                    {...field}
-                    disabled={!podeSalvar}
-                  />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
 
-          <div className="col-6">
-            <Controller
-              control={control}
-              name="last_name"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Sobrenome"
-                  />
-                  <InputText
-                    id={field.name}
-                    {...field}
-                    value={field?.value || ''}
-                    disabled={!podeSalvar}
-                  />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
-          <div className="col-6">
-            <Controller
-              control={control}
-              name="email"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Email"
-                    required
-                  />
-                  <InputText
-                    id={field.name}
-                    {...field}
-                    placeholder="exemplo@exemplo.com"
-                    disabled={!podeSalvar}
-                  />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
-          {/* Só aparece quando há grupos para escolher: sem
+              <div className="col-6">
+                <Controller
+                  control={control}
+                  name="last_name"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <LabelPlus
+                        htmlFor={field.name}
+                        text="Sobrenome"
+                      />
+                      <InputText
+                        id={field.name}
+                        {...field}
+                        value={field?.value || ''}
+                        disabled={!podeSalvar}
+                      />
+                      {getFormErrorMessage(fieldState)}
+                    </>
+                  )}
+                />
+              </div>
+              <div className="col-6">
+                <Controller
+                  control={control}
+                  name="email"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <LabelPlus
+                        htmlFor={field.name}
+                        text="Email"
+                        required
+                      />
+                      <InputText
+                        id={field.name}
+                        {...field}
+                        placeholder="exemplo@exemplo.com"
+                        disabled={!podeSalvar}
+                      />
+                      {getFormErrorMessage(fieldState)}
+                    </>
+                  )}
+                />
+              </div>
+              <div className="col-6">
+                <Controller
+                  control={control}
+                  name="senha"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <LabelPlus
+                        htmlFor={field.name}
+                        text="Senha"
+                        required={!data?.id}
+                      />
+                      <InputText
+                        id={field.name}
+                        {...field}
+                        type="password"
+                        disabled={!podeSalvar}
+                      />
+                      {getFormErrorMessage(fieldState)}
+                    </>
+                  )}
+                />
+              </div>
+              <div className="col-6">
+                <Controller
+                  control={control}
+                  name="confirma_senha"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <LabelPlus
+                        htmlFor={field.name}
+                        text="Confirma senha"
+                        required={!data?.id}
+                      />
+                      <InputText
+                        id={field.name}
+                        {...field}
+                        type="password"
+                        disabled={!podeSalvar}
+                      />
+                      {getFormErrorMessage(fieldState)}
+                    </>
+                  )}
+                />
+              </div>
+            </div>
+          </TabPanel>
+
+          <TabPanel
+            header="Configuração"
+            leftIcon="fa-regular fa-sliders mr-2"
+          >
+            <div className="grid">
+              {/* Só aparece quando há grupos para escolher: sem
               `permission_group:view` a lista volta vazia, e um campo
               desabilitado só ocuparia espaço. */}
-          {grupos.length > 0 && (
-            <div className="col-6">
-              <Controller
-                control={control}
-                name="permission_group_id"
-                render={({ field }) => (
-                  <>
-                    <LabelPlus
-                      htmlFor={field.name}
-                      text="Grupo de permissão"
-                      textHelp="Define o que este usuário pode fazer no sistema. Sem grupo, ele entra mas não acessa nada."
-                    />
-                    <Dropdown
-                      id={field.name}
-                      {...field}
-                      className="w-full"
-                      // `SEM_GRUPO` na frente: o valor nulo é escolha legítima
-                      // e precisa ser selecionável de volta depois de trocado.
-                      options={[SEM_GRUPO, ...grupos]}
-                      optionLabel="name"
-                      optionValue="id"
-                      placeholder="Selecione o grupo"
-                      // Sem `user:change_group` ninguém muda o próprio grupo -
-                      // seria promover a si mesmo. O backend recusa com 401.
-                      disabled={!podeSalvar}
-                    />
-                  </>
-                )}
-              />
+              {grupos.length > 0 && (
+                <div className="col-6">
+                  <Controller
+                    control={control}
+                    name="permission_group_id"
+                    render={({ field }) => (
+                      <>
+                        <LabelPlus
+                          htmlFor={field.name}
+                          text="Grupo de acesso"
+                          textHelp="Define o que este usuário pode fazer no sistema. Sem grupo, ele entra mas não acessa nada."
+                        />
+                        <Dropdown
+                          id={field.name}
+                          {...field}
+                          className="w-full"
+                          // `SEM_GRUPO` na frente: o valor nulo é escolha legítima
+                          // e precisa ser selecionável de volta depois de trocado.
+                          options={[SEM_GRUPO, ...grupos]}
+                          optionLabel="name"
+                          optionValue="id"
+                          placeholder="Selecione o grupo"
+                          // Sem `user:change_group` ninguém muda o próprio grupo -
+                          // seria promover a si mesmo. O backend recusa com 401.
+                          disabled={!podeSalvar}
+                        />
+                      </>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Mesmo critério do grupo: sem setores cadastrados, ou sem
+              permissão de listá-los, o campo não aparece. */}
+              {setores.length > 0 && (
+                <div className="col-6">
+                  <Controller
+                    control={control}
+                    name="department_ids"
+                    render={({ field }) => (
+                      <>
+                        <LabelPlus
+                          htmlFor={field.name}
+                          text="Setores"
+                          textHelp="Os setores em que a pessoa atende. Pode ser mais de um."
+                        />
+                        <MultiSelect
+                          id={field.name}
+                          value={field.value ?? []}
+                          onChange={(e) => field.onChange(e.value)}
+                          options={setores}
+                          optionLabel="name"
+                          optionValue="id"
+                          display="chip"
+                          placeholder="Nenhum setor"
+                          filter={setores.length > 6}
+                          className="w-full"
+                          disabled={!podeSalvar}
+                        />
+                      </>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Os dois campos somem sem o que escolher (sem grupos ou setores
+                  cadastrados, ou sem permissão de listá-los); a aba não pode
+                  ficar em branco sem explicação. */}
+              {grupos.length === 0 && setores.length === 0 && (
+                <div className="col-12 text-color-secondary">
+                  Nenhum grupo de acesso ou setor disponível para escolher.
+                </div>
+              )}
             </div>
-          )}
-          
-          <div className="col-6">
-            <Controller
-              control={control}
-              name="senha"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Senha"
-                    required={!data?.id}
-                  />
-                  <InputText
-                    id={field.name}
-                    {...field}
-                    type="password"
-                    disabled={!podeSalvar}
-                  />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
-          <div className="col-6">
-            <Controller
-              control={control}
-              name="confirma_senha"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Confirma senha"
-                    required={!data?.id}
-                  />
-                  <InputText
-                    id={field.name}
-                    {...field}
-                    type="password"
-                    disabled={!podeSalvar}
-                  />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
-        </div>
+          </TabPanel>
+        </TabView>
       </Modal>
     </>
   );

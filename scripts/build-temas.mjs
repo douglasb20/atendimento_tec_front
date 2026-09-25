@@ -1,12 +1,12 @@
 /**
  * Compila os temas a partir do SCSS do Apollo.
  *
- * Gera `public/theme/gerados/<modo>/<cor>/theme.css` — um CSS completo por
+ * Gera `public/theme/gerados/<modo>/<cor>/theme.css` - um CSS completo por
  * combinação, como fazem os temas oficiais do PrimeReact. São 24 arquivos de
  * ~220 KB; só um é carregado por vez, pelo `<link id="theme-link">`.
  *
  * ⚠️ **Os CSS gerados não vão para o git** (ver `.gitignore`): são derivados,
- * pesam ~5 MB somados e conflitariam a cada merge. O build os produz — daí este
+ * pesam ~5 MB somados e conflitariam a cada merge. O build os produz - daí este
  * script rodar no `prebuild`.
  *
  * O mecanismo é o `!default` do Sass: todas as variáveis do tema Apollo estão

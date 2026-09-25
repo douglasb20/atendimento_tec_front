@@ -2,12 +2,13 @@ import { memo, useEffect, useState } from 'react';
 import { Dialog as Modal } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
+import { MultiSelect } from 'primereact/multiselect';
 import { Button } from 'primereact/button';
 import { useForm, Controller } from 'react-hook-form';
 
 import EditorMensagem from '@/components/EditorMensagem';
 import LabelPlus from '@/components/LabelPlus';
-import { ChannelResponse, IntegrationResponse } from '@/Interfaces';
+import { ChannelResponse, DepartmentResponse, IntegrationResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta, getFormErrorMessage, msgRequired } from '@/service/Util';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
@@ -25,6 +26,7 @@ const defaultValues = {
   integration_id: null,
   mensagem_saudacao: '',
   mensagem_despedida: '',
+  department_ids: [],
 };
 
 /** Opção que representa "sem vínculo" - o canal cai na integração padrão. */
@@ -44,6 +46,7 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
   });
   const { FetchReq } = useApi();
   const [integracoes, setIntegracoes] = useState<IntegrationResponse[]>([]);
+  const [setores, setSetores] = useState<DepartmentResponse[]>([]);
 
   const onSubmit = async (data: ChannelResponse) => {
     onComplete && onComplete(data);
@@ -53,6 +56,10 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
     reset({
       ...defaultValues,
       ...value,
+      // `value.departments` só vem populado quando o canal foi recarregado
+      // individualmente (`GET /channels/:id`, `findChannelComSetores`) - a
+      // listagem não traz essa relação.
+      department_ids: value?.departments?.map((setor) => setor.id) ?? [],
     });
   }, [visible, value]);
 
@@ -63,10 +70,14 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
 
     const carregar = async () => {
       try {
-        const dados = await FetchReq<IntegrationResponse[]>('ListarIntegracoes');
-        setIntegracoes((dados ?? []).filter((i) => i.is_active));
+        const [dadosIntegracoes, dadosSetores] = await Promise.all([
+          FetchReq<IntegrationResponse[]>('ListarIntegracoes'),
+          FetchReq<DepartmentResponse[]>('ListarSetores'),
+        ]);
+        setIntegracoes((dadosIntegracoes ?? []).filter((i) => i.is_active));
+        setSetores(dadosSetores ?? []);
       } catch (err) {
-        CatchAlerta(err, 'Não foi possível carregar as integrações');
+        CatchAlerta(err, 'Não foi possível carregar as integrações/setores');
       }
     };
 
@@ -134,6 +145,36 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
               )}
             />
           </div>
+
+          {setores.length > 0 && (
+            <div className="col-12 p-fluid">
+              <Controller
+                control={control}
+                name="department_ids"
+                render={({ field }) => (
+                  <>
+                    <LabelPlus
+                      htmlFor={field.name}
+                      text="Setores"
+                      textHelp="Os setores atendidos por este canal - pode ser mais de um. Sem chatbot ativo, se todos estiverem fora do horário de atendimento, o canal manda a mensagem de ausência do primeiro setor vinculado em vez da saudação."
+                    />
+                    <MultiSelect
+                      id={field.name}
+                      value={field.value ?? []}
+                      onChange={(e) => field.onChange(e.value)}
+                      options={setores}
+                      optionLabel="name"
+                      optionValue="id"
+                      display="chip"
+                      placeholder="Nenhum setor"
+                      disabled={somenteLeitura}
+                    />
+                  </>
+                )}
+              />
+            </div>
+          )}
+
           <div className="col-12">
             <LabelPlus
               text="Mensagem de saudação"

@@ -108,7 +108,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   const onSubmitForm = async (
     data: Pick<
       ChannelResponse,
-      'name' | 'id' | 'integration_id' | 'mensagem_saudacao' | 'mensagem_despedida'
+      'name' | 'id' | 'integration_id' | 'mensagem_saudacao' | 'mensagem_despedida' | 'department_ids'
     >,
   ) => {
     try {
@@ -123,6 +123,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
         // string vazia faria a coluna ter dois jeitos de dizer a mesma coisa.
         mensagem_saudacao: data.mensagem_saudacao?.trim() || null,
         mensagem_despedida: data.mensagem_despedida?.trim() || null,
+        department_ids: data.department_ids ?? [],
       };
 
       if (!data?.id) {
@@ -159,7 +160,14 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   };
 
   const AbrirModalForm = async (canal: ChannelResponse = null) => {
-    setActiveChannel(canal);
+    // A listagem não traz `departments` (custaria o join em toda consulta -
+    // ver `findChannelComSetores`); reconsulta o canal individual para o
+    // MultiSelect de setores abrir pré-marcado.
+    if (canal?.id) {
+      await BuscarCanal(canal.id, false);
+    } else {
+      setActiveChannel(canal);
+    }
     setModalVisible((prev) => ({ ...prev, formChannel: true }));
   };
 

@@ -112,12 +112,6 @@
     }
 }
 
-@media screen and (min-width: 1960px) {
-    .layout-content,
-    .landing-wrapper,
-    .layout-topbar {
-        width: 1700px;
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
-}
+// O template original limitava `.layout-content`/`.layout-topbar` a 1700px
+// centralizados em telas muito largas (>=1960px) - o usuário pediu para o
+// topbar (e o conteúdo) ocuparem a largura inteira sempre, sem esse teto.

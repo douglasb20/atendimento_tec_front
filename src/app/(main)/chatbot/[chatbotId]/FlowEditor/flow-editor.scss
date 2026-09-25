@@ -1,0 +1,27 @@
+// Verde para quem recebe (target), vermelho para quem envia (source) - o
+// React Flow já marca cada `<Handle>` com a classe `target`/`source` sozinho
+// (é o próprio `type` da prop), então isto cobre todos os nós sem precisar
+// de `className` repetido em cada um.
+.react-flow__handle {
+    &.target {
+        background: var(--green-500);
+        border-color: var(--green-700);
+    }
+
+    &.source {
+        background: var(--red-500);
+        border-color: var(--red-700);
+    }
+}
+
+// A ligação em si (o traço entre os nós) - azul, para se diferenciar das
+// cores de entrada/saída dos handles nas pontas.
+.react-flow__edge-path {
+    stroke: var(--blue-500);
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge.selectable:focus .react-flow__edge-path,
+.react-flow__edge.selectable:focus-visible .react-flow__edge-path {
+    stroke: var(--blue-700);
+}

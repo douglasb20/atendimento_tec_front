@@ -122,6 +122,13 @@ export default function SendMessageBox() {
   >('idle');
   const [duration, setDuration] = useState(0); // em segundos
   const [anexos, setAnexos] = useState<AnexoSelecionado[]>([]);
+  // Legenda pré-preenchida quando o anexo vem de uma resposta rápida - o
+  // texto da resposta vira a legenda da mídia, não algo solto na caixa.
+  const [legendasIniciais, setLegendasIniciais] = useState<Record<string, string>>({});
+  // A cópia server-side (`PrepararAnexoRespostaRapida`) roda em paralelo ao
+  // preview, não antes dele - só é aguardada na hora do envio, quando o
+  // resultado (a `mediaKey` definitiva) de fato precisa existir.
+  const copiasEmAndamentoRef = useRef<Record<string, Promise<string>>>({});
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startedAtRef = useRef<number | null>(null);
@@ -246,65 +253,70 @@ export default function SendMessageBox() {
   };
 
   /**
-   * Põe o texto da resposta na caixa, com as variáveis resolvidas.
-   *
+   * Sem anexo: põe o texto na caixa, com as variáveis resolvidas.
    * **Substitui a mensagem inteira**, não só o `/atalho`. Pelo `/` o campo tem
    * apenas o atalho mesmo (é o primeiro caractere, e o token vai até o
    * cursor), então dá no mesmo; pelo botão da barra, enxertar a resposta no
    * meio do que já estava escrito produzia frases emendadas. Uma resposta
    * rápida é a mensagem, não um pedaço dela.
    *
-   * O anexo, quando há, é enfileirado à parte: o backend copia o arquivo do
-   * cadastro para `chat/media/` e devolve a key da cópia, que é o que a
-   * mensagem referencia. Sem a cópia, o cron de retenção apagaria o arquivo do
-   * cadastro alguns meses depois do primeiro uso.
+   * Com anexo: a mídia entra na revisão (`PreviewAnexos`), com o texto como
+   * legenda - o mesmo caminho de conferência de um anexo escolhido à mão,
+   * em vez de enviar direto. Nada vai para a caixa de mensagem neste caso.
    */
   const inserirResposta = async (resposta: QuickReplyResponse) => {
+    fecharLista();
+
+    if (resposta.anexo_key) {
+      // O texto vira legenda na revisão, não fica na caixa - mas o `/atalho`
+      // que disparou a lista precisa sair de lá, senão fica pendurado depois
+      // que a revisão fecha (pelo Enter ou por "Cancelar").
+      setValue('messageText', '', { shouldDirty: true });
+      await abrirRevisaoDaResposta(resposta);
+      return;
+    }
+
     const campo = campoRef.current;
     const texto = resolveVariaveis(resposta.mensagem);
 
     setValue('messageText', texto, { shouldDirty: true });
-    fecharLista();
 
     // Depois do render: mexer na seleção antes dele seria desfeito pelo React.
     requestAnimationFrame(() => {
       campo?.focus();
       campo?.setSelectionRange(texto.length, texto.length);
     });
-
-    if (resposta.anexo_key) {
-      await enviarAnexoDaResposta(resposta);
-    }
   };
 
-  /** Enfileira o anexo da resposta, sem passar por upload. */
-  const enviarAnexoDaResposta = async (resposta: QuickReplyResponse) => {
+  /**
+   * Abre a revisão na hora, baixando o binário direto do `anexo_url` do
+   * cadastro (já disponível na listagem, sem custo de cópia). A cópia
+   * server-side (`PrepararAnexoRespostaRapida`) roda **em paralelo**, e só é
+   * aguardada em `onEnviarAnexos` - antes esperávamos a cópia terminar só
+   * para então baixar o mesmo arquivo de volta, dobrando a espera para o
+   * preview aparecer.
+   */
+  const abrirRevisaoDaResposta = async (resposta: QuickReplyResponse) => {
     try {
-      const copia = await FetchReq<{
-        media_key: string;
-        media_type: string;
-        mimetype: string;
-        file_name: string;
-      }>({ endpoint: 'PrepararAnexoRespostaRapida', variables: [resposta.id] });
+      if (!resposta.anexo_url) throw new Error('Resposta sem URL de anexo');
 
-      const item = {
-        id: `envio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        supportChatId: String(activeChat?.id),
-        chatId: activeChat?.contact?.remote_jid,
-        enviadoEm: new Date().toISOString(),
-        tipo: 'midia' as const,
-        conteudo: '',
-        autor: nomeDoAtendente(),
-        // Já nasce com a key: o `subirArquivo` do Outbox devolve na primeira
-        // linha quando ela existe, e o envio vai direto ao provider.
-        mediaKey: copia.media_key,
-        mediaType: copia.media_type as TipoAnexo,
-        mimetype: copia.mimetype,
-        fileName: copia.file_name,
-      };
+      const binario = await fetch(resposta.anexo_url).then((r) => r.blob());
+      const arquivo = new File([binario], resposta.anexo_nome ?? 'arquivo', {
+        type: resposta.anexo_mimetype ?? binario.type,
+      });
 
-      enfileirar(item);
-      processarItem({ ...item, status: 'pendente', tentativas: 0 }, FetchReq);
+      const id = `anexo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+      tipoAnexoRef.current = resposta.anexo_tipo ?? 'document';
+      setLegendasIniciais({ [id]: resolveVariaveis(resposta.mensagem) });
+      copiasEmAndamentoRef.current[id] = FetchReq<{ media_key: string }>({
+        endpoint: 'PrepararAnexoRespostaRapida',
+        variables: [resposta.id],
+      }).then((copia) => copia.media_key);
+      setAnexos((atuais) => [
+        ...atuais,
+        { id, arquivo, previewUrl: URL.createObjectURL(arquivo) },
+      ]);
     } catch (erro) {
       Alerta('Não foi possível anexar o arquivo da resposta rápida.', 'Aviso', 'warning');
     }
@@ -484,11 +496,11 @@ export default function SendMessageBox() {
   };
 
   /**
-   * A seleção **não** envia: abre a tela de revisão. Enviar é irreversível
+   * Comum a "escolher arquivo" e "colar imagem": valida tamanho e acrescenta
+   * à revisão. **Não envia** - abre a tela de revisão; enviar é irreversível
    * assim que chega ao provider, então o atendente confere antes.
    */
-  const onSelecionarArquivo = (evento: React.ChangeEvent<HTMLInputElement>) => {
-    const selecionados = Array.from(evento.target.files ?? []);
+  const adicionarArquivos = (selecionados: File[]) => {
     if (!selecionados.length) return;
 
     const excedentes = selecionados.filter((a) => a.size > LIMITE_MB * 1024 * 1024);
@@ -502,7 +514,7 @@ export default function SendMessageBox() {
     }
     if (!aceitos.length) return;
 
-    // Acrescenta aos já escolhidos: o botão "+" da revisão reabre este seletor.
+    // Acrescenta aos já escolhidos: o botão "+" da revisão reabre o seletor.
     setAnexos((atuais) => [
       ...atuais,
       ...aceitos.map((arquivo, indice) => ({
@@ -511,6 +523,36 @@ export default function SendMessageBox() {
         previewUrl: URL.createObjectURL(arquivo),
       })),
     ]);
+  };
+
+  const onSelecionarArquivo = (evento: React.ChangeEvent<HTMLInputElement>) => {
+    adicionarArquivos(Array.from(evento.target.files ?? []));
+  };
+
+  /**
+   * Cola uma imagem do clipboard direto na revisão, como o WhatsApp Web
+   * oficial - sem isto, colar um print vira só o campo de texto sem reação
+   * (o navegador não tem o que fazer com uma imagem num `<textarea>`).
+   *
+   * Só imagem: é o único tipo que a área de transferência do sistema carrega
+   * como arquivo pronto (documento/vídeo não têm esse caminho no clipboard).
+   * Texto colado continua indo para a caixa normalmente - `items` traz os
+   * dois tipos juntos quando a origem oferece ambos, e aqui só filtramos o
+   * que é imagem.
+   */
+  const onColarImagem = (evento: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const imagens = Array.from(evento.clipboardData?.items ?? [])
+      .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+      .map((item) => item.getAsFile())
+      .filter((arquivo): arquivo is File => arquivo !== null);
+
+    if (!imagens.length) return;
+
+    // Preveni o comportamento padrão só quando há imagem - colar texto
+    // continua funcionando normalmente no campo.
+    evento.preventDefault();
+    tipoAnexoRef.current = 'image';
+    adicionarArquivos(imagens);
   };
 
   /** Libera os blobs da revisão - sem isto ficam retidos na memória da aba. */
@@ -527,16 +569,45 @@ export default function SendMessageBox() {
   const onCancelarAnexos = () => {
     descartarAnexos(anexos);
     setAnexos([]);
+    setLegendasIniciais({});
+    copiasEmAndamentoRef.current = {};
   };
 
-  /** Confirmada a revisão, cada arquivo vira um item da fila de envio. */
-  const onEnviarAnexos = (legendas: Record<string, string>) => {
+  /**
+   * Confirmada a revisão, cada arquivo vira um item da fila de envio.
+   *
+   * Anexo de resposta rápida: aguarda aqui a cópia server-side que já estava
+   * rodando em paralelo desde a abertura do preview (`abrirRevisaoDaResposta`)
+   * - na prática já deve estar pronta, o tempo de revisão/legenda é maior que
+   * o de copiar um arquivo no storage.
+   */
+  const onEnviarAnexos = async (legendas: Record<string, string>) => {
     const tipo = tipoAnexoRef.current;
     const ehResposta = Boolean(quoted?.message && quoted.mode === ModeQuoted.REPLY);
     const autor = nomeDoAtendente();
     const agora = Date.now();
+    const anexosParaEnviar = anexos;
+    const copiasParaEnviar = copiasEmAndamentoRef.current;
 
-    anexos.forEach(({ id: idAnexo, arquivo }, indice) => {
+    // Sai da revisão na hora - não faz sentido travar a tela esperando a
+    // cópia, que provavelmente já terminou.
+    descartarAnexos(anexos);
+    setAnexos([]);
+    setLegendasIniciais({});
+    copiasEmAndamentoRef.current = {};
+    setQuotedMessage(null, null);
+
+    for (let indice = 0; indice < anexosParaEnviar.length; indice++) {
+      const { id: idAnexo, arquivo } = anexosParaEnviar[indice];
+      // A key pronta faz o Outbox pular o upload (`subirArquivo` devolve na
+      // hora quando `mediaKey` já vem preenchida).
+      let mediaKeyPronta: string | undefined;
+      try {
+        mediaKeyPronta = await copiasParaEnviar[idAnexo];
+      } catch {
+        // Cópia falhou: segue como upload normal, sem key pronta.
+      }
+
       const item = {
         id: `envio-${agora}-${indice}-${Math.random().toString(36).slice(2, 8)}`,
         supportChatId: String(activeChat?.id),
@@ -553,6 +624,7 @@ export default function SendMessageBox() {
         mimetype: arquivo.type,
         fileName: arquivo.name,
         previewUrl: URL.createObjectURL(arquivo),
+        ...(mediaKeyPronta && { mediaKey: mediaKeyPronta }),
         ...(ehResposta && indice === 0 && { quotedMessageId: quoted.message.message_id }),
       };
 
@@ -560,11 +632,7 @@ export default function SendMessageBox() {
       enfileirar(item);
       // A corrente da conversa os envia um a um, na ordem de seleção.
       processarItem({ ...item, status: 'pendente', tentativas: 0 }, FetchReq);
-    });
-
-    descartarAnexos(anexos);
-    setAnexos([]);
-    setQuotedMessage(null, null);
+    }
   };
 
   const menuAnexos: MenuItem[] = [
@@ -640,6 +708,7 @@ export default function SendMessageBox() {
           onAdicionar={() => abrirSeletor(tipoAnexoRef.current)}
           onCancelar={onCancelarAnexos}
           onEnviar={onEnviarAnexos}
+          legendasIniciais={legendasIniciais}
         />
       )}
 
@@ -779,6 +848,7 @@ export default function SendMessageBox() {
                   // o atendente volta a digitar assim que o envio termina, sem
                   // precisar clicar de novo. O `p-disabled` dá a aparência de
                   // desabilitado, com o mesmo tratamento do resto do PrimeReact.
+                  onPaste={onColarImagem}
                   className="w-full max-h-10rem shadow-none border-none"
                   placeholder="Digite sua mensagem..."
                   rows={1}

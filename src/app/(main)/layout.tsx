@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 
 import ChatInterno from '@/app/(main)/chat/[[...id]]/_ChatInterno';
+import AlertasNaTela from '@/components/AlertasNaTela';
 import ModalAlteraSenha from '@/components/ModalAlteraSenha';
 import Layout from '@/layout/layout';
 import { iniciarRenovacaoDeSessao, pararRenovacaoDeSessao } from '@/service/Api/sessaoViva';
@@ -78,6 +79,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
           navegação entre telas, e é aqui que o hook do chat interno assina os
           eventos de socket - uma vez só em toda a aplicação. */}
       <ChatInterno />
+      {/* Os avisos com o portal na frente - o do navegador cobre a aba em
+          segundo plano. Aqui para aparecer em qualquer tela. */}
+      <AlertasNaTela />
       <Layout>{children}</Layout>
     </>
   );

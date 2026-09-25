@@ -22,6 +22,29 @@ export const ListUrl = {
   AtualizarTag: { url: '/tags/{{tag_id}}', method: 'PATCH' },
   RemoverTag: { url: '/tags/{{tag_id}}', method: 'DELETE' },
 
+  // Setores de atendimento. `ListarSetores` também serve ao cadastro de
+  // usuário, que escolhe os setores de cada pessoa.
+  ListarSetores: { url: '/departments', method: 'GET' },
+  AdicionarSetor: { url: '/departments', method: 'POST' },
+  AtualizarSetor: { url: '/departments/{{department_id}}', method: 'PATCH' },
+  RemoverSetor: { url: '/departments/{{department_id}}', method: 'DELETE' },
+  ListarMembrosSetor: { url: '/departments/{{department_id}}/users', method: 'GET' },
+  AtualizarMembrosSetor: { url: '/departments/{{department_id}}/users', method: 'PATCH' },
+  BuscarHorarioSetor: { url: '/departments/{{department_id}}/schedule', method: 'GET' },
+  AtualizarHorarioSetor: { url: '/departments/{{department_id}}/schedule', method: 'PATCH' },
+
+  // Chatbot por fluxo visual. `type=complementar` na query lista os fluxos
+  // complementares (subfluxos), separado da listagem principal.
+  ListarChatbots: { url: '/chatbots', method: 'GET' },
+  ListarFluxosComplementares: { url: '/chatbots?type=complementar', method: 'GET' },
+  BuscarChatbot: { url: '/chatbots/{{chatbot_id}}', method: 'GET' },
+  AdicionarChatbot: { url: '/chatbots', method: 'POST' },
+  AtualizarChatbot: { url: '/chatbots/{{chatbot_id}}', method: 'PATCH' },
+  RemoverChatbot: { url: '/chatbots/{{chatbot_id}}', method: 'DELETE' },
+  BuscarFluxoChatbot: { url: '/chatbots/{{chatbot_id}}/flow', method: 'GET' },
+  SalvarFluxoChatbot: { url: '/chatbots/{{chatbot_id}}/flow', method: 'PUT' },
+  AssinarMediaChatbot: { url: '/chatbots/sign-media', method: 'POST' },
+
   ListarIntegracoes: { url: '/integrations', method: 'GET' },
   BuscarIntegracao: { url: '/integrations/{{integration_id}}', method: 'GET' },
   AdicionarIntegracao: { url: '/integrations', method: 'POST' },
@@ -112,6 +135,7 @@ export const ListUrl = {
   SendMessage: { url: '/support-chats/{{support_chat_id}}/send-message', method: 'POST' },
   SendReaction: { url: '/support-chats/{{support_chat_id}}/send-reaction', method: 'POST' },
   IniciarAtendimentoChat: { url: '/support-chats/{{support_chat_id}}/iniciar', method: 'POST' },
+  CriarAtendimentoNovo: { url: '/support-chats/nova', method: 'POST' },
   MarcarConversaLida: {
     url: '/support-chats/{{support_chat_id}}/marcar-lida',
     method: 'POST',

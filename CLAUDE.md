@@ -317,24 +317,31 @@ de medição, não de suposição: com a aba em foco, o `showNotification` do wo
 cria a notificação (o navegador a lista em `getNotifications()`) e **não a
 exibe** no Opera, enquanto o construtor aparece.
 
-⚠️ **O Opera suprime o aviso enquanto qualquer aba da mesma origem estiver
-visível** - não só a que disparou. O `onshow` dispara e nada aparece; mudando
-para uma aba de outra origem, aparece. Chrome e Firefox não fazem isso. Não há
-correção possível no código: a decisão é do navegador, depois de a API confirmar.
+⚠️ **Em `http://localhost`, o Opera não exibe o aviso enquanto uma aba da mesma
+origem estiver visível** - o `onshow` dispara e nada aparece. Em HTTPS
+(homologação) funciona normalmente com a aba na frente. Chrome e Firefox não têm
+essa diferença. **Teste notificação no Opera em homologação, não em localhost** -
+foram várias rodadas mexendo em código correto por causa disso.
 
 O service worker **não faz push** - não há `push` listener nem chaves VAPID.
 Serve só para exibir, e só com o portal aberto em alguma aba.
 
-Quem decide *se* notificar é `useAvisarEvento`, num lugar só. O silêncio tem
-três causas: sem permissão do navegador, preferência desligada, ou **a mensagem
-chegou na conversa que está aberta** com a aba em foco - e esta última só vale
-com `notif_com_portal_aberto` desligada (o padrão é ligada).
+Quem decide *se* e *como* avisar é `useAvisarEvento`, num lugar só. As
+preferências separam **o que** avisa (mensagens na fila, em atendimento, do chat
+interno; transferência) de **como** avisa (som, alerta na tela, navegador), com
+uma chave geral (`notif_habilitadas`) que desliga tudo, inclusive o som.
 
-⚠️ Estar na tela de chat **não** basta para o silêncio: é preciso que seja a
-conversa aberta. Generalizar isso deixou o portal mudo com a lista aberta e
-nenhuma conversa selecionada. É também a regra do Whaticket, conferida no código
-dele (`NotificationsPopOver`): `ticketId === atual && visibilityState ===
-'visible'`.
+Os dois canais visuais **se revezam, nunca aparecem juntos**: com o portal na
+frente vai o **alerta na tela** (`components/AlertasNaTela`, canto superior
+direito); minimizado ou em outra aba, a **notificação do navegador**. Com o
+portal na frente e a mensagem na conversa já aberta, silêncio.
+
+⚠️ Estar no `/chat` **não** basta para o silêncio: é preciso ser a conversa
+aberta. Generalizar isso já deixou o portal mudo com a lista aberta e nenhuma
+conversa selecionada. É também a regra do Whaticket (`NotificationsPopOver`).
+
+O som não passa por `avisar`: é tocado no `chat_state` e no chat interno, e ali
+obedece a `podeTocarSom()`.
 
 As preferências vêm da **store** `usePreferenciasStore`, carregada da API - não
 do cookie `userInfo`. O cookie é gravado no login e não traz preferência criada
