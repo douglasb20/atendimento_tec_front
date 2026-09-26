@@ -127,7 +127,7 @@ const AppMenu = () => {
           ],
         },
         {
-          label: 'Usuários',
+          label: 'Atendentes',
           // @ts-ignore
           icon: `${PrimeIcons.ADDRESS_BOOK} pi-fw`,
           items: [
@@ -170,8 +170,13 @@ const AppMenu = () => {
         {
           // Perto de Conexões, de propósito: o chatbot roda em cima de um
           // canal, e trocar de fluxo é a mesma esfera de quem mexe em canal.
+          //
+          // ⚠️ Atrás de `SHOW_CHATBOT_MENU` (`next.config.js`): a feature
+          // ainda não fechou, e vai para produção escondida até lá - ligar
+          // só em desenvolvimento, enquanto se trabalha nela.
           label: 'Chatbot',
           icon: `${PrimeIcons.COMMENTS} pi-fw`,
+          visible: process.env.SHOW_CHATBOT_MENU === 'true',
           items: [
             {
               label: 'Fluxos',

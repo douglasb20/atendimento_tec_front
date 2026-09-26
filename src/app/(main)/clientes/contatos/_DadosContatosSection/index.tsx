@@ -108,6 +108,11 @@ export default function DadosContatosSection({ data }: DadosContatosProps) {
         campos: (fields.campos ?? [])
           .filter((c) => c.custom_field_id && c.valor?.trim())
           .map((c) => ({ custom_field_id: c.custom_field_id, valor: c.valor.trim() })),
+        ignore_support: Boolean(fields.ignore_support),
+        ...(fields.changedAvatar && {
+          avatar_url: fields.avatarKey,
+          changed_avatar: true,
+        }),
       };
 
       // `aviso` só vem na criação, quando o número não tem WhatsApp ou não pôde
@@ -162,6 +167,10 @@ export default function DadosContatosSection({ data }: DadosContatosProps) {
           onHide={() => setModalVisible(false)}
           onConfirm={SalvarContato}
           data={selectedContact}
+          onContatoAtualizado={(atualizado) => {
+            setSelectedContact(atualizado);
+            GetContacts();
+          }}
         />
       </>
     )

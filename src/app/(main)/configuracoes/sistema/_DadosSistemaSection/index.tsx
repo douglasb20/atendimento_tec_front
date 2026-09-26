@@ -205,7 +205,7 @@ export default function DadosSistemaSection({ data }: Props) {
         <Message
           severity="warn"
           className="w-full justify-content-start mb-4"
-          text="Estes ajustes valem para todos os usuários do portal."
+          text="Estes ajustes valem para todos os atendentes do portal."
         />
 
         <h3 className="text-900 text-lg font-semibold mb-1">Comportamento</h3>

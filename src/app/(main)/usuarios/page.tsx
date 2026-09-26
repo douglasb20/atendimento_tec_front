@@ -5,7 +5,7 @@ import DadosUsuariosSection from './DadosUsuariosSection';
 import { IUsuariosResponse } from '@/Interfaces';
 
 export const metadata: Metadata = {
-  title: 'Usuários',
+  title: 'Atendentes',
 };
 
 export default async function UsuariosPage() {

@@ -1,7 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Checkbox } from 'primereact/checkbox';
 import { Dialog as Modal } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
+import { TabPanel, TabView } from 'primereact/tabview';
+import { Tooltip } from 'primereact/tooltip';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -9,6 +12,7 @@ import * as yup from 'yup';
 import { getFormErrorMessage, msgRequired } from '@/service/Util';
 import { ContactResponse, ValorCampoForm } from '@/Interfaces';
 import CamposPersonalizados from '@/components/CamposPersonalizados';
+import EditorAvatarContato from '@/components/EditorAvatarContato';
 import InputTelefone, { paraE164 } from '@/components/InputTelefone';
 import LabelPlus from '@/components/LabelPlus';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
@@ -19,9 +23,16 @@ import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
  * Nomeado em vez de usar `ContactResponse` inteiro: quem recebe o `onConfirm`
  * precisa saber que só estes campos chegam preenchidos.
  */
-export type ContactFormFields = Pick<ContactResponse, 'id' | 'name' | 'last_name' | 'phone'> & {
+export type ContactFormFields = Pick<
+  ContactResponse,
+  'id' | 'name' | 'last_name' | 'phone' | 'ignore_support'
+> & {
   /** Campos personalizados escolhidos para este contato. */
   campos?: ValorCampoForm[];
+  /** Presente só quando um upload novo acabou de subir para o storage -
+   * `EditorAvatarContato` já fez o PUT, falta o PATCH gravar a key. */
+  avatarKey?: string | null;
+  changedAvatar?: boolean;
 };
 
 type ModalProps = {
@@ -29,6 +40,10 @@ type ModalProps = {
   onHide: () => void;
   data: ContactResponse;
   onConfirm: (fields: ContactFormFields) => void;
+  /** A foto (upload ou remoção, via `EditorAvatarContato`) persiste sozinha,
+   * fora do submit deste formulário - isto avisa quem chama para atualizar
+   * o estado local e a listagem. */
+  onContatoAtualizado?: (contato: ContactResponse) => void;
 };
 
 const defaultForm: ContactFormFields = {
@@ -36,6 +51,7 @@ const defaultForm: ContactFormFields = {
   name: '',
   last_name: '',
   phone: '',
+  ignore_support: false,
   campos: [],
 };
 
@@ -44,6 +60,7 @@ const schema = yup.object({
   // Opcional: muito contato é empresa ou chega do WhatsApp com uma palavra só.
   last_name: yup.string().notRequired(),
   phone: yup.string().notRequired(),
+  ignore_support: yup.boolean().notRequired(),
   // Adicionou a linha, tem que preencher: uma linha pela metade não significa
   // nada, e o backend a recusaria.
   campos: yup.array().of(
@@ -55,7 +72,7 @@ const schema = yup.object({
 });
 
 function ModalFormulario(props: ModalProps) {
-  const { visible, onHide, data, onConfirm } = props;
+  const { visible, onHide, data, onConfirm, onContatoAtualizado } = props;
 
   const { podeAdicionar, podeEditar, semPermissao } = usePermissoesModulo('contact');
 
@@ -67,6 +84,13 @@ function ModalFormulario(props: ModalProps) {
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
   });
+
+  // Fora do react-hook-form: não é um campo digitado, é o resultado do
+  // upload que `EditorAvatarContato` já fez para o storage.
+  const [avatarPendente, setAvatarPendente] = useState<{
+    avatarKey: string | null;
+    changedAvatar: boolean;
+  } | null>(null);
 
   const modalFooter = () => {
     return (
@@ -89,12 +113,20 @@ function ModalFormulario(props: ModalProps) {
 
   const onSubmitForm = (fields: ContactFormFields) => {
     try {
-      onConfirm && onConfirm(fields);
+      onConfirm &&
+        onConfirm({
+          ...fields,
+          ...(avatarPendente?.changedAvatar && {
+            avatarKey: avatarPendente.avatarKey,
+            changedAvatar: true,
+          }),
+        });
     } catch (error) {}
   };
 
   useEffect(() => {
     if (visible) {
+      setAvatarPendente(null);
       reset({
         ...defaultForm,
         ...data,
@@ -117,7 +149,21 @@ function ModalFormulario(props: ModalProps) {
       onHide={onHide}
       footer={modalFooter}
     >
+      <TabView>
+        <TabPanel
+          header="Dados"
+          leftIcon="fa-regular fa-user mr-2"
+        >
       <div className="grid">
+        <div className="col-12">
+          <EditorAvatarContato
+            contato={data}
+            disabled={somenteLeitura || !data?.id}
+            onChange={setAvatarPendente}
+            onContatoAtualizado={onContatoAtualizado}
+          />
+        </div>
+
         <div className="col-6">
           <Controller
             control={control}
@@ -206,6 +252,44 @@ function ModalFormulario(props: ModalProps) {
           />
         </div>
       </div>
+        </TabPanel>
+
+        <TabPanel
+          header="Configurações"
+          leftIcon="fa-regular fa-gear mr-2"
+        >
+          <div className="grid">
+            <div className="col-12">
+              <Controller
+                control={control}
+                name="ignore_support"
+                render={({ field }) => (
+                  <div className="flex align-items-center gap-2">
+                    <Checkbox
+                      inputId={field.name}
+                      checked={Boolean(field.value)}
+                      disabled={somenteLeitura}
+                      onChange={(e) => field.onChange(e.checked)}
+                    />
+                    <label
+                      htmlFor={field.name}
+                      className="cursor-pointer"
+                    >
+                      Ignorar atendimento
+                    </label>
+                    <i
+                      className="tooltip-ignorar-atendimento pi pi-info-circle text-sm text-primary"
+                      data-pr-tooltip="Mensagens deste contato são descartadas - não geram conversa nem protocolo."
+                      data-pr-position="right"
+                    />
+                    <Tooltip target=".tooltip-ignorar-atendimento" />
+                  </div>
+                )}
+              />
+            </div>
+          </div>
+        </TabPanel>
+      </TabView>
     </Modal>
   );
 }

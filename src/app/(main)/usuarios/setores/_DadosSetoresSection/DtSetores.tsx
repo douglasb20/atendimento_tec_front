@@ -38,7 +38,7 @@ const DtSetores = ({ actions, ...props }) => {
           cadastro de cada usuário. */}
       <Column
         field="total_usuarios"
-        header="Usuários"
+        header="Atendentes"
         headerClassName="w-8rem"
         align="center"
         sortable

@@ -67,6 +67,11 @@ export interface SupportChatsResponse {
   support_chat_status_id: number;
   protocol: string;
   unread_count: number;
+  /** "Marcar como não lida" (ação manual do atendente) - distinto de
+   * `unread_count`, que é mensagem real do contato ainda não vista. A lista
+   * mostra os dois de formas diferentes: número para `unread_count`,
+   * bolinha simples para este campo (como o WhatsApp Web). */
+  marked_unread?: boolean;
   last_message: string;
   last_message_type: string;
   last_message_id: string;

@@ -1,5 +1,52 @@
-import { ChatSlice, ehAtendimentoFinalizado, SupportChatsResponse } from '@/Interfaces';
+import { ChatSlice, ContactResponse, ehAtendimentoFinalizado, SupportChatsResponse } from '@/Interfaces';
 import type { StateCreator } from 'zustand';
+
+/**
+ * Quando cada conversa teve o contato atualizado localmente pela última vez
+ * (`patchActiveChat`), por id de chat.
+ *
+ * `updateChat` (disparado por `whatsapp:chat_state`) pode chegar com um
+ * snapshot do contato montado pelo backend um instante antes de um PATCH já
+ * commitado alhures - sem essa proteção, o evento "atrasado" apagava um
+ * avatar/cadastro recém-salvo (a tela mostrava o dado certo até fechar o
+ * modal, e voltava ao anterior assim que o evento chegava).
+ *
+ * `updated_at` não serve para essa comparação: várias entidades do projeto
+ * (`Contacts` inclusive) usam `onUpdate: 'CURRENT_TIMESTAMP'` do TypeORM, que
+ * só tem efeito no MySQL - no Postgres (o banco daqui) o campo nunca é
+ * preenchido de verdade. Por isso o carimbo é local, só em memória: não
+ * precisa sobreviver a um reload (a API já devolve o dado fresco nesse caso).
+ */
+const patchLocalEm = new Map<string, number>();
+
+/** Curta o bastante para cobrir só a corrida real (evento chegando enquanto
+ * o patch local ainda está "fresco"), longa o bastante para qualquer round
+ * trip de rede plausível. */
+const JANELA_PATCH_LOCAL_MS = 5000;
+
+const contatoRespeitandoPatchLocal = (
+  chatId: string | number,
+  candidato: ContactResponse | undefined,
+  atual: ContactResponse | undefined,
+): ContactResponse | undefined => {
+  if (!candidato) return atual;
+
+  const marcadoEm = patchLocalEm.get(String(chatId));
+  const dentroDaJanela = marcadoEm != null && Date.now() - marcadoEm < JANELA_PATCH_LOCAL_MS;
+
+  return dentroDaJanela ? atual : candidato;
+};
+
+/**
+ * Chame antes de `updateChat`/`patchActiveChat` quando o contato que está
+ * sendo escrito vem de uma ação local de verdade (o atendente acabou de
+ * salvar o cadastro) - não de um evento de socket. É o que dá a
+ * `contatoRespeitandoPatchLocal` a base para recusar um `chat_state`
+ * atrasado que tentaria reverter essa escrita.
+ */
+export const marcarContatoAtualizadoLocalmente = (chatId: string | number) => {
+  patchLocalEm.set(String(chatId), Date.now());
+};
 
 export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set) => ({
   chats: [],
@@ -38,7 +85,11 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
       // zerando o que o outro acabou de somar.
       const mesclar = (atual: SupportChatsResponse) => {
         const { unread_count: _ignorado, ...semContador } = chat;
-        return { ...atual, ...semContador };
+        return {
+          ...atual,
+          ...semContador,
+          contact: contatoRespeitandoPatchLocal(chat.id, chat.contact, atual.contact),
+        };
       };
 
       const novosChats = encerrado
@@ -81,7 +132,6 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
         activeChat: ehAConversaAberta
           ? {
               ...mesclar(activeChat),
-              contact: chat.contact ?? activeChat.contact,
               supportChatStatus: chat.supportChatStatus ?? activeChat.supportChatStatus,
               // O webhook às vezes traz uma mensagem só neste campo.
               supportChatMessages: activeChat.supportChatMessages,
@@ -98,6 +148,12 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
   patchActiveChat: (patch) => {
     set(({ activeChat, chats }) => {
       if (!activeChat) return {};
+
+      // Carimbo só quando o patch mexe no contato - é o único campo que
+      // `updateChat` também escreve, e é aí que existe a corrida a evitar.
+      if (patch.contact) {
+        marcarContatoAtualizadoLocalmente(activeChat.id);
+      }
 
       return {
         activeChat: { ...activeChat, ...patch },

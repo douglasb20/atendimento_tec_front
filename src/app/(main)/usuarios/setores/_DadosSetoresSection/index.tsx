@@ -58,7 +58,7 @@ export default function DadosSetoresSection({ data }: DadosSetoresProps) {
           // ninguém descobrir depois que sumiu de onde atendia.
           setor.total_usuarios
             ? `O setor "${setor.name}" será removido, e ${setor.total_usuarios} ${
-                setor.total_usuarios === 1 ? 'usuário sairá dele' : 'usuários sairão dele'
+                setor.total_usuarios === 1 ? 'atendente sairá dele' : 'atendentes sairão dele'
               }.`
             : `O setor "${setor.name}" será removido.`,
           RemoverSetor,

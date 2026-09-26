@@ -79,8 +79,8 @@ const IdentificacaoContato = ({
       <Avatar
         src={contato?.avatar_url}
         alt={nomeContato}
-        width={60}
-        height={60}
+        width={56}
+        height={56}
         className="border-circle flex-none"
         style={{ objectFit: 'cover' }}
       />

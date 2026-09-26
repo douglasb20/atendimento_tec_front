@@ -56,11 +56,17 @@ const Header = () => {
   const entrarModoSelecao = useSelecaoMensagens((s) => s.entrarModoSelecao);
 
   // As mesmas permissões que o backend exige nas rotas correspondentes.
-  const { podeEditar: podeAgir, podeAcao } = usePermissoesModulo('support.chat');
+  const { podeEditar: podeAgir, podeAcao, carregado: permissoesCarregadas } =
+    usePermissoesModulo('support.chat');
   const podeTransferir = podeAcao('transfer');
   const { podeEditar: podeEditarContato } = usePermissoesModulo('contact');
 
   const [modalAberto, setModalAberto] = useState<ModalAberto>(null);
+  // O painel "Dados do atendimento" tem os dois caminhos para o mesmo modal:
+  // "Editar contato" comum e o aviso de "sem cliente" - o segundo destaca o
+  // campo Cliente, para não parecer que abriu "outra coisa" sem relação com
+  // o que foi pedido.
+  const [focarClienteAoAbrir, setFocarClienteAoAbrir] = useState(false);
   const [modoFinalizar, setModoFinalizar] = useState<ModoFinalizar>('normal');
   const [iniciando, setIniciando] = useState(false);
   const [detalhesAberto, setDetalhesAberto] = useState(false);
@@ -124,7 +130,7 @@ const Header = () => {
 
   return (
     <>
-      <div className="flex align-items-center gap-3 surface-100 border-1 border-primary-700 border-round-top px-3 py-3">
+      <div className="flex align-items-center gap-3 surface-100 border-1 border-primary-700 border-round-top px-3 py-1">
         <IdentificacaoContato
           contato={activeChat.contact}
           ultimaInteracao={activeChat.updated_at ?? activeChat.created_at}
@@ -154,24 +160,30 @@ const Header = () => {
           )}
         </div>
 
-        <AcoesAtendimento
-          aguardando={aguardando}
-          emAndamento={emAndamento}
-          souODono={souODono}
-          finalizado={finalizado}
-          processando={iniciando}
-          onIniciar={iniciarAtendimento}
-          onFinalizar={() => abrirFinalizacao('normal')}
-          onFinalizarSemDespedida={() => abrirFinalizacao('sem-despedida')}
-          onFinalizarSemAtendimento={() => abrirFinalizacao('sem-atendimento')}
-          onMarcarNaoLida={marcarComoNaoLida}
-          onSelecionarMensagens={entrarModoSelecao}
-          onEditarContato={() => setModalAberto('contato')}
-          onTransferir={() => setModalAberto('transferir')}
-          podeAgir={podeAgir}
-          podeTransferir={podeTransferir}
-          podeEditarContato={podeEditarContato}
-        />
+        {/* Antes do cookie de permissões carregar, `podeAgir` é `false` por
+            padrão (ver `usePermissoes`) - sem este guard, os botões de ação
+            piscavam escondidos por um quadro toda vez que o chat abria ou
+            trocava, antes de saber de verdade se o atendente pode agir. */}
+        {permissoesCarregadas && (
+          <AcoesAtendimento
+            aguardando={aguardando}
+            emAndamento={emAndamento}
+            souODono={souODono}
+            finalizado={finalizado}
+            processando={iniciando}
+            onIniciar={iniciarAtendimento}
+            onFinalizar={() => abrirFinalizacao('normal')}
+            onFinalizarSemDespedida={() => abrirFinalizacao('sem-despedida')}
+            onFinalizarSemAtendimento={() => abrirFinalizacao('sem-atendimento')}
+            onMarcarNaoLida={marcarComoNaoLida}
+            onSelecionarMensagens={entrarModoSelecao}
+            onEditarContato={() => setModalAberto('contato')}
+            onTransferir={() => setModalAberto('transferir')}
+            podeAgir={podeAgir}
+            podeTransferir={podeTransferir}
+            podeEditarContato={podeEditarContato}
+          />
+        )}
       </div>
 
       <ModalFinalizarAtendimento
@@ -203,8 +215,9 @@ const Header = () => {
         // Sem `contact:update` o painel abre em leitura, sem o botão de editar.
         onEditar={
           podeEditarContato
-            ? () => {
+            ? (focarCliente) => {
                 setDetalhesAberto(false);
+                setFocarClienteAoAbrir(Boolean(focarCliente));
                 setModalAberto('contato');
               }
             : undefined
@@ -216,6 +229,7 @@ const Header = () => {
         onHide={() => setModalAberto(null)}
         contato={activeChat.contact}
         onConfirm={aoSalvarContato}
+        focarCliente={focarClienteAoAbrir}
       />
     </>
   );

@@ -58,7 +58,7 @@ const AppProfileSidebar = () => {
         {/* Nome e e-mail reais. Este painel vinha do template com "Isabella
             Andolini" cravado, três notificações falsas e itens que não levavam
             a lugar nenhum - tudo isso saiu. */}
-        <span className="text-color-secondary font-medium">{nome || 'Usuário'}</span>
+        <span className="text-color-secondary font-medium">{nome || 'Atendente'}</span>
         <span className="text-color-secondary text-sm mb-5">{email}</span>
 
         <ul className="list-none m-0 p-0">

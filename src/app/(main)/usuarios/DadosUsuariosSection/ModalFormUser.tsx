@@ -252,10 +252,10 @@ const ModalFormUser = (props: ModalProps) => {
         await getUserInfo();
       }
 
-      AlertaCallback('Usuário salvo com sucesso!', () => onConfirm && onConfirm(), 'success');
+      AlertaCallback('Atendente salvo com sucesso!', () => onConfirm && onConfirm(), 'success');
       onHide && onHide();
     } catch (err) {
-      CatchAlerta(err, 'Erro ao salvar usuário');
+      CatchAlerta(err, 'Erro ao salvar atendente');
     } finally {
       setLoading(false);
     }
@@ -364,7 +364,7 @@ const ModalFormUser = (props: ModalProps) => {
         className="p-fluid"
         style={{ width: '60rem' }}
         visible={visible}
-        header={(!data?.id ? 'Adicionar' : 'Alterar') + ' usuário'}
+        header={(!data?.id ? 'Adicionar' : 'Alterar') + ' atendente'}
         onHide={onHide}
         footer={modalFooter}
       >
@@ -373,7 +373,7 @@ const ModalFormUser = (props: ModalProps) => {
           onTabChange={(e) => setAbaAtiva(e.index)}
         >
           <TabPanel
-            header="Dados de usuário"
+            header="Dados de atendente"
             leftIcon="fa-regular fa-user mr-2"
           >
             <div className="grid">
@@ -386,7 +386,7 @@ const ModalFormUser = (props: ModalProps) => {
                   >
                     <Avatar
                       src={avatarConfig.displayUrl}
-                      alt="Imagem de usuário"
+                      alt="Imagem de atendente"
                       fill
                       style={{ objectFit: 'cover' }}
                       sizes="200"
@@ -562,7 +562,7 @@ const ModalFormUser = (props: ModalProps) => {
                         <LabelPlus
                           htmlFor={field.name}
                           text="Grupo de acesso"
-                          textHelp="Define o que este usuário pode fazer no sistema. Sem grupo, ele entra mas não acessa nada."
+                          textHelp="Define o que este atendente pode fazer no sistema. Sem grupo, ele entra mas não acessa nada."
                         />
                         <Dropdown
                           id={field.name}

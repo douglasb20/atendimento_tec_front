@@ -15,6 +15,15 @@ export type ContactResponse = {
   updated_at: string;
   status: number;
   client: ClientResponse | null;
+  /** Contato que nunca terá cliente associado (fornecedor, parceiro etc) -
+   * marcado, finalizar atendimento com ele deixa de exigir cliente. */
+  has_no_client?: boolean;
+  /** Foto definida manualmente (upload) - marcado, o webhook de mensagem
+   * recebida não sobrescreve mais com a foto do WhatsApp. */
+  avatar_is_manual?: boolean;
+  /** Marcado, a mensagem deste contato é descartada já no webhook - nunca
+   * vira atendimento, protocolo ou histórico. */
+  ignore_support?: boolean;
 
   /** Campos personalizados preenchidos, com a definição carregada. */
   camposPersonalizados?: ValorCampoResponse[];

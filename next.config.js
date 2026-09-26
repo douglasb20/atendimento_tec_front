@@ -36,6 +36,10 @@ const nextConfig = {
   env: {
     URL_ENDPOINT: process.env.URL_ENDPOINT,
     WEBSOCKET_HOST: process.env.WEBSOCKET_HOST,
+    // Feature flag do menu "Chatbot", ainda incompleto - sem a variável (ou
+    // fora de "true"), o item some do menu sem afetar rota nem permissão.
+    // Ligada só em desenvolvimento até a entrega fechar.
+    SHOW_CHATBOT_MENU: process.env.SHOW_CHATBOT_MENU,
   },
 };
 

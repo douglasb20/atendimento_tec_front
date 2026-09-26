@@ -5,7 +5,7 @@ import { classNames } from 'primereact/utils';
 import { SupportChatsResponse, SupportChatStatusId } from '@/Interfaces';
 
 /** Grupos da lista lateral. `meus` entra quando houver filtro por atendente. */
-export type GrupoAtendimento = 'todos' | 'fila' | 'andamento';
+export type GrupoAtendimento = 'todos' | 'fila' | 'andamento' | 'chatbot';
 
 type FiltroAtendimentosProps = {
   chats: SupportChatsResponse[];
@@ -38,11 +38,16 @@ const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar }: FiltroAtendimen
       rotulo: 'Espera',
       total: chats.filter((c) => grupoDaConversa(c) === 'fila').length,
     },
+    {
+      id: 'chatbot',
+      rotulo: 'Chatbot',
+      total: chats.filter((c) => grupoDaConversa(c) === 'chatbot').length,
+    },
     { id: 'todos', rotulo: 'Todos', total: chats.length },
   ];
 
   return (
-    <div className="flex align-items-center justify-content-between gap-1 border-bottom-1 surface-border overflow-x-auto px-2 py-3 mb-2">
+    <div className="flex flex-1 align-items-center justify-content-between gap-1 border-bottom-1 surface-border overflow-x-auto px-2 pb-2 pt-3 mb-2">
       {abas.map(({ id, rotulo, total }) => {
         const ativa = id === grupoAtivo;
 

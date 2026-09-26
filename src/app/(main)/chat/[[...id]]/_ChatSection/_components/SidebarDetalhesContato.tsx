@@ -21,8 +21,9 @@ type SidebarDetalhesContatoProps = {
   visible: boolean;
   onHide: () => void;
   contato?: ContactResponse;
-  /** Abre o cadastro para corrigir os dados ou trocar o cliente. */
-  onEditar?: () => void;
+  /** Abre o cadastro para corrigir os dados ou trocar o cliente - `true`
+   * quando veio do aviso de "sem cliente", para o modal destacar esse campo. */
+  onEditar?: (focarCliente?: boolean) => void;
   /**
    * Para onde propagar o contato alterado.
    *
@@ -197,10 +198,10 @@ const SidebarDetalhesContato = ({
             </div>
             {onEditar && (
               <Button
-                label="Associar cliente"
-                icon="fa-regular fa-link"
+                label="Editar contato"
+                icon="fa-regular fa-pen-to-square"
                 size="small"
-                onClick={onEditar}
+                onClick={() => onEditar(true)}
               />
             )}
           </div>
@@ -230,7 +231,7 @@ const SidebarDetalhesContato = ({
             label="Editar contato"
             icon="fa-regular fa-pen-to-square"
             outlined
-            onClick={onEditar}
+            onClick={() => onEditar()}
           />
         )}
       </div>

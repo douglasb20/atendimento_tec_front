@@ -30,7 +30,7 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
   // pelo backend de qualquer forma.
   const ButtonsHeader: IButtonsOthers[] = [
         {
-          label: 'Adicionar usuário',
+          label: 'Adicionar atendente',
           icon: 'pi pi-user-plus',
           action: () => {
             setUsuarioSelecionado(null);
@@ -44,8 +44,8 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
   const acoesTable: IActionTable<IUsuariosResponse>[] = [
     {
       // Sempre visível: sem `:update` o cadastro abre em somente leitura.
-      label: podeEditar ? 'Editar usuário' : 'Visualizar usuário',
-      tooltip: podeEditar ? 'Editar usuário' : 'Ver usuário',
+      label: podeEditar ? 'Editar atendente' : 'Visualizar atendente',
+      tooltip: podeEditar ? 'Editar atendente' : 'Ver atendente',
       icon: podeEditar ? 'pi pi-fw pi-user-edit' : 'pi pi-fw pi-eye',
       command: (data) => {
         GetUserById(data.id);
@@ -53,11 +53,11 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
     },
     {
       isHidden: () => !podeExcluir,
-      label: 'Excluir usuário',
-      tooltip: 'Excluir usuário',
+      label: 'Excluir atendente',
+      tooltip: 'Excluir atendente',
       icon: 'pi pi-fw pi-times',
       bgcolor: 'danger',
-      command: (data) => ConfirmaAcao('Confirma remover este usuario?', RemoverUsuario, data),
+      command: (data) => ConfirmaAcao('Confirma remover este atendente?', RemoverUsuario, data),
     },
   ];
 
@@ -67,7 +67,7 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
       const data = await FetchReq<IUsuariosResponse[]>('ListarUsuarios');
       setUsuarios(data);
     } catch (err) {
-      CatchAlerta(err, 'Erro ao consultar usuários');
+      CatchAlerta(err, 'Erro ao consultar atendentes');
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
       const data = await FetchReq<IUsuariosResponse>('BuscarUsuarioPorId', [id]);
       ShowModalFormUser(data);
     } catch (err) {
-      CatchAlerta(err, 'Erro ao consultar usuários');
+      CatchAlerta(err, 'Erro ao consultar atendentes');
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,7 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
       await sleep(1);
       GetUsers();
     } catch (err) {
-      CatchAlerta(err, 'Erro ao remover usuário.');
+      CatchAlerta(err, 'Erro ao remover atendente.');
     }
   };
 
@@ -108,7 +108,7 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
     rendered && (
       <>
         <TitleCards
-          title="Usuários"
+          title="Atendentes"
           buttons={ButtonsHeader}
         />
 

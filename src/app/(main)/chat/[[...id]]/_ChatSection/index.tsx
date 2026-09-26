@@ -97,10 +97,13 @@ export default function ChatSection(props: ChatSectionProps) {
   return (
     rendered && (
       <React.Fragment>
-        <div className="col-5 md:col-4 lg:col-3 h-full">
+        <div className="col-5 md:col-4 lg:col-3 h-full"
+          style={{ maxWidth: '35rem' }}>
           <ConversationSection />
         </div>
-        <div className="col-7 md:col-8 lg:col-9 h-full">
+        <div className="flex-1 h-full"
+          style={{padding: '0.5rem'}}
+        >
           {/* A conversa interna toma o painel, como no atendimento: é o modo
               normal de uso. O popup existe para quem quiser falar com o colega
               sem largar o cliente, e só aparece quando a pessoa destaca. */}

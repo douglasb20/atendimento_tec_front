@@ -2,14 +2,18 @@
 
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Button } from 'primereact/button';
+import { Checkbox } from 'primereact/checkbox';
 import { Dialog as Modal } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
 import { InputMask } from 'primereact/inputmask';
 import { InputText } from 'primereact/inputtext';
+import { TabPanel, TabView } from 'primereact/tabview';
+import { Tooltip } from 'primereact/tooltip';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 
+import EditorAvatarContato from '@/components/EditorAvatarContato';
 import LabelPlus from '@/components/LabelPlus';
 import useApi from '@/service/Api/ApiClient';
 import { ClientResponse, ContactResponse, Masks } from '@/Interfaces';
@@ -22,6 +26,10 @@ type ModalContatoChatProps = {
   contato?: ContactResponse;
   /** Devolve o contato salvo, já com a relação de cliente carregada. */
   onConfirm: (contato: ContactResponse) => void;
+  /** Aberto a partir do aviso "associe um cliente" (painel de detalhes ou
+   * modal de finalização) - destaca o campo Cliente, para não parecer que o
+   * clique abriu "o formulário inteiro" sem relação com o que foi pedido. */
+  focarCliente?: boolean;
 };
 
 type FormContato = {
@@ -29,6 +37,8 @@ type FormContato = {
   last_name?: string | null;
   phone?: string;
   client_id?: number | null;
+  has_no_client?: boolean;
+  ignore_support?: boolean;
 };
 
 const schema = yup.object({
@@ -36,6 +46,8 @@ const schema = yup.object({
   last_name: yup.string().notRequired(),
   phone: yup.string().notRequired(),
   client_id: yup.number().nullable().notRequired(),
+  has_no_client: yup.boolean().notRequired(),
+  ignore_support: yup.boolean().notRequired(),
 });
 
 /**
@@ -46,25 +58,46 @@ const schema = yup.object({
  * nunca chegou a persistir nada. Mantidos separados para não mexer numa tela em
  * uso; a convergência seria extrair só os campos num componente comum.
  */
-const ModalContatoChat = ({ visible, onHide, contato, onConfirm }: ModalContatoChatProps) => {
+const ModalContatoChat = ({
+  visible,
+  onHide,
+  contato,
+  onConfirm,
+  focarCliente,
+}: ModalContatoChatProps) => {
   const { FetchReq } = useApi();
   const [clientes, setClientes] = useState<ClientResponse[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [modalClienteAberto, setModalClienteAberto] = useState(false);
+  // A remoção do avatar (dentro de `EditorAvatarContato`) persiste sozinha e
+  // devolve o contato atualizado - guardado aqui para o preview refletir na
+  // hora, sem esperar o resto do formulário ser salvo.
+  const [contatoAtual, setContatoAtual] = useState(contato);
+  const [avatarPendente, setAvatarPendente] = useState<{
+    avatarKey: string | null;
+    changedAvatar: boolean;
+  } | null>(null);
 
-  const { control, handleSubmit, reset, setValue } = useForm<FormContato>({
+  const { control, handleSubmit, reset, setValue, watch } = useForm<FormContato>({
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
   });
 
+  const semCliente = watch('has_no_client');
+
   useEffect(() => {
     if (!visible) return;
+
+    setContatoAtual(contato);
+    setAvatarPendente(null);
 
     reset({
       name: contato?.name ?? '',
       last_name: contato?.last_name ?? '',
       phone: contato?.phone ?? '',
       client_id: contato?.client_id ?? null,
+      has_no_client: contato?.has_no_client ?? false,
+      ignore_support: contato?.ignore_support ?? false,
     });
 
     FetchReq<ClientResponse[]>('ListarClientes')
@@ -90,6 +123,12 @@ const ModalContatoChat = ({ visible, onHide, contato, onConfirm }: ModalContatoC
           last_name: campos.last_name?.trim() || null,
           phone: campos.phone?.replace(/\D/g, '') || null,
           ...(campos.client_id && { client_id: campos.client_id }),
+          has_no_client: Boolean(campos.has_no_client),
+          ignore_support: Boolean(campos.ignore_support),
+          ...(avatarPendente?.changedAvatar && {
+            avatar_url: avatarPendente.avatarKey,
+            changed_avatar: true,
+          }),
         },
       });
 
@@ -127,11 +166,27 @@ const ModalContatoChat = ({ visible, onHide, contato, onConfirm }: ModalContatoC
         style={{ width: '45rem' }}
         breakpoints={{ '640px': '95vw' }}
         visible={visible}
-        header="Dados do contato"
+        header={focarCliente ? 'Associar cliente ao contato' : 'Dados do contato'}
         onHide={onHide}
         footer={rodape}
       >
+        <TabView>
+          <TabPanel
+            header="Dados"
+            leftIcon="fa-regular fa-user mr-2"
+          >
         <div className="grid">
+          <div className="col-12">
+            <EditorAvatarContato
+              contato={contatoAtual}
+              onChange={setAvatarPendente}
+              onContatoAtualizado={(atualizado) => {
+                setContatoAtual(atualizado);
+                onConfirm(atualizado);
+              }}
+            />
+          </div>
+
           <div className="col-12 md:col-4">
             <Controller
               control={control}
@@ -227,6 +282,7 @@ const ModalContatoChat = ({ visible, onHide, contato, onConfirm }: ModalContatoC
                       placeholder="Selecione o cliente"
                       filter
                       showClear
+                      disabled={semCliente}
                       emptyMessage="Nenhum cliente cadastrado"
                       className="flex-1"
                     />
@@ -234,6 +290,7 @@ const ModalContatoChat = ({ visible, onHide, contato, onConfirm }: ModalContatoC
                       type="button"
                       icon="fa-regular fa-plus"
                       outlined
+                      disabled={semCliente}
                       tooltip="Cadastrar novo cliente"
                       tooltipOptions={{ position: 'left' }}
                       onClick={() => setModalClienteAberto(true)}
@@ -244,7 +301,72 @@ const ModalContatoChat = ({ visible, onHide, contato, onConfirm }: ModalContatoC
               )}
             />
           </div>
+
+          <div className="col-12">
+            <Controller
+              control={control}
+              name="has_no_client"
+              render={({ field }) => (
+                <div className="flex align-items-center gap-2">
+                  <Checkbox
+                    inputId={field.name}
+                    checked={Boolean(field.value)}
+                    onChange={(e) => {
+                      field.onChange(e.checked);
+                      // Marcar isenta de cliente - o vínculo, se houver,
+                      // deixa de fazer sentido (é ou um, ou o outro).
+                      if (e.checked) setValue('client_id', null);
+                    }}
+                  />
+                  <label
+                    htmlFor={field.name}
+                    className="cursor-pointer"
+                  >
+                    Contato sem cliente (fornecedor, parceiro etc - dispensa
+                    vínculo com cliente para finalizar atendimento)
+                  </label>
+                </div>
+              )}
+            />
+          </div>
         </div>
+          </TabPanel>
+
+          <TabPanel
+            header="Configurações"
+            leftIcon="fa-regular fa-gear mr-2"
+          >
+            <div className="grid">
+              <div className="col-12">
+                <Controller
+                  control={control}
+                  name="ignore_support"
+                  render={({ field }) => (
+                    <div className="flex align-items-center gap-2">
+                      <Checkbox
+                        inputId={field.name}
+                        checked={Boolean(field.value)}
+                        onChange={(e) => field.onChange(e.checked)}
+                      />
+                      <label
+                        htmlFor={field.name}
+                        className="cursor-pointer"
+                      >
+                        Ignorar atendimento
+                      </label>
+                      <i
+                        className="tooltip-ignorar-atendimento pi pi-info-circle text-sm text-primary"
+                        data-pr-tooltip="Mensagens deste contato são descartadas - não geram conversa nem protocolo."
+                        data-pr-position="right"
+                      />
+                      <Tooltip target=".tooltip-ignorar-atendimento" />
+                    </div>
+                  )}
+                />
+              </div>
+            </div>
+          </TabPanel>
+        </TabView>
       </Modal>
 
       <ModalClienteChat

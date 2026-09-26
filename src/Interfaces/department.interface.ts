@@ -31,6 +31,9 @@ export type ScheduleInterval = { weekday: number; start_time: string; end_time: 
 
 /** O horário de atendimento do setor - lista vazia significa sempre disponível. */
 export type DepartmentScheduleResponse = {
+  /** Switch mestre: desligado, o setor é sempre disponível, ignorando os
+   * intervalos abaixo. */
+  schedule_enabled: boolean;
   intervals: ScheduleInterval[];
   absence_message: string | null;
 };

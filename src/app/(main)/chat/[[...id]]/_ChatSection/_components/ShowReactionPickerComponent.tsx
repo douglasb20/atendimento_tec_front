@@ -58,7 +58,11 @@ const ShowReactionPickerComponent = ({ message, bottomEl }: ShowReactionComponen
           },
           'box-reaction absolute w-2rem h-2rem justify-content-center align-items-center border-1 align-self-center mx-1 bg-bluegray-400 border-bluegray-300 p-1 border-round-lg',
         )}
-        style={message.from_me ? { left: '-2.5rem' } : { right: '-2.5rem' }}
+        style={{
+          top: '50%',
+          transform: 'translateY(-50%)',
+          ...(message.from_me ? { left: '-2.60rem' } : { right: '-2.60rem' }),
+        }}
       >
         <i className="fa-regular text-lg fa-face-smile text-white"></i>
       </button>

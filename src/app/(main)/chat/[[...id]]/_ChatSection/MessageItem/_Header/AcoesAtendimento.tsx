@@ -130,7 +130,7 @@ const AcoesAtendimento = ({
           <Button
             label="Finalizar sem atendimento"
             icon="fa-regular fa-ban"
-            severity="secondary"
+            severity="warning"
             outlined
             onClick={onFinalizarSemAtendimento}
             disabled={processando}
@@ -157,6 +157,7 @@ const AcoesAtendimento = ({
           icon="fa-regular fa-check"
           severity="success"
           outlined
+          size='small'
           onClick={onFinalizar}
           model={itensAcoes}
           // Largura pelo item mais longo: o menu herda a medida do gatilho, e

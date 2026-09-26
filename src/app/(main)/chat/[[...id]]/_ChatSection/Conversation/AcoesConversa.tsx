@@ -15,6 +15,7 @@ import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
+import { marcarContatoAtualizadoLocalmente } from '@/store/chatSlice';
 import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 
 import ModalContatoChat from '../_components/ModalContatoChat';
@@ -58,6 +59,9 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
   const [transferirAberto, setTransferirAberto] = useState(false);
   const [detalhesAberto, setDetalhesAberto] = useState(false);
   const [contatoAberto, setContatoAberto] = useState(false);
+  // Mesmo caso do Header do chat: o aviso "sem cliente" destaca o campo
+  // Cliente ao abrir, para não parecer que abriu "outra coisa".
+  const [focarClienteAoAbrir, setFocarClienteAoAbrir] = useState(false);
   const [iniciando, setIniciando] = useState(false);
 
   // Com o menu aberto o ponteiro sai do cartão, e só o `:hover` faria o botão
@@ -172,6 +176,7 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
    * finalizar, que é a ação seguinte.
    */
   const aoSalvarContato = (contato: ContactResponse) => {
+    marcarContatoAtualizadoLocalmente(conversa.id);
     updateChat({ ...conversa, contact: contato });
     setContatoAberto(false);
   };
@@ -236,13 +241,17 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
         onHide={() => setDetalhesAberto(false)}
         contato={conversa.contact}
         // Esta conversa, e não a ativa: o painel foi aberto pela lista.
-        onContatoAtualizado={(contato) => updateChat({ ...conversa, contact: contato })}
+        onContatoAtualizado={(contato) => {
+          marcarContatoAtualizadoLocalmente(conversa.id);
+          updateChat({ ...conversa, contact: contato });
+        }}
         onEditar={
           podeEditarContato
-            ? () => {
+            ? (focarCliente) => {
           // O painel fecha antes: os dois sobrepostos disputam o foco, e o
           // formulário ficaria atrás do que o abriu.
                 setDetalhesAberto(false);
+                setFocarClienteAoAbrir(Boolean(focarCliente));
                 setContatoAberto(true);
               }
             : undefined
@@ -254,6 +263,7 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
         onHide={() => setContatoAberto(false)}
         contato={conversa.contact}
         onConfirm={aoSalvarContato}
+        focarCliente={focarClienteAoAbrir}
       />
     </span>
   );

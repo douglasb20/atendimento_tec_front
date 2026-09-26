@@ -369,13 +369,29 @@ const ConversationSection = () => {
 
   return (
     <div className="card flex flex-column shadow-1 h-full px-2 pt-2">
-      {temChatInterno && (
-        <AbasConversa
-          ativa={abaAtiva}
-          onTrocar={setAbaAtiva}
-          naoLidasInternas={naoLidasInternas}
-        />
-      )}
+      <AbasConversa
+        ativa={abaAtiva}
+        onTrocar={setAbaAtiva}
+        naoLidasInternas={naoLidasInternas}
+        mostrarInterno={temChatInterno}
+        acaoExtra={
+          <Button
+            icon="fa-regular fa-message-plus text-lg"
+            rounded
+            text
+            style={{ padding: '0.4rem' }}
+            title="Novo atendimento"
+            aria-label="Novo atendimento"
+            onClick={() => setModalNovoAberto(true)}
+          />
+        }
+      />
+
+      <ModalNovoAtendimento
+        visible={modalNovoAberto}
+        onHide={() => setModalNovoAberto(false)}
+        onCriado={onNovoAtendimentoCriado}
+      />
 
       {temChatInterno && abaAtiva === 'interno' ? (
         <div className="flex-1 overflow-hidden">
@@ -392,22 +408,7 @@ const ConversationSection = () => {
           grupoAtivo={grupoAtivo}
           onSelecionar={setGrupoAtivo}
         />
-        <Button
-          icon="fa-regular fa-message-plus text-lg"
-          rounded
-          text
-          style={{ padding: '0.4rem' }}
-          title="Novo atendimento"
-          aria-label="Novo atendimento"
-          onClick={() => setModalNovoAberto(true)}
-        />
       </div>
-
-      <ModalNovoAtendimento
-        visible={modalNovoAberto}
-        onHide={() => setModalNovoAberto(false)}
-        onCriado={onNovoAtendimentoCriado}
-      />
 
       <ul className="list-none flex-1 m-0 p-0 overflow-auto">
         {chatsVisiveis.length === 0 ? (
@@ -540,12 +541,23 @@ const ConversationSection = () => {
                   </div>
 
                   {/* Junto da prévia, não numa coluna própria: o espaço só é
-                      ocupado quando há o que contar. */}
-                  {Number(conversation?.unread_count) > 0 && (
+                      ocupado quando há o que contar.
+                      Mensagem real do contato tem prioridade sobre o gesto
+                      manual: se as duas coincidirem, o número já comunica
+                      "tem algo novo" melhor que a bolinha vazia. */}
+                  {Number(conversation?.unread_count) > 0 ? (
                     <Badge
                       className="conversa-meta flex-none bg-primary-500"
                       value={conversation?.unread_count}
                     />
+                  ) : (
+                    conversation?.marked_unread && (
+                      <span
+                        className="conversa-meta flex-none border-circle bg-primary-500"
+                        style={{ width: '1.37rem', height: '1.37rem' }}
+                        aria-label="Marcada como não lida"
+                      />
+                    )
                   )}
                 </div>
               </div>

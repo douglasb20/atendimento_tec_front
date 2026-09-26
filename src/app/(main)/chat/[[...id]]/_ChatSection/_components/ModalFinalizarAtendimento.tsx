@@ -8,7 +8,8 @@ import { useEffect, useState } from 'react';
 
 import useApi from '@/service/Api/ApiClient';
 import { ContactResponse, SupportChatsResponse } from '@/Interfaces';
-import { Alerta, CatchAlerta, formatDuracao, nomeExibicao } from '@/service/Util';
+import { CatchAlerta, formatDuracao, nomeExibicao } from '@/service/Util';
+import { mostrarToast } from '@/components/ToastGlobal';
 import ModalContatoChat from './ModalContatoChat';
 
 /**
@@ -54,6 +55,7 @@ const ModalFinalizarAtendimento = ({
   const [relato, setRelato] = useState('');
   const [finalizando, setFinalizando] = useState(false);
   const [modalContatoAberto, setModalContatoAberto] = useState(false);
+  const [marcandoSemCliente, setMarcandoSemCliente] = useState(false);
 
   useEffect(() => {
     if (visible) setRelato('');
@@ -62,12 +64,34 @@ const ModalFinalizarAtendimento = ({
   const descarte = modo === 'sem-atendimento';
 
   // O descarte não exige cliente: encerrar spam não pode dar mais trabalho do
-  // que atender. Nos outros dois o vínculo continua obrigatório.
-  const semCliente = !descarte && !chat?.contact?.client_id;
+  // que atender. Nos outros dois o vínculo continua obrigatório - a não ser
+  // que o contato esteja marcado como isento (fornecedor, parceiro etc).
+  const semCliente =
+    !descarte && !chat?.contact?.client_id && !chat?.contact?.has_no_client;
 
   const duracao = chat?.answered_at
     ? formatDuracao(Math.floor((Date.now() - parseISO(chat.answered_at).getTime()) / 1000))
     : null;
+
+  /** Atalho para não sair deste modal só para marcar a isenção - mesmo campo
+   * do cadastro completo (`ModalContatoChat`), só que direto daqui. */
+  const marcarSemCliente = async () => {
+    try {
+      setMarcandoSemCliente(true);
+
+      const salvo = await FetchReq<ContactResponse>({
+        endpoint: 'AtualizarContato',
+        variables: [chat.contact.id],
+        body: { has_no_client: true },
+      });
+
+      onContatoAtualizado(salvo);
+    } catch (erro) {
+      CatchAlerta(erro, 'Não foi possível marcar o contato como sem cliente');
+    } finally {
+      setMarcandoSemCliente(false);
+    }
+  };
 
   const finalizar = async () => {
     try {
@@ -85,10 +109,8 @@ const ModalFinalizarAtendimento = ({
 
       onFinalizado(atualizado);
       onHide();
-      Alerta(
+      mostrarToast(
         descarte ? 'Conversa encerrada sem atendimento.' : 'Atendimento finalizado com sucesso!',
-        'Aviso',
-        'success',
       );
     } catch (erro) {
       CatchAlerta(erro, 'Não foi possível finalizar o atendimento');
@@ -173,12 +195,24 @@ const ModalFinalizarAtendimento = ({
                   Este contato ainda não está associado a um cliente. Associe antes de finalizar.
                 </span>
               </div>
-              <Button
-                label="Associar cliente"
-                icon="fa-regular fa-link"
-                size="small"
-                onClick={() => setModalContatoAberto(true)}
-              />
+              <div className="flex gap-2">
+                <Button
+                  label="Associar cliente"
+                  icon="fa-regular fa-link"
+                  size="small"
+                  onClick={() => setModalContatoAberto(true)}
+                />
+                <Button
+                  label="Contato sem cliente"
+                  icon="fa-regular fa-user-slash"
+                  size="small"
+                  outlined
+                  loading={marcandoSemCliente}
+                  tooltip="Para fornecedor, parceiro etc - contatos que nunca terão cliente"
+                  tooltipOptions={{ position: 'top' }}
+                  onClick={marcarSemCliente}
+                />
+              </div>
             </div>
           )}
 
@@ -215,6 +249,7 @@ const ModalFinalizarAtendimento = ({
         onHide={() => setModalContatoAberto(false)}
         contato={chat?.contact}
         onConfirm={onContatoAtualizado}
+        focarCliente
       />
     </>
   );

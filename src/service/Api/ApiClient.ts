@@ -64,6 +64,11 @@ export const ListUrl = {
   AdicionarContato: { url: '/contacts', method: 'POST' },
   AtualizarContato: { url: '/contacts/contact/{{contact_id}}', method: 'PATCH' },
   RemoverContato: { url: '/contacts/contact/{{contact_id}}', method: 'DELETE' },
+  AssinarAvatarContato: { url: '/contacts/contact/{{contact_id}}/sign-avatar', method: 'POST' },
+  BuscarFotoWhatsappContato: {
+    url: '/contacts/contact/{{contact_id}}/buscar-foto-whatsapp',
+    method: 'POST',
+  },
 
   ListarGruposPermissao: { url: '/permission-groups', method: 'GET' },
   BuscarGrupoPermissao: { url: '/permission-groups/{{group_id}}', method: 'GET' },

@@ -178,7 +178,7 @@ function ModalFormSetor({ visible, onHide, data, onConfirm }: ModalProps) {
     <Modal
       modal
       className="p-fluid"
-      style={{ width: '45rem' }}
+      style={{ width: '48rem' }}
       breakpoints={{ '640px': '95vw' }}
       visible={visible}
       header={!data?.id ? 'Novo setor' : 'Alterar setor'}
@@ -252,7 +252,7 @@ function ModalFormSetor({ visible, onHide, data, onConfirm }: ModalProps) {
               <ProgressSpinner className="w-3rem" />
             </div>
           ) : membros.length === 0 ? (
-            <div className="text-color-secondary p-2">Nenhum usuário cadastrado.</div>
+            <div className="text-color-secondary p-2">Nenhum atendente cadastrado.</div>
           ) : (
             <div className="flex flex-column gap-3">
               {membros.map((usuario) => (

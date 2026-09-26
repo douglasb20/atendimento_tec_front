@@ -13,8 +13,19 @@ const AVATAR_PADRAO = '/images/avatar/avatar-noprofile.png';
  * boundary e derruba a página inteira. Avatares do WhatsApp (`pps.whatsapp.net`)
  * caem aqui, e suas URLs têm assinatura com validade, o que as torna más
  * candidatas a otimização de qualquer forma.
+ *
+ * ⚠️ Vazia de propósito: o Backblaze B2 (`s3.eu-central-003.backblazeb2.com`)
+ * já esteve aqui, mas o otimizador do Next (fetch server-side em
+ * `/_next/image`) trava contra esse host - reproduzido direto (`504 Gateway
+ * Timeout`, `"url" parameter is valid but upstream response timed out"`),
+ * enquanto um `curl` para a mesma URL responde em milissegundos. O sintoma
+ * era um avatar recém-enviado (upload confirmado, arquivo existente e
+ * acessível) caindo no placeholder depois do primeiro carregamento - o
+ * `<Image>` falhava no fetch do otimizador, `onError` disparava, e `Avatar`
+ * caía no padrão. Servir sem otimização evita o problema por completo, e o
+ * custo é aceitável: as imagens já saem em tamanho de avatar.
  */
-const HOSTS_OTIMIZAVEIS = ['s3.eu-central-003.backblazeb2.com'];
+const HOSTS_OTIMIZAVEIS: string[] = [];
 
 const podeOtimizar = (url: string) => {
   if (!url.startsWith('http')) return true; // caminho local

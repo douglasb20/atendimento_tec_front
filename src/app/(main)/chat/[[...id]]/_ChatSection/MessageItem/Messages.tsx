@@ -570,7 +570,7 @@ const Messages = () => {
                     message={msg}
                     activeChat={activeChat}
                   />
-                  <div className="relative message-balloon">
+                  <div className="relative message-balloon w-fit">
                     <MenuMessageComponent
                       menuModel={menuModel}
                       message={msg}
@@ -593,11 +593,15 @@ const Messages = () => {
                       activeChat={activeChat}
                     />
                     <ShowReactionMessageComponent message={msg} />
+                    {/* Dentro da bolha (`w-fit`), não do wrapper flex maior
+                        (até 70% da largura do painel) - senão o botão
+                        ancorava longe de mensagens curtas, na borda do
+                        container em vez da borda real do balão. */}
+                    <ShowReactionPickerComponent
+                      message={msg}
+                      bottomEl={bottomEl?.current}
+                    />
                   </div>
-                  <ShowReactionPickerComponent
-                    message={msg}
-                    bottomEl={bottomEl?.current}
-                  />
                 </div>
                 {naFila && (
                   <div className="flex align-items-center gap-2 mt-1 mb-1 text-xs text-600">

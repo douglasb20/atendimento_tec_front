@@ -3,6 +3,8 @@ import { Calendar } from 'primereact/calendar';
 import { InputSwitch } from 'primereact/inputswitch';
 import { PrimeIcons } from 'primereact/api';
 import { ProgressSpinner } from 'primereact/progressspinner';
+import { SelectButton } from 'primereact/selectbutton';
+import { classNames } from 'primereact/utils';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 
 import EditorMensagem from '@/components/EditorMensagem';
@@ -10,6 +12,30 @@ import LabelPlus from '@/components/LabelPlus';
 import { DepartmentScheduleResponse, ScheduleInterval } from '@/Interfaces';
 import ApiClient from '@/service/Api/ApiClient';
 import { Alerta, AlertaCallback, CatchAlerta } from '@/service/Util';
+
+/** Intervalo especial que representa "esse dia é livre, sem restrição de
+ * horário" - reaproveita a estrutura de intervalo existente (uma linha por
+ * bloco de horário) em vez de exigir uma coluna nova só para esse estado. */
+const INTERVALO_DIA_LIVRE = { start_time: '00:00', end_time: '23:59' };
+
+const ehDiaLivre = (intervalos: ScheduleInterval[]) =>
+  intervalos.length === 1 &&
+  intervalos[0].start_time === INTERVALO_DIA_LIVRE.start_time &&
+  intervalos[0].end_time === INTERVALO_DIA_LIVRE.end_time;
+
+type EstadoDia = 'fechado' | 'horario' | 'livre';
+
+const estadoDoDia = (intervalos: ScheduleInterval[]): EstadoDia => {
+  if (intervalos.length === 0) return 'fechado';
+  if (ehDiaLivre(intervalos)) return 'livre';
+  return 'horario';
+};
+
+const OPCOES_ESTADO_DIA: { label: string; value: EstadoDia }[] = [
+  { label: 'Fechado', value: 'fechado' },
+  { label: 'Horário', value: 'horario' },
+  { label: 'Dia livre', value: 'livre' },
+];
 
 /** Domingo primeiro, como a referência visual (Whaticket) - não é a ordem
  * comum de calendário de trabalho brasileiro, mas é a pedida. */
@@ -69,6 +95,7 @@ function HorarioSetorTab(
   const { FetchReq } = ApiClient();
 
   const [carregando, setCarregando] = useState(false);
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [intervalosPorDia, setIntervalosPorDia] = useState<Record<number, ScheduleInterval[]>>({});
   const [mensagemAusencia, setMensagemAusencia] = useState('');
 
@@ -90,6 +117,7 @@ function HorarioSetorTab(
 
         setIntervalosPorDia(agrupado);
         setMensagemAusencia(dados?.absence_message ?? '');
+        setScheduleEnabled(dados?.schedule_enabled ?? false);
       } catch (err) {
         CatchAlerta(err, 'Erro ao carregar o horário do setor');
       } finally {
@@ -101,12 +129,17 @@ function HorarioSetorTab(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ativa, departmentId]);
 
-  const diaLigado = (weekday: number) => (intervalosPorDia[weekday]?.length ?? 0) > 0;
+  const estadoDia = (weekday: number): EstadoDia => estadoDoDia(intervalosPorDia[weekday] ?? []);
 
-  const alternarDia = (weekday: number, ligado: boolean) => {
+  const mudarEstadoDia = (weekday: number, estado: EstadoDia) => {
     setIntervalosPorDia((prev) => ({
       ...prev,
-      [weekday]: ligado ? [{ weekday, start_time: '08:00', end_time: '18:00' }] : [],
+      [weekday]:
+        estado === 'fechado'
+          ? []
+          : estado === 'livre'
+            ? [{ weekday, ...INTERVALO_DIA_LIVRE }]
+            : [{ weekday, start_time: '08:00', end_time: '18:00' }],
     }));
   };
 
@@ -137,7 +170,7 @@ function HorarioSetorTab(
     // Mesma regra do backend (`DepartmentsService.updateSchedule`) validada
     // aqui antes: evita o round-trip só para descobrir o óbvio - horário
     // ativo sem mensagem deixaria o canal mudo fora do expediente.
-    if (intervals.length > 0 && !mensagemAusencia.trim()) {
+    if (scheduleEnabled && !mensagemAusencia.trim()) {
       Alerta('Informe a mensagem de ausência antes de ativar o horário de atendimento.', 'Atenção', 'warning');
       return;
     }
@@ -148,7 +181,7 @@ function HorarioSetorTab(
       await FetchReq({
         endpoint: 'AtualizarHorarioSetor',
         variables: [departmentId],
-        body: { intervals, absence_message: mensagemAusencia.trim() || null },
+        body: { schedule_enabled: scheduleEnabled, intervals, absence_message: mensagemAusencia.trim() || null },
       });
 
       AlertaCallback('Horário de atendimento atualizado com sucesso!', () => {}, 'success');
@@ -171,10 +204,25 @@ function HorarioSetorTab(
 
   return (
     <div className="flex flex-column gap-4">
+      <div className="flex align-items-center justify-content-between gap-2 border-1 border-300 border-round-lg p-3">
+        <div>
+          <span className="font-semibold block">Usar horário de atendimento</span>
+          <span className="text-sm text-color-secondary">
+            Desligado, o setor fica sempre disponível - a configuração abaixo é ignorada.
+          </span>
+        </div>
+        <InputSwitch
+          checked={scheduleEnabled}
+          disabled={somenteLeitura}
+          onChange={(e) => setScheduleEnabled(!!e.value)}
+        />
+      </div>
+
       <div>
         <LabelPlus
           text="Mensagem de ausência"
           textHelp="Exibida ao contato quando ele escreve fora do horário configurado abaixo."
+          required={scheduleEnabled}
         />
         <EditorMensagem
           value={mensagemAusencia}
@@ -182,26 +230,28 @@ function HorarioSetorTab(
           rows={3}
           maxLength={500}
           placeholder="Nosso horário de atendimento é de segunda a sexta, das 08h às 18h."
-          disabled={somenteLeitura}
+          disabled={somenteLeitura || !scheduleEnabled}
         />
       </div>
 
-      <div className="flex flex-column gap-3">
+      <div className={classNames('flex flex-column gap-3', { 'opacity-60': !scheduleEnabled })}>
         {DIAS_DA_SEMANA.map((nomeDia, weekday) => (
           <div
             key={weekday}
             className="border-1 border-300 border-round-lg p-3"
           >
-            <div className="flex align-items-center justify-content-between gap-2 mb-2">
+            <div className="flex align-items-center justify-content-between gap-2 flex-wrap mb-4">
               <span className="font-semibold">{nomeDia}</span>
-              <InputSwitch
-                checked={diaLigado(weekday)}
-                disabled={somenteLeitura}
-                onChange={(e) => alternarDia(weekday, !!e.value)}
+              <SelectButton
+                value={estadoDia(weekday)}
+                options={OPCOES_ESTADO_DIA}
+                disabled={somenteLeitura || !scheduleEnabled}
+                onChange={(e) => e.value && mudarEstadoDia(weekday, e.value)}
+                className='w-7'
               />
             </div>
 
-            {diaLigado(weekday) && (
+            {estadoDia(weekday) === 'horario' && (
               <div className="flex flex-column gap-2">
                 {(intervalosPorDia[weekday] ?? []).map((intervalo, indice) => (
                   <div
@@ -214,7 +264,7 @@ function HorarioSetorTab(
                       timeOnly
                       hourFormat="24"
                       className="flex-1"
-                      disabled={somenteLeitura}
+                      disabled={somenteLeitura || !scheduleEnabled}
                     />
                     <i className={PrimeIcons.ARROW_RIGHT} />
                     <Calendar
@@ -223,13 +273,13 @@ function HorarioSetorTab(
                       timeOnly
                       hourFormat="24"
                       className="flex-1"
-                      disabled={somenteLeitura}
+                      disabled={somenteLeitura || !scheduleEnabled}
                     />
                     <Button
                       icon={PrimeIcons.TRASH}
                       severity="danger"
                       text
-                      disabled={somenteLeitura}
+                      disabled={somenteLeitura || !scheduleEnabled}
                       onClick={() => removerIntervalo(weekday, indice)}
                     />
                   </div>
@@ -241,10 +291,16 @@ function HorarioSetorTab(
                   text
                   size="small"
                   className="align-self-start"
-                  disabled={somenteLeitura}
+                  disabled={somenteLeitura || !scheduleEnabled}
                   onClick={() => adicionarIntervalo(weekday)}
                 />
               </div>
+            )}
+
+            {estadoDia(weekday) === 'livre' && (
+              <span className="text-sm text-color-secondary">
+                Atende o dia inteiro, sem restrição de horário.
+              </span>
             )}
           </div>
         ))}

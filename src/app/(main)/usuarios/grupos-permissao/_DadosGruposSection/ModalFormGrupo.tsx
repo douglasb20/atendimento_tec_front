@@ -168,7 +168,7 @@ const ModalFormGrupo = ({
         <div className="col-12 p-fluid">
           <LabelPlus
             text="Descrição"
-            textHelp="Uma linha explicando para quem é este grupo - ajuda na hora de escolher no cadastro do usuário."
+            textHelp="Uma linha explicando para quem é este grupo - ajuda na hora de escolher no cadastro do atendente."
           />
           <Controller
             control={control}
@@ -176,7 +176,7 @@ const ModalFormGrupo = ({
             render={({ field }) => (
               <InputText
                 {...field}
-                placeholder="Ex.: Acompanha a operação sem mexer em usuários"
+                placeholder="Ex.: Acompanha a operação sem mexer em atendentes"
                 disabled={somenteLeitura}
               />
             )}
