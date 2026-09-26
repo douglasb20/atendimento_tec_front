@@ -1,13 +1,7 @@
 'use client';
 import type { AppTopbarRef, ChildContainerProps } from '@/types';
 import { usePathname, useSearchParams } from 'next/navigation';
-import PrimeReact from 'primereact/api';
-import {
-  useEventListener,
-  useMountEffect,
-  useResizeListener,
-  useUnmountEffect,
-} from 'primereact/hooks';
+import { useEventListener, useResizeListener, useUnmountEffect } from 'primereact/hooks';
 import { DomHandler, classNames } from 'primereact/utils';
 import React, { useCallback, useContext, useEffect, useRef } from 'react';
 import AppBreadCrumb from './AppBreadCrumb';
@@ -132,10 +126,6 @@ const Layout = (props: ChildContainerProps) => {
       }));
     }
   };
-
-  useMountEffect(() => {
-    PrimeReact.ripple = true;
-  });
 
   useEffect(() => {
     if (

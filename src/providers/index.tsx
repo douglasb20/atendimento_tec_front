@@ -31,7 +31,15 @@ const LoginProvider = ({ children }) => {
   return (
     // `locale` aqui também: o `GeneralProvider` o define e este não definia,
     // então a tela de login usava os rótulos em inglês do PrimeReact.
-    <PrimeReactProvider value={{ locale: 'pt-br' }}>
+    //
+    // `ripple` pelo contexto, não por `PrimeReact.ripple = true` num efeito:
+    // aquele é lido de forma síncrona no render (igual em servidor e cliente),
+    // este só depois do mount - a primeira reconciliação após a hidratação
+    // sempre via o servidor sem o `<span class="p-ink">` e o cliente já com
+    // ele (ou o oposto, se o singleton mutável tivesse ficado `true` de uma
+    // navegação anterior), e o React derrubava a árvore com "Hydration
+    // failed". Mesmo problema do comentário de `addLocale` abaixo.
+    <PrimeReactProvider value={{ locale: 'pt-br', ripple: true }}>
       <OthersProvider>{children}</OthersProvider>
     </PrimeReactProvider>
   );
@@ -59,6 +67,7 @@ const GeneralProvider = ({ children }) => {
           },
         },
         locale: 'pt-br',
+        ripple: true,
       }}
     >
       <OthersProvider>{children}</OthersProvider>

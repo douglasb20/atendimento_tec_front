@@ -196,6 +196,12 @@ export const ListUrl = {
   AtualizarAjustesSistema: { url: '/system-settings', method: 'PATCH' },
   TestarEmailSistema: { url: '/system-settings/testar-email', method: 'POST' },
 
+  ListarAjustesAtendimento: { url: '/attendance-settings', method: 'GET' },
+  AtualizarAjustesAtendimento: { url: '/attendance-settings', method: 'PATCH' },
+  // Valores vigentes (chave→valor, sem rótulo/descrição) - liberado a
+  // qualquer autenticado, para aplicar o ajuste em runtime, não só na tela.
+  AjustesAtendimentoVigentes: { url: '/attendance-settings/vigentes', method: 'GET' },
+
   // Preferências do próprio usuário (tema e notificações). O alvo vem sempre
   // do token - não há id na URL.
   ListarPreferencias: { url: '/user-config', method: 'GET' },

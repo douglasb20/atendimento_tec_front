@@ -12,6 +12,7 @@ import { useForm, Controller, useWatch } from 'react-hook-form';
 import { parseCookies } from 'nookies';
 
 import useApi from '@/service/Api/ApiClient';
+import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import { useChatStore } from '@/store/useChatStore';
 import { useOutboxStore } from '@/store/useOutboxStore';
 import { processarItem, registrarArquivo } from '@/service/Outbox';
@@ -71,11 +72,19 @@ import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
  * Devolve string vazia quando o cookie não existe, está expirado ou veio sem o
  * campo - casos reais, já que ele é re-hidratado pelo middleware. Quem usa não
  * pode montar o prefixo `*Nome:*` sem checar, sob pena de exibir um ":" solto.
+ *
+ * `nomeCompleto`: replica o ajuste `assinatura_nome_completo` (o backend é
+ * quem decide de verdade, ao montar o prefixo de fato) - sem isso, a bolha
+ * otimista sempre mostraria o primeiro nome e trocaria de texto assim que a
+ * mensagem definitiva chegasse pelo webhook, com o nome completo do backend.
  */
-const nomeDoAtendente = (): string => {
+const nomeDoAtendente = (nomeCompletoLigado: boolean): string => {
   try {
     const cru = parseCookies()['userInfo'];
-    return cru ? ((JSON.parse(cru) as UserInfo).name ?? '') : '';
+    if (!cru) return '';
+
+    const usuario = JSON.parse(cru) as UserInfo;
+    return nomeCompletoLigado ? nomeCompleto(usuario) : (usuario.name ?? '');
   } catch {
     return '';
   }
@@ -110,6 +119,7 @@ export default function SendMessageBox() {
   const setQuotedMessage = useChatStore((s) => s.setQuotedMessage);
   const enfileirar = useOutboxStore((s) => s.enfileirar);
   const { usuarioId, carregado } = useUsuarioLogado();
+  const { ajustes } = useAjustesAtendimento();
   const { control, handleSubmit, reset, setValue } = useForm<{ messageText: string }>({
     defaultValues: { messageText: '' },
   });
@@ -253,16 +263,52 @@ export default function SendMessageBox() {
   };
 
   /**
-   * Sem anexo: põe o texto na caixa, com as variáveis resolvidas.
-   * **Substitui a mensagem inteira**, não só o `/atalho`. Pelo `/` o campo tem
-   * apenas o atalho mesmo (é o primeiro caractere, e o token vai até o
-   * cursor), então dá no mesmo; pelo botão da barra, enxertar a resposta no
-   * meio do que já estava escrito produzia frases emendadas. Uma resposta
-   * rápida é a mensagem, não um pedaço dela.
+   * Enfileira um texto puro - usada pelo envio manual (Enter/botão) e pelo
+   * atalho automático (`inserirResposta`, com "Enviar automaticamente o
+   * atalho" ligado). Devolve o controle na hora: o envio corre fora do
+   * componente, então trocar de conversa não o interrompe.
+   */
+  const enviarTexto = (texto: string) => {
+    const ehResposta = Boolean(quoted?.message && quoted.mode === ModeQuoted.REPLY);
+
+    // O backend prefixa o texto com o nome do atendente; repetir aqui evita que
+    // a bolha mude de conteúdo quando a mensagem definitiva chegar.
+    const autor = nomeDoAtendente(ajustes.assinatura_nome_completo);
+
+    const item = {
+      id: `envio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      supportChatId: String(activeChat?.id),
+      chatId: activeChat?.contact?.remote_jid,
+      // Instante do envio: é o que define a posição na conversa, mesmo que a
+      // confirmação demore.
+      enviadoEm: new Date().toISOString(),
+      tipo: 'texto' as const,
+      conteudo: texto,
+      autor,
+      ...(ehResposta && { quotedMessageId: quoted.message.message_id }),
+    };
+
+    enfileirar(item);
+    processarItem({ ...item, status: 'pendente', tentativas: 0 }, FetchReq);
+    setQuotedMessage(null, null);
+  };
+
+  /**
+   * Sem anexo e com "Enviar automaticamente o atalho" ligado: envia direto,
+   * sem passar pela caixa - como escolher a resposta já fosse teclar Enter.
+   *
+   * Sem anexo e desligado (o padrão): põe o texto na caixa, com as variáveis
+   * resolvidas. **Substitui a mensagem inteira**, não só o `/atalho`. Pelo `/`
+   * o campo tem apenas o atalho mesmo (é o primeiro caractere, e o token vai
+   * até o cursor), então dá no mesmo; pelo botão da barra, enxertar a
+   * resposta no meio do que já estava escrito produzia frases emendadas. Uma
+   * resposta rápida é a mensagem, não um pedaço dela.
    *
    * Com anexo: a mídia entra na revisão (`PreviewAnexos`), com o texto como
-   * legenda - o mesmo caminho de conferência de um anexo escolhido à mão,
-   * em vez de enviar direto. Nada vai para a caixa de mensagem neste caso.
+   * legenda - o mesmo caminho de conferência de um anexo escolhido à mão, em
+   * vez de enviar direto. A preferência não altera este caminho: anexo sempre
+   * passa pela revisão, mesmo com o envio automático ligado - enviar mídia é
+   * irreversível, e vale conferir antes mesmo sendo um atalho.
    */
   const inserirResposta = async (resposta: QuickReplyResponse) => {
     fecharLista();
@@ -276,9 +322,15 @@ export default function SendMessageBox() {
       return;
     }
 
-    const campo = campoRef.current;
     const texto = resolveVariaveis(resposta.mensagem);
 
+    if (ajustes.atalho_mensagem_automatico) {
+      enviarTexto(texto);
+      reset();
+      return;
+    }
+
+    const campo = campoRef.current;
     setValue('messageText', texto, { shouldDirty: true });
 
     // Depois do render: mexer na seleção antes dele seria desfeito pelo React.
@@ -326,32 +378,8 @@ export default function SendMessageBox() {
     const texto = field.messageText.trim();
     if (!texto) return;
 
-    const ehResposta = Boolean(quoted?.message && quoted.mode === ModeQuoted.REPLY);
-
-    // O backend prefixa o texto com o nome do atendente; repetir aqui evita que
-    // a bolha mude de conteúdo quando a mensagem definitiva chegar.
-    const autor = nomeDoAtendente();
-
-    const item = {
-      id: `envio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      supportChatId: String(activeChat?.id),
-      chatId: activeChat?.contact?.remote_jid,
-      // Instante do envio: é o que define a posição na conversa, mesmo que a
-      // confirmação demore.
-      enviadoEm: new Date().toISOString(),
-      tipo: 'texto' as const,
-      conteudo: texto,
-      autor,
-      ...(ehResposta && { quotedMessageId: quoted.message.message_id }),
-    };
-
-    // Enfileira e devolve o controle na hora: o envio corre fora do componente,
-    // então trocar de conversa não o interrompe.
-    enfileirar(item);
-    processarItem({ ...item, status: 'pendente', tentativas: 0 }, FetchReq);
-
+    enviarTexto(texto);
     reset();
-    setQuotedMessage(null, null);
   };
 
   const startRecording = async () => {
@@ -461,7 +489,7 @@ export default function SendMessageBox() {
 
     const arquivo = new File([audioBlob], 'audio_message.ogg', { type: 'audio/ogg' });
     const ehResposta = Boolean(quoted?.message && quoted.mode === ModeQuoted.REPLY);
-    const autor = nomeDoAtendente();
+    const autor = nomeDoAtendente(ajustes.assinatura_nome_completo);
 
     const item = {
       id: `envio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -584,7 +612,7 @@ export default function SendMessageBox() {
   const onEnviarAnexos = async (legendas: Record<string, string>) => {
     const tipo = tipoAnexoRef.current;
     const ehResposta = Boolean(quoted?.message && quoted.mode === ModeQuoted.REPLY);
-    const autor = nomeDoAtendente();
+    const autor = nomeDoAtendente(ajustes.assinatura_nome_completo);
     const agora = Date.now();
     const anexosParaEnviar = anexos;
     const copiasParaEnviar = copiasEmAndamentoRef.current;

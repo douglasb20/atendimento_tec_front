@@ -1,6 +1,7 @@
 'use client';
 
 import { useAvisoDeAtividade } from '@/hooks/useAvisoDeAtividade';
+import { useCarregarAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import { useChatInterno } from '@/hooks/useChatInterno';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useCarregarPreferencias } from '@/hooks/usePreferencias';
@@ -36,6 +37,11 @@ const ChatInterno = () => {
   // As preferências governam as notificações do portal inteiro, não só do chat
   // interno - por isso a carga não depende de `ativo`. O master também as tem.
   useCarregarPreferencias();
+
+  // Mesmo raciocínio: os ajustes de atendimento (assinatura, ordenação da
+  // fila, histórico automático...) valem para o portal inteiro, carregados
+  // uma vez aqui, junto das preferências.
+  useCarregarAjustesAtendimento();
 
   useChatInterno({ ativo });
 

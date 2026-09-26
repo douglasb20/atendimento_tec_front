@@ -87,10 +87,11 @@ const AppMenu = () => {
           ],
         },
         {
+          // Escondido por ora: a rota `/relatorios` ainda não existe.
           label: 'Relatórios',
           icon: `${PrimeIcons.BOOK} pi-fw`,
           to: '/relatorios',
-          visible: liberado(pode('support:view')),
+          visible: false,
         },
         {
           label: 'Clientes',
@@ -121,7 +122,7 @@ const AppMenu = () => {
               label: 'Campos personalizados',
               // @ts-ignore
               icon: `fa fa-list-check text-2xl font-light text-center`,
-              to: '/configuracoes/campos-personalizados',
+              to: '/clientes/campos-personalizados',
               visible: liberado(pode('custom.field:view')),
             },
           ],
@@ -208,6 +209,17 @@ const AppMenu = () => {
               visible: liberado(pode('integration:view')),
             },
           ],
+        },
+        {
+          // Gestão de negócio do administrador do cliente - separado de
+          // "Configurações do sistema" (sidebar de perfil), que é operação
+          // da API e fica restrita ao usuário master. Item direto, sem
+          // submenu: só há um destino hoje, um submenu de item único seria
+          // clique a mais sem ganho.
+          label: 'Configurações',
+          icon: `${PrimeIcons.COG} pi-fw`,
+          to: '/configuracoes/atendimento',
+          visible: liberado(pode('attendance_settings:manage')),
         },
       ],
     },

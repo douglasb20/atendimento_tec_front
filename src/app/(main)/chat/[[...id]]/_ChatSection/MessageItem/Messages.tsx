@@ -7,6 +7,7 @@ import { classNames } from 'primereact/utils';
 import { v4 as uuidV4 } from 'uuid';
 
 import { ModeQuoted, podeAgirNoAtendimento, SupportChatMessageResponse } from '@/Interfaces';
+import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 import ModalEditarMensagem from '../_components/ModalEditarMensagem';
 import { BotaoAnterior, Separador } from '../_components/HistoricoAnterior';
@@ -46,6 +47,7 @@ const Messages = () => {
   const setTotalAnteriores = useChatStore((s) => s.setTotalAnteriores);
   const setCarregandoAnterior = useChatStore((s) => s.setCarregandoAnterior);
   const adicionaAnterior = useChatStore((s) => s.adicionaAnterior);
+  const { ajustes } = useAjustesAtendimento();
   const { FetchReq } = useApi();
   const bottomEl = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(0);
@@ -85,6 +87,27 @@ const Messages = () => {
    * altura antes e restaurar depois, quem estava lendo perde o lugar - é o
    * defeito clássico deste padrão.
    */
+  /**
+   * Estado lido pelo listener de scroll (efeito com `[]`, criado uma vez).
+   *
+   * Sem a ref, o listener fecharia sobre os valores da primeira renderização
+   * e nunca veria a conversa trocar ou o histórico já carregado crescer -
+   * recriar o listener a cada mudança desses valores é o que o `debounce`
+   * original evitava de propósito.
+   */
+  const estadoAnteriorRef = useRef({
+    ligado: ajustes.carregar_mensagens_anteriores,
+    totalAnteriores,
+    quantidadeCarregada: anteriores.length,
+    carregandoAnterior,
+  });
+  estadoAnteriorRef.current = {
+    ligado: ajustes.carregar_mensagens_anteriores,
+    totalAnteriores,
+    quantidadeCarregada: anteriores.length,
+    carregandoAnterior,
+  };
+
   const carregarAnterior = async () => {
     if (!activeChat?.id || carregandoAnterior) return;
 
@@ -131,6 +154,32 @@ const Messages = () => {
       setCarregandoAnterior(false);
     }
   };
+
+  // Mesmo motivo da ref de estado acima: o listener de scroll precisa chamar
+  // sempre a versão mais recente, não a fechada na primeira montagem.
+  const carregarAnteriorRef = useRef(carregarAnterior);
+  carregarAnteriorRef.current = carregarAnterior;
+
+  /**
+   * Com "Carregar mensagens anteriores" ligado, traz o primeiro atendimento
+   * anterior sozinho ao abrir a conversa - sem esperar o clique no botão. Só
+   * dispara quando o total já chegou (a contagem acima) e nada foi carregado
+   * ainda: sem essas guardas, reabriria o mesmo histórico a cada re-render.
+   *
+   * Os próximos (o segundo anterior em diante) vêm do scroll, como uma lista
+   * infinita: ver o handler de scroll mais abaixo.
+   */
+  useEffect(() => {
+    if (!ajustes.carregar_mensagens_anteriores) return;
+    if (!activeChat?.id || totalAnteriores <= 0 || anteriores.length > 0 || carregandoAnterior) {
+      return;
+    }
+
+    carregarAnterior();
+    // Só quando a conversa ou o total mudam - `carregarAnterior` é recriada a
+    // cada render e entraria em loop se fosse dependência.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ajustes.carregar_mensagens_anteriores, activeChat?.id, totalAnteriores]);
 
   /**
    * Junta as mensagens confirmadas com as que ainda estão na fila de envio.
@@ -452,6 +501,16 @@ const Messages = () => {
       }
 
       scrollRef.current = el.scrollTop;
+
+      // Lista infinita: perto do topo do que já está carregado, busca sozinho
+      // o próximo atendimento anterior - só com a preferência ligada, com
+      // mais histórico disponível (`quantidadeCarregada < totalAnteriores`) e
+      // fora de uma busca já em andamento.
+      const estado = estadoAnteriorRef.current;
+      const permaneceHistorico = estado.quantidadeCarregada < estado.totalAnteriores;
+      if (estado.ligado && permaneceHistorico && !estado.carregandoAnterior && el.scrollTop < 150) {
+        carregarAnteriorRef.current();
+      }
     }, 50); // só executa 50ms depois do último scroll
 
     el.addEventListener('scroll', handleScroll);

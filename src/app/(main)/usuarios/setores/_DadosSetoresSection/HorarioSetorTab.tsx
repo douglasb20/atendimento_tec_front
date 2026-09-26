@@ -3,7 +3,6 @@ import { Calendar } from 'primereact/calendar';
 import { InputSwitch } from 'primereact/inputswitch';
 import { PrimeIcons } from 'primereact/api';
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { SelectButton } from 'primereact/selectbutton';
 import { classNames } from 'primereact/utils';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 
@@ -12,30 +11,6 @@ import LabelPlus from '@/components/LabelPlus';
 import { DepartmentScheduleResponse, ScheduleInterval } from '@/Interfaces';
 import ApiClient from '@/service/Api/ApiClient';
 import { Alerta, AlertaCallback, CatchAlerta } from '@/service/Util';
-
-/** Intervalo especial que representa "esse dia é livre, sem restrição de
- * horário" - reaproveita a estrutura de intervalo existente (uma linha por
- * bloco de horário) em vez de exigir uma coluna nova só para esse estado. */
-const INTERVALO_DIA_LIVRE = { start_time: '00:00', end_time: '23:59' };
-
-const ehDiaLivre = (intervalos: ScheduleInterval[]) =>
-  intervalos.length === 1 &&
-  intervalos[0].start_time === INTERVALO_DIA_LIVRE.start_time &&
-  intervalos[0].end_time === INTERVALO_DIA_LIVRE.end_time;
-
-type EstadoDia = 'fechado' | 'horario' | 'livre';
-
-const estadoDoDia = (intervalos: ScheduleInterval[]): EstadoDia => {
-  if (intervalos.length === 0) return 'fechado';
-  if (ehDiaLivre(intervalos)) return 'livre';
-  return 'horario';
-};
-
-const OPCOES_ESTADO_DIA: { label: string; value: EstadoDia }[] = [
-  { label: 'Fechado', value: 'fechado' },
-  { label: 'Horário', value: 'horario' },
-  { label: 'Dia livre', value: 'livre' },
-];
 
 /** Domingo primeiro, como a referência visual (Whaticket) - não é a ordem
  * comum de calendário de trabalho brasileiro, mas é a pedida. */
@@ -82,11 +57,12 @@ function paraHora(data: Date): string {
  * "Equipe" (`ModalFormSetor.tsx`): estado próprio, carregado ao trocar de
  * aba, gravado independente do formulário principal.
  *
- * Por dia da semana: toggle liga/desliga (controla só a exibição local dos
- * intervalos daquele dia - desligar e salvar apaga as linhas do dia, não
- * existe uma coluna "ativo" própria) + lista de intervalos, cada um com
- * início/fim + remover. "+ Adicionar horário" acrescenta um intervalo vazio.
- * Mensagem de ausência é texto livre, exibida ao contato fora do horário.
+ * Por dia da semana: um switch "Atende neste dia" (não existe coluna "ativo"
+ * própria - desligar e salvar apaga as linhas do dia) que só abre a lista de
+ * janelas de horário; salvar exige ao menos uma janela quando ligado, não há
+ * estado "atende sem horário definido". "+ Adicionar horário" acrescenta uma
+ * janela (pode haver várias). Mensagem de ausência é texto livre, exibida ao
+ * contato fora do horário.
  */
 function HorarioSetorTab(
   { departmentId, ativa, somenteLeitura, onSalvandoChange }: HorarioSetorTabProps,
@@ -97,6 +73,7 @@ function HorarioSetorTab(
   const [carregando, setCarregando] = useState(false);
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [intervalosPorDia, setIntervalosPorDia] = useState<Record<number, ScheduleInterval[]>>({});
+  const [atendeDia, setAtendeDia] = useState<Record<number, boolean>>({});
   const [mensagemAusencia, setMensagemAusencia] = useState('');
 
   useEffect(() => {
@@ -115,7 +92,13 @@ function HorarioSetorTab(
           agrupado[intervalo.weekday] = [...(agrupado[intervalo.weekday] ?? []), intervalo];
         });
 
+        const atende: Record<number, boolean> = {};
+        Object.entries(agrupado).forEach(([weekday, intervalos]) => {
+          atende[Number(weekday)] = intervalos.length > 0;
+        });
+
         setIntervalosPorDia(agrupado);
+        setAtendeDia(atende);
         setMensagemAusencia(dados?.absence_message ?? '');
         setScheduleEnabled(dados?.schedule_enabled ?? false);
       } catch (err) {
@@ -129,17 +112,19 @@ function HorarioSetorTab(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ativa, departmentId]);
 
-  const estadoDia = (weekday: number): EstadoDia => estadoDoDia(intervalosPorDia[weekday] ?? []);
+  // "Atende neste dia" não tem coluna própria: é derivado de um estado que o
+  // front guarda por fora da lista de intervalos, porque "atende, sem nenhum
+  // horário ainda adicionado" e "fechado" são os dois o mesmo array vazio.
+  const alternarAtendeNesteDia = (weekday: number, atende: boolean) => {
+    setAtendeDia((prev) => ({ ...prev, [weekday]: atende }));
 
-  const mudarEstadoDia = (weekday: number, estado: EstadoDia) => {
     setIntervalosPorDia((prev) => ({
       ...prev,
-      [weekday]:
-        estado === 'fechado'
-          ? []
-          : estado === 'livre'
-            ? [{ weekday, ...INTERVALO_DIA_LIVRE }]
-            : [{ weekday, start_time: '08:00', end_time: '18:00' }],
+      // Desligar limpa os intervalos do dia - reabrir começa com uma janela
+      // padrão, não com a antiga escondida esperando para voltar. Ligar já
+      // entra com uma janela pronta: sem isso, o aviso de "adicione um
+      // horário" apareceria assim que o switch fosse ligado.
+      [weekday]: atende ? [{ weekday, start_time: '08:00', end_time: '18:00' }] : [],
     }));
   };
 
@@ -165,6 +150,21 @@ function HorarioSetorTab(
   };
 
   const salvar = async () => {
+    // "Atende neste dia" sem nenhuma janela preenchida é formulário
+    // incompleto, não "atende o dia todo" - exige pelo menos um horário antes
+    // de deixar salvar.
+    const diaSemHorario = DIAS_DA_SEMANA.findIndex(
+      (_, weekday) => atendeDia[weekday] && (intervalosPorDia[weekday] ?? []).length === 0,
+    );
+    if (diaSemHorario !== -1) {
+      Alerta(
+        `Adicione ao menos um horário para ${DIAS_DA_SEMANA[diaSemHorario]}, ou desligue "Atende neste dia".`,
+        'Atenção',
+        'warning',
+      );
+      return;
+    }
+
     const intervals = Object.values(intervalosPorDia).flat();
 
     // Mesma regra do backend (`DepartmentsService.updateSchedule`) validada
@@ -242,17 +242,24 @@ function HorarioSetorTab(
           >
             <div className="flex align-items-center justify-content-between gap-2 flex-wrap mb-4">
               <span className="font-semibold">{nomeDia}</span>
-              <SelectButton
-                value={estadoDia(weekday)}
-                options={OPCOES_ESTADO_DIA}
-                disabled={somenteLeitura || !scheduleEnabled}
-                onChange={(e) => e.value && mudarEstadoDia(weekday, e.value)}
-                className='w-7'
-              />
+              <div className="flex align-items-center gap-2">
+                <span className="text-sm text-color-secondary">Atende neste dia</span>
+                <InputSwitch
+                  checked={Boolean(atendeDia[weekday])}
+                  disabled={somenteLeitura || !scheduleEnabled}
+                  onChange={(e) => alternarAtendeNesteDia(weekday, !!e.value)}
+                />
+              </div>
             </div>
 
-            {estadoDia(weekday) === 'horario' && (
+            {atendeDia[weekday] && (
               <div className="flex flex-column gap-2">
+                {(intervalosPorDia[weekday] ?? []).length === 0 && (
+                  <span className="text-sm text-orange-500 mb-1">
+                    Adicione ao menos um horário, ou desligue &quot;Atende neste dia&quot;.
+                  </span>
+                )}
+
                 {(intervalosPorDia[weekday] ?? []).map((intervalo, indice) => (
                   <div
                     key={indice}
@@ -297,10 +304,8 @@ function HorarioSetorTab(
               </div>
             )}
 
-            {estadoDia(weekday) === 'livre' && (
-              <span className="text-sm text-color-secondary">
-                Atende o dia inteiro, sem restrição de horário.
-              </span>
+            {!atendeDia[weekday] && (
+              <span className="text-sm text-color-secondary">Não atende neste dia.</span>
             )}
           </div>
         ))}
