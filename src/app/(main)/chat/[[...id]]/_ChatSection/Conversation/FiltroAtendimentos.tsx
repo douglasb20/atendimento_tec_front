@@ -38,11 +38,17 @@ const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar }: FiltroAtendimen
       rotulo: 'Espera',
       total: chats.filter((c) => grupoDaConversa(c) === 'fila').length,
     },
-    {
-      id: 'chatbot',
-      rotulo: 'Chatbot',
-      total: chats.filter((c) => grupoDaConversa(c) === 'chatbot').length,
-    },
+    // Atrás de `SHOW_CHATBOT_MENU`, como o resto da feature: a fila ainda não
+    // é atribuída em `grupoDaConversa`, e a aba ficaria sempre zerada.
+    ...(process.env.SHOW_CHATBOT_MENU === 'true'
+      ? [
+          {
+            id: 'chatbot' as GrupoAtendimento,
+            rotulo: 'Chatbot',
+            total: chats.filter((c) => grupoDaConversa(c) === 'chatbot').length,
+          },
+        ]
+      : []),
     { id: 'todos', rotulo: 'Todos', total: chats.length },
   ];
 
