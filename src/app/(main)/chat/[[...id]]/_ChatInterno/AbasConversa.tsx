@@ -1,6 +1,5 @@
 'use client';
 
-import { ReactNode } from 'react';
 import { Badge } from 'primereact/badge';
 import { classNames } from 'primereact/utils';
 
@@ -13,8 +12,6 @@ type Props = {
   naoLidasInternas: number;
   /** Esconde a aba "Interno" - caso do usuário master, que não participa dele. */
   mostrarInterno?: boolean;
-  /** Ação extra ao lado das abas, ex. o botão de "Novo atendimento". */
-  acaoExtra?: ReactNode;
 };
 
 /**
@@ -25,13 +22,7 @@ type Props = {
  * disso - e misturá-las na mesma lista faria o atendente perder um cliente
  * esperando no meio de conversa interna.
  */
-const AbasConversa = ({
-  ativa,
-  onTrocar,
-  naoLidasInternas,
-  mostrarInterno = true,
-  acaoExtra,
-}: Props) => {
+const AbasConversa = ({ ativa, onTrocar, naoLidasInternas, mostrarInterno = true }: Props) => {
   const aba = (chave: AbaConversa, icone: string, rotulo: string, badge?: number) => (
     <button
       type="button"
@@ -59,16 +50,13 @@ const AbasConversa = ({
   );
 
   return (
-    <div className="flex justify-content-between align-items-center gap-2 mb-2">
-      <div
-        className={classNames('flex border-round-top overflow-hidden', {
-          'flex-1': mostrarInterno,
-        })}
-      >
-        {aba('atendimentos', 'fa-regular fa-comments', 'Atendimentos')}
-        {mostrarInterno && aba('interno', 'fa-regular fa-users', 'Interno', naoLidasInternas)}
-      </div>
-      {acaoExtra}
+    <div
+      className={classNames('flex border-round-top overflow-hidden mb-2', {
+        'flex-1': mostrarInterno,
+      })}
+    >
+      {aba('atendimentos', 'fa-regular fa-comments', 'Atendimentos')}
+      {mostrarInterno && aba('interno', 'fa-regular fa-users', 'Interno', naoLidasInternas)}
     </div>
   );
 };

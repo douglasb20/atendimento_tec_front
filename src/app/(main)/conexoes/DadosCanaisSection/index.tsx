@@ -7,6 +7,7 @@ import { io } from 'socket.io-client';
 import { ChannelResponse, ChannelStatusId } from '@/Interfaces';
 import { useService } from '@/contexts/ServicesContext';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
+import { useSalvarCanal } from '@/hooks/useSalvarCanal';
 import useApi from '@/service/Api/ApiClient';
 import { useCanaisRevalidacao } from '@/store/useCanaisRevalidacao';
 import { Alerta, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
@@ -16,7 +17,7 @@ import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 
 import DtCanais from './DtCanais';
 import ModalConfigChannel from './ModalConfigChannel';
-import ModalForm from './ModalForm';
+import ModalForm, { EstadoAnexo } from './ModalForm';
 
 type DadosCanaisProps = {
   data: ChannelResponse[];
@@ -44,13 +45,14 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   // é mais grave do que corrigir o nome do canal.
   const podeConfigurar = podeAcao('config');
   const { FetchReq } = useApi();
+  const { resolveAnexos } = useSalvarCanal();
   const activeChannelRef = useRef<ChannelResponse | null>(null);
 
   // Sem permissão de criar, o botão não aparece: a chamada seria recusada
   // pelo backend de qualquer forma.
   const ButtonsHeader: IButtonsOthers[] = [
         {
-          label: 'Adicionar canal',
+          label: 'Adicionar',
           icon: PrimeIcons.PLUS,
           action: () => AbrirModalForm(null),
           bgColor: 'primary p-button-outlined',
@@ -62,8 +64,8 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   const acoesTable: IActionTable<ChannelResponse>[] = [
     {
       // Sempre visível: sem `:update` o cadastro abre em somente leitura.
-      label: podeEditar ? 'Editar canal' : 'Visualizar canal',
-      tooltip: podeEditar ? 'Editar canal' : 'Ver canal',
+      label: podeEditar ? 'Editar conexão' : 'Visualizar conexão',
+      tooltip: podeEditar ? 'Editar conexão' : 'Ver conexão',
       icon: podeEditar ? 'pi pi-fw pi-file-edit' : 'pi pi-fw pi-eye',
       bgcolor: 'primary py-2',
       command: (data) => AbrirModalForm(data),
@@ -73,8 +75,8 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       // sessão. Escondido e não desabilitado porque não há o que ler ali - a
       // tela é de ações.
       isHidden: () => !podeConfigurar,
-      label: 'Configurar canal',
-      tooltip: 'Configurar canal',
+      label: 'Configurar conexão',
+      tooltip: 'Configurar conexão',
       icon: 'pi pi-fw pi-cog',
       bgcolor: 'info py-2',
       command: (data) => AbrirModalConfig(data.id!),
@@ -97,33 +99,38 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     },
     {
       isHidden: () => !podeExcluir,
-      label: 'Excluir canal',
-      tooltip: 'Excluir canal',
+      label: 'Excluir conexão',
+      tooltip: 'Excluir conexão',
       icon: 'pi pi-fw pi-times',
       bgcolor: 'danger py-2',
-      command: (data) => ConfirmaAcao('Confirma remover este canal?', RemoverCanal, data),
+      command: (data) => ConfirmaAcao('Confirma remover esta conexão?', RemoverCanal, data),
     },
   ];
 
   const onSubmitForm = async (
     data: Pick<
       ChannelResponse,
-      'name' | 'id' | 'integration_id' | 'mensagem_saudacao' | 'mensagem_despedida' | 'department_ids'
+      'name' | 'id' | 'mensagem_saudacao' | 'mensagem_despedida' | 'department_ids'
     >,
+    anexoSaudacao: EstadoAnexo,
+    anexoDespedida: EstadoAnexo,
   ) => {
     try {
       setLoading();
-      // `integration_id` vai junto: o dropdown existia na tela e o valor
-      // escolhido nunca chegava à API - todo canal era salvo como "usar a
-      // integração padrão", qualquer que fosse a escolha.
+
+      const anexos = await resolveAnexos(anexoSaudacao, anexoDespedida, activeChannel);
+
+      // Sem campo de integração: o canal já é a conexão inteira, e o gateway
+      // WhatsApp (Evolution) é configuração do backend, não escolha por
+      // canal - nunca coexistem duas integrações ao mesmo tempo.
       const corpo = {
         name: data.name,
-        integration_id: data.integration_id ?? null,
         // Vazio vira nulo: é como o backend entende "não enviar", e guardar
         // string vazia faria a coluna ter dois jeitos de dizer a mesma coisa.
         mensagem_saudacao: data.mensagem_saudacao?.trim() || null,
         mensagem_despedida: data.mensagem_despedida?.trim() || null,
         department_ids: data.department_ids ?? [],
+        ...anexos,
       };
 
       if (!data?.id) {
@@ -138,7 +145,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       await ReloadCanais();
       await FecharModalForm();
     } catch (err) {
-      CatchAlerta(err, 'Erro ao salvar canal');
+      CatchAlerta(err, 'Erro ao salvar conexão');
     } finally {
       setLoading(false);
     }
@@ -198,7 +205,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       // que já não existe.
       invalidarCanais();
     } catch (err) {
-      CatchAlerta(err, 'Erro ao consultar canais');
+      CatchAlerta(err, 'Erro ao consultar conexões');
     } finally {
       if (use_loading) setLoading(false);
       setRendered(true);
@@ -211,7 +218,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       const data = await FetchReq<ChannelResponse>('BuscarCanal', [id]);
       setActiveChannel(data);
     } catch (err) {
-      CatchAlerta(err, 'Erro ao buscar canal');
+      CatchAlerta(err, 'Erro ao buscar conexão');
       return null;
     } finally {
       if (use_loading) setLoading(false);
@@ -225,7 +232,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       await sleep(1);
       await ReloadCanais();
     } catch (err) {
-      CatchAlerta(err, 'Erro ao remover canal.');
+      CatchAlerta(err, 'Erro ao remover conexão.');
     } finally {
       setLoading(false);
     }
@@ -272,7 +279,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
 
       Alerta(
         mudou
-          ? `O canal estava marcado como "${anterior}" e na verdade está "${atual}". O registro foi corrigido.`
+          ? `A conexão estava marcada como "${anterior}" e na verdade está "${atual}". O registro foi corrigido.`
           : `O status continua "${atual}".`,
         mudou ? 'Status corrigido' : 'Status confirmado',
         mudou ? 'warning' : 'success',
@@ -310,7 +317,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     activeChannelRef.current = activeChannel;
   }, [activeChannel]);
 
-  // `/canais?canal=<id>` abre direto a configuração daquele canal - é como o
+  // `/conexoes?canal=<id>` abre direto a configuração daquele canal - é como o
   // badge de status do topbar leva o atendente até aqui. O parâmetro é
   // removido em seguida para o modal não reabrir a cada voltar/avançar.
   useEffect(() => {
@@ -318,7 +325,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     if (!id) return;
 
     AbrirModalConfig(id);
-    router.replace('/canais');
+    router.replace('/conexoes');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -367,7 +374,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     rendered && (
       <>
         <TitleCards
-          title="Lista de canais"
+          title="Lista de conexões"
           buttons={ButtonsHeader}
         />
 

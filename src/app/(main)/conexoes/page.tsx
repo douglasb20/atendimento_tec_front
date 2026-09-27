@@ -4,7 +4,7 @@ import { ChannelResponse } from '@/Interfaces';
 import DadosCanaisSection from './DadosCanaisSection';
 
 export const metadata: Metadata = {
-  title: 'Canais',
+  title: 'Conexões',
 };
 
 export default async function CanaisPage() {

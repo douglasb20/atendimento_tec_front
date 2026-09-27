@@ -26,6 +26,22 @@ type EditorMensagemProps = {
   /** Fora das mensagens automáticas não há o que substituir. */
   comVariaveis?: boolean;
   disabled?: boolean;
+  /**
+   * Um anexo opcional, na barra de formatação - como o Whaticket faz: clipe
+   * para escolher, o nome do arquivo ao lado, lixeira para remover. Ausente,
+   * a barra não ganha os botões; nenhum formulário hoje perde o que já tinha.
+   */
+  comAnexo?: boolean;
+  /** O nome do arquivo escolhido ou já gravado, para exibir ao lado do clipe. */
+  nomeAnexo?: string | null;
+  /**
+   * Para onde o clique no nome do anexo leva - como o Whaticket faz, abre numa
+   * aba nova. É a URL pública quando já está gravado, ou um `blob:` local
+   * quando é um arquivo recém-escolhido que ainda não subiu.
+   */
+  urlAnexo?: string | null;
+  onEscolherAnexo?: (arquivo: File) => void;
+  onRemoverAnexo?: () => void;
 };
 
 /**
@@ -62,10 +78,25 @@ const EditorMensagem = ({
   comPreVisualizacao = false,
   comVariaveis = true,
   disabled = false,
+  comAnexo = false,
+  nomeAnexo,
+  urlAnexo,
+  onEscolherAnexo,
+  onRemoverAnexo,
 }: EditorMensagemProps) => {
   const campoRef = useRef<HTMLTextAreaElement>(null);
   const menuVariaveisRef = useRef<Menu>(null);
+  const inputAnexoRef = useRef<HTMLInputElement>(null);
   const [emojiAberto, setEmojiAberto] = useState(false);
+
+  const aoEscolherArquivo = (evento: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = evento.target.files?.[0];
+    // O input é limpo sempre: sem isto, escolher o mesmo arquivo duas vezes
+    // seguidas não dispara o `change` na segunda.
+    evento.target.value = '';
+
+    if (arquivo) onEscolherAnexo?.(arquivo);
+  };
 
   // O picker vai para um portal no `body`: dentro do contêiner do editor ele
   // era cortado pelo `overflow: hidden` que arredonda a caixa, e ainda ficava
@@ -164,6 +195,55 @@ const EditorMensagem = ({
               botao(formato.icone, formato.titulo, () =>
                 escreveNaSelecao(formato.marcador, formato.marcador),
               ),
+            )}
+
+            {comAnexo && (
+              <>
+                <span
+                  className="surface-300 mx-1"
+                  style={{ width: 1, height: '1.25rem' }}
+                />
+
+                <input
+                  ref={inputAnexoRef}
+                  type="file"
+                  className="hidden"
+                  onChange={aoEscolherArquivo}
+                />
+
+                {botao('fa-regular fa-paperclip', 'Anexar arquivo', () =>
+                  inputAnexoRef.current?.click(),
+                )}
+
+                {nomeAnexo && (
+                  <>
+                    {botao('fa-regular fa-trash-can', 'Remover anexo', () => onRemoverAnexo?.())}
+                    {/* Como o Whaticket: clicar no nome abre o arquivo numa aba
+                        nova. Sem `urlAnexo` (não deveria ocorrer com o anexo
+                        presente) o nome só é exibido, sem link. */}
+                    {urlAnexo ? (
+                      <a
+                        href={urlAnexo}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary text-sm underline white-space-nowrap overflow-hidden text-overflow-ellipsis"
+                        style={{ maxWidth: '12rem' }}
+                        title={nomeAnexo}
+                      >
+                        {nomeAnexo}
+                      </a>
+                    ) : (
+                      <span
+                        className="text-sm white-space-nowrap overflow-hidden text-overflow-ellipsis"
+                        style={{ maxWidth: '12rem' }}
+                        title={nomeAnexo}
+                      >
+                        {nomeAnexo}
+                      </span>
+                    )}
+                  </>
+                )}
+              </>
             )}
 
             <span

@@ -368,23 +368,25 @@ const ConversationSection = () => {
   };
 
   return (
-    <div className="card flex flex-column shadow-1 h-full px-2 pt-2">
+    <div className="card flex flex-column shadow-1 h-full px-2 pt-2 relative">
       <AbasConversa
         ativa={abaAtiva}
         onTrocar={setAbaAtiva}
         naoLidasInternas={naoLidasInternas}
         mostrarInterno={temChatInterno}
-        acaoExtra={
-          <Button
-            icon="fa-regular fa-message-plus text-lg"
-            rounded
-            text
-            style={{ padding: '0.4rem' }}
-            title="Novo atendimento"
-            aria-label="Novo atendimento"
-            onClick={() => setModalNovoAberto(true)}
-          />
-        }
+      />
+
+      {/* Flutuante, ancorado no próprio painel (`relative` acima) e não na
+          tela toda: `fixed` faria o botão seguir o scroll da página, não da
+          lista de conversas. */}
+      <Button
+        icon="pi pi-plus text-xl"
+        rounded
+        title="Novo atendimento"
+        aria-label="Novo atendimento"
+        onClick={() => setModalNovoAberto(true)}
+        className="absolute shadow-3 p-0"
+        style={{ left: '1rem', bottom: '1rem', width: '3.2rem', height: '3.2rem', zIndex: 1 }}
       />
 
       <ModalNovoAtendimento

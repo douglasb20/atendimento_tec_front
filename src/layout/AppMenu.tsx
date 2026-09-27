@@ -188,27 +188,15 @@ const AppMenu = () => {
           ],
         },
         {
-          // No fim da lista: é o que se mexe ao montar o ambiente, não no dia a
-          // dia do atendimento. Canais e integrações andam juntos - cada canal
-          // aponta para uma integração -, e é isso que o nome do grupo diz.
+          // No fim da lista: é o que se mexe ao montar o ambiente, não no dia
+          // a dia do atendimento. Item direto, sem submenu: canal já é a
+          // conexão inteira (nunca existem duas integrações coexistindo, o
+          // gateway WhatsApp é configuração do backend), então não sobra um
+          // segundo destino para justificar o grupo.
           label: 'Conexões',
           icon: `${PrimeIcons.LINK} pi-fw`,
-          items: [
-            {
-              label: 'Canais',
-              // @ts-ignore
-              icon: `fa fa-plug text-2xl font-light text-center`,
-              to: '/canais',
-              visible: liberado(pode('channel:view')),
-            },
-            {
-              label: 'Integrações',
-              // @ts-ignore
-              icon: `fa fa-puzzle-piece text-2xl font-light text-center`,
-              to: '/integracoes',
-              visible: liberado(pode('integration:view')),
-            },
-          ],
+          to: '/conexoes',
+          visible: liberado(pode('channel:view')),
         },
         {
           // Gestão de negócio do administrador do cliente - separado de

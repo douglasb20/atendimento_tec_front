@@ -1,3 +1,5 @@
+import { TipoAnexo } from './quick-reply.interface';
+
 /**
  * Estados do canal, espelhando a tabela `channel_status` do backend.
  *
@@ -26,8 +28,6 @@ export type ChannelResponse = {
   updated_at: string | null;
   deleted_at: string | null;
   channelStatus: ChannelStatus;
-  /** Nulo significa "usa a integração padrão". */
-  integration_id: number | null;
   /**
    * Enviada sozinha quando um contato abre uma conversa nova.
    *
@@ -35,9 +35,21 @@ export type ChannelResponse = {
    * `components/EditorMensagem/variaveis.ts`.
    */
   mensagem_saudacao: string | null;
+  /** A key do anexo da saudação no storage. Nulo quando não há anexo. */
+  saudacao_anexo_key: string | null;
+  saudacao_anexo_nome: string | null;
+  saudacao_anexo_mimetype: string | null;
+  saudacao_anexo_tipo: TipoAnexo | null;
+  /** Só na leitura: a URL pública, montada a partir da key. */
+  saudacao_anexo_url?: string;
   /** Enviada ao finalizar o atendimento. Mesmas regras da saudação. */
   mensagem_despedida: string | null;
-  integration?: { id: number; name: string } | null;
+  /** Anexo da despedida - independente do de saudação, mesmas regras dele. */
+  despedida_anexo_key: string | null;
+  despedida_anexo_nome: string | null;
+  despedida_anexo_mimetype: string | null;
+  despedida_anexo_tipo: TipoAnexo | null;
+  despedida_anexo_url?: string;
   /** Os setores atendidos por este canal - só vem populado por
    * `GET /channels/:id` (`findChannelComSetores`), não na listagem. */
   departments?: { id: number; name: string }[];

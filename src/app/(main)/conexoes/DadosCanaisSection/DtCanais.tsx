@@ -25,7 +25,7 @@ const DtCanais = ({ actions, ...props }) => {
     <>
       <DataTableCustom
         value={props.value}
-        emptyMessage="Nenhum canal encontrado"
+        emptyMessage="Nenhuma conexão encontrada"
       >
         {/* <Column
           alignHeader="center"
@@ -46,19 +46,6 @@ const DtCanais = ({ actions, ...props }) => {
           align="center"
           className="w-10rem"
           body={BodyPhone}
-        />
-        <Column
-          field="integration.name"
-          header="Integração"
-          align="center"
-          className="w-10rem"
-          body={({ integration }: ChannelResponse) =>
-            integration?.name ?? (
-              // Sem vínculo o canal segue a integração padrão - dizer "padrão"
-              // é mais útil que um traço, que leria como "nenhuma".
-              <span className="text-500 text-sm font-italic">Padrão</span>
-            )
-          }
         />
         <Column
           field="created_at"

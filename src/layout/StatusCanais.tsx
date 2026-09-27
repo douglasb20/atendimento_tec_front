@@ -65,9 +65,9 @@ const StatusCanais = () => {
     // O `icon` do MenuItem é só uma string de classe - as utilitárias de forma
     // e cor transformam o espaço do ícone na bolinha de status.
     icon: classNames('border-circle w-1rem h-1rem', corDe(canal.channel_status_id).ponto),
-    // A configuração é um modal dentro de /canais, não uma rota própria; o
+    // A configuração é um modal dentro de /conexoes, não uma rota própria; o
     // parâmetro diz à tela qual canal abrir ao montar.
-    command: () => router.push(`/canais?canal=${canal.id}`),
+    command: () => router.push(`/conexoes?canal=${canal.id}`),
   }));
 
   return (

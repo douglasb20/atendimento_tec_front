@@ -10,7 +10,6 @@ export * from './contact.interface';
 export * from './client.interface';
 export * from './custom-field.interface';
 export * from './tag.interface';
-export * from './integration.interface';
 export * from './permission-group.interface';
 export * from './quick-reply.interface';
 export * from './service-alert.interface';
@@ -85,7 +84,8 @@ export interface IUsuariosResponse {
   permission_group_id?: number | null;
   /** A relação carregada, quando o endpoint a traz - para exibir o nome. */
   permissionGroup?: { id: number; name: string } | null;
-  /** Os setores em que a pessoa atende. Vêm na listagem e no `GET /users/:id`. */
+  /** Os setores em que a pessoa atende. Vêm na listagem, no `GET /users/:id`
+   *  e no `GET /users/info` (cookie `userInfo`). */
   departments?: { id: number; name: string }[];
 }
 

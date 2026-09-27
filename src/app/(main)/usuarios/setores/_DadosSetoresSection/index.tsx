@@ -96,7 +96,11 @@ export default function DadosSetoresSection({ data }: DadosSetoresProps) {
     try {
       setLoading(true);
 
-      const body = { name: fields.name, description: fields.description || null };
+      const body = {
+        name: fields.name,
+        description: fields.description || null,
+        color: fields.color || null,
+      };
 
       if (setorAtivo?.id) {
         await FetchReq({ endpoint: 'AtualizarSetor', variables: [setorAtivo.id], body });

@@ -8,6 +8,8 @@ export type DepartmentResponse = {
   id: number;
   name: string;
   description: string | null;
+  /** `#RRGGBB` - mesmo formato de `tags.color`. */
+  color: string | null;
   /** Texto exibido ao contato fora do horário configurado. */
   absence_message?: string | null;
   /** Quantos usuários ativos estão no setor. Só vem na listagem. */

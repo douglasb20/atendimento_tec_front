@@ -44,18 +44,6 @@ export const ListUrl = {
   BuscarFluxoChatbot: { url: '/chatbots/{{chatbot_id}}/flow', method: 'GET' },
   SalvarFluxoChatbot: { url: '/chatbots/{{chatbot_id}}/flow', method: 'PUT' },
   AssinarMediaChatbot: { url: '/chatbots/sign-media', method: 'POST' },
-
-  ListarIntegracoes: { url: '/integrations', method: 'GET' },
-  BuscarIntegracao: { url: '/integrations/{{integration_id}}', method: 'GET' },
-  AdicionarIntegracao: { url: '/integrations', method: 'POST' },
-  AtualizarIntegracao: { url: '/integrations/{{integration_id}}', method: 'PATCH' },
-  RemoverIntegracao: { url: '/integrations/{{integration_id}}', method: 'DELETE' },
-  ListarProvidersIntegracao: { url: '/integrations/providers', method: 'GET' },
-  TestarConexaoIntegracao: { url: '/integrations/testar-conexao', method: 'POST' },
-  RevelarCredenciaisIntegracao: {
-    url: '/integrations/{{integration_id}}/credenciais',
-    method: 'GET',
-  },
   AtualizarTagsCliente: { url: '/clients/{{client_id}}/tags', method: 'PATCH' },
 
   BuscarContatoClientId: { url: '/clients/{{client_id}}/contact', method: 'GET' },
@@ -114,6 +102,7 @@ export const ListUrl = {
   AdicionarCanal: { url: '/channels', method: 'POST' },
   AtualizarCanal: { url: '/channels/{{channel_id}}', method: 'PATCH' },
   RemoverCanal: { url: '/channels/{{channel_id}}', method: 'DELETE' },
+  AssinarAnexoCanal: { url: '/channels/assinar-anexo', method: 'POST' },
   IniciarSessao: { url: '/channels/{{channel_id}}/start', method: 'GET' },
   ReiniciarCanal: { url: '/channels/{{channel_id}}/reiniciar', method: 'POST' },
   FinalizarSessao: { url: '/channels/{{channel_id}}/terminate', method: 'GET' },
