@@ -87,6 +87,13 @@ export interface IUsuariosResponse {
   /** Os setores em que a pessoa atende. Vêm na listagem, no `GET /users/:id`
    *  e no `GET /users/info` (cookie `userInfo`). */
   departments?: { id: number; name: string }[];
+  /**
+   * Status do convite de cadastro, calculado no backend a partir do convite
+   * mais recente do usuário: `pendente` enquanto ele não define a própria
+   * senha, `aceito` depois (ou se nunca houve convite - cadastro do fluxo
+   * antigo). Só vem na listagem (`GET /users`).
+   */
+  convite_status?: 'pendente' | 'aceito';
 }
 
 export interface IClientResponse extends ClientResponse {

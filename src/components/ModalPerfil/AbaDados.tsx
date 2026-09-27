@@ -30,8 +30,9 @@ const schema = yup.object({
     .required(msgRequired)
     .test('email-validation', 'Email com formato inválido', (val) => ValidaEmail(val)),
   // Em branco significa "não trocar": exigir a senha a cada edição do nome
-  // faria a pessoa digitá-la para mudar o sobrenome.
-  senha: yup.string().nullable(),
+  // faria a pessoa digitá-la para mudar o sobrenome. Sem exigir a atual: a
+  // sessão já autenticada é a confirmação de que é a própria pessoa.
+  senha: yup.string().nullable().min(6, 'A senha precisa ter ao menos 6 caracteres'),
   confirma_senha: yup
     .string()
     .nullable()
@@ -271,16 +272,20 @@ const AbaDados = ({ perfil, onSalvo }: Props) => {
           <Controller
             name="senha"
             control={control}
-            render={({ field }) => (
-              <InputText
-                id={field.name}
-                type="password"
-                autoComplete="new-password"
-                {...field}
-                value={field.value ?? ''}
-                disabled={!podeSalvar}
-                placeholder="Deixe em branco para manter"
-              />
+            render={({ field, fieldState }) => (
+              <>
+                <InputText
+                  id={field.name}
+                  type="password"
+                  autoComplete="new-password"
+                  {...field}
+                  value={field.value ?? ''}
+                  disabled={!podeSalvar}
+                  className={classNames({ 'p-invalid': fieldState.error })}
+                  placeholder="Deixe em branco para manter"
+                />
+                {getFormErrorMessage(fieldState)}
+              </>
             )}
           />
         </div>

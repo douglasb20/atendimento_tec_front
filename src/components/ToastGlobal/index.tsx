@@ -23,10 +23,10 @@ export const mostrarToast = (
 
 /**
  * Monta o `Toast` uma vez, em `(main)/layout.tsx`, no mesmo padrão de
- * `AlertasNaTela`/`ModalAlteraSenha` - existe uma única instância para o
- * portal inteiro, e `mostrarToast` a alcança por uma ref de módulo (não dá
- * para usar hook: `Alerta`/`CatchAlerta` já são chamadas fora de componente,
- * de qualquer arquivo de serviço).
+ * `AlertasNaTela` - existe uma única instância para o portal inteiro, e
+ * `mostrarToast` a alcança por uma ref de módulo (não dá para usar hook:
+ * `Alerta`/`CatchAlerta` já são chamadas fora de componente, de qualquer
+ * arquivo de serviço).
  */
 const ToastGlobal = () => {
   const localRef = useRef<Toast>(null);

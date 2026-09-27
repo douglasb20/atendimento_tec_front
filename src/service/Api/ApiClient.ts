@@ -218,6 +218,12 @@ export const ListUrl = {
   EsqueciSenha: { url: '/auth/esqueci-senha', method: 'POST' },
   ValidarTokenSenha: { url: '/auth/redefinir-senha/{{token}}/valido', method: 'GET' },
   RedefinirSenha: { url: '/auth/redefinir-senha', method: 'POST' },
+
+  // Convite de cadastro (substitui o admin definir senha na hora).
+  ValidarTokenConvite: { url: '/convites/{{token}}/valido', method: 'GET' },
+  AceitarConvite: { url: '/convites/{{token}}/aceitar', method: 'POST' },
+  ReenviarConvite: { url: '/users/{{user_id}}/reenviar-convite', method: 'POST' },
+  LinkConvite: { url: '/users/{{user_id}}/link-convite', method: 'POST' },
 };
 
 /**
@@ -232,6 +238,8 @@ const ENDPOINTS_PUBLICOS = new Set<keyof typeof ListUrl>([
   'EsqueciSenha',
   'ValidarTokenSenha',
   'RedefinirSenha',
+  'ValidarTokenConvite',
+  'AceitarConvite',
 ]);
 
 /**

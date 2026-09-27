@@ -3,7 +3,6 @@ import { useEffect, useRef } from 'react';
 
 import ChatInterno from '@/app/(main)/chat/[[...id]]/_ChatInterno';
 import AlertasNaTela from '@/components/AlertasNaTela';
-import ModalAlteraSenha from '@/components/ModalAlteraSenha';
 import ToastGlobal from '@/components/ToastGlobal';
 import Layout from '@/layout/layout';
 import { iniciarRenovacaoDeSessao, pararRenovacaoDeSessao } from '@/service/Api/sessaoViva';
@@ -75,7 +74,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
         />
       </audio>
 
-      <ModalAlteraSenha />
       {/* Fora do `Layout` e em portal: a janela flutuante precisa sobreviver à
           navegação entre telas, e é aqui que o hook do chat interno assina os
           eventos de socket - uma vez só em toda a aplicação. */}

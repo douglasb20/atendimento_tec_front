@@ -6,8 +6,6 @@ export const ServiceContext = createContext({});
 interface IServiceContext {
   setLoading?: (state?: boolean) => void;
   setPdfPreview?: (props: IPDFPreview) => void;
-  setModalPasswordVisible?: (state: boolean) => void;
-  readonly modalPasswordVisible?: boolean;
   readonly isLoading?: boolean;
   readonly pdfPreview?: IPDFPreview;
 }
@@ -27,7 +25,6 @@ export function ServiceProvider({ children }: { children: React.ReactNode }) {
     }),
     {
       isLoading: false,
-      modalPasswordVisible: false,
       pdfPreview: {
         visible: false,
         file: null,
@@ -48,15 +45,9 @@ export function ServiceProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const setModalPasswordVisible = (state: boolean) => {
-    setContexts({ modalPasswordVisible: state });
-  };
-
   return (
     <>
-      <ServiceContext.Provider
-        value={{ ...contexts, setLoading, setPdfPreview, setModalPasswordVisible }}
-      >
+      <ServiceContext.Provider value={{ ...contexts, setLoading, setPdfPreview }}>
         {children}
       </ServiceContext.Provider>
     </>

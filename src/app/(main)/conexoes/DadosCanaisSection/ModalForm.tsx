@@ -9,7 +9,7 @@ import EditorMensagem from '@/components/EditorMensagem';
 import LabelPlus from '@/components/LabelPlus';
 import { ChannelResponse, DepartmentResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta, getFormErrorMessage, msgRequired } from '@/service/Util';
+import { getFormErrorMessage, msgRequired } from '@/service/Util';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 /** Estado do anexo de uma mensagem automática: novo, removido ou inalterado. */
@@ -116,6 +116,11 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
 
   // Carregados ao abrir: a lista muda pouco, mas cadastrar um setor novo e
   // voltar aqui sem vê-lo na seleção seria confuso.
+  //
+  // Sem `department:view` a chamada falha, e o campo de setores é só um
+  // extra opcional deste formulário - configurar a conexão não pode ficar
+  // bloqueado por um alerta de erro por causa disso. O campo some (mesmo
+  // padrão de `ModalFormUser`), silenciosamente.
   useEffect(() => {
     if (!visible) return;
 
@@ -123,8 +128,8 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
       try {
         const dadosSetores = await FetchReq<DepartmentResponse[]>('ListarSetores');
         setSetores(dadosSetores ?? []);
-      } catch (err) {
-        CatchAlerta(err, 'Não foi possível carregar os setores');
+      } catch {
+        setSetores([]);
       }
     };
 

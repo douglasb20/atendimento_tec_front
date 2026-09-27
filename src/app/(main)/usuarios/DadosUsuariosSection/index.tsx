@@ -5,7 +5,7 @@ import { useService } from '@/contexts/ServicesContext';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { IActionTable } from '@/components/AcoesDataTable';
-import { CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
+import { AlertaCallback, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 import ApiClient from '@/service/Api/ApiClient';
 import { IUsuariosResponse } from '@/Interfaces';
 
@@ -50,6 +50,24 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
       command: (data) => {
         GetUserById(data.id);
       },
+    },
+    {
+      // Só enquanto o convite não foi aceito - depois disso o atendente já
+      // tem senha própria, e não há mais o que reenviar.
+      isHidden: (data) => !podeEditar || data.convite_status !== 'pendente',
+      label: 'Reenviar convite',
+      tooltip: 'Reenviar convite por e-mail',
+      icon: 'pi pi-fw pi-send',
+      bgcolor: 'info',
+      command: (data) => ReenviarConvite(data),
+    },
+    {
+      isHidden: (data) => !podeEditar || data.convite_status !== 'pendente',
+      label: 'Copiar link do convite',
+      tooltip: 'Copiar link do convite',
+      icon: 'pi pi-fw pi-copy',
+      bgcolor: 'secondary',
+      command: (data) => CopiarLinkConvite(data),
     },
     {
       isHidden: () => !podeExcluir,
@@ -98,6 +116,35 @@ export default function DadosClientesSection({ data }: DadosUsuariosProps) {
       GetUsers();
     } catch (err) {
       CatchAlerta(err, 'Erro ao remover atendente.');
+    }
+  };
+
+  const ReenviarConvite = async (data: IUsuariosResponse) => {
+    try {
+      setLoading(true);
+      await FetchReq({ endpoint: 'ReenviarConvite', variables: [data.id] });
+      AlertaCallback('Convite reenviado!', () => {}, 'success');
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao reenviar convite');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Não-destrutiva e instantânea: sem `ConfirmaAcao`, diferente das outras.
+  const CopiarLinkConvite = async (data: IUsuariosResponse) => {
+    try {
+      setLoading(true);
+      const { url } = await FetchReq<{ url: string }>({
+        endpoint: 'LinkConvite',
+        variables: [data.id],
+      });
+      await navigator.clipboard.writeText(url);
+      AlertaCallback('Link copiado!', () => {}, 'success');
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao copiar link do convite');
+    } finally {
+      setLoading(false);
     }
   };
 

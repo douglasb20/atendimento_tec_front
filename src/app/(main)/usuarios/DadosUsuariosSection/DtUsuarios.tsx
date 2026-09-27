@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Column } from 'primereact/column';
+import { Tag } from 'primereact/tag';
 
 import AcoesDataTable, { BodyDateAndTime } from '@/components/AcoesDataTable';
 import DataTableCustom from '@/components/DataTableCustom';
@@ -57,6 +58,24 @@ const DtUsuarios = ({ actions, ...props }) => {
           alignHeader="center"
           headerClassName="w-12rem"
           body={BodyDateAndTime}
+        />
+        <Column
+          header="Status"
+          align="center"
+          headerClassName="w-10rem"
+          body={(usuario: IUsuariosResponse) =>
+            usuario.convite_status === 'pendente' ? (
+              <Tag
+                severity="warning"
+                value="Convite pendente"
+              />
+            ) : (
+              <Tag
+                severity="success"
+                value="Ativo"
+              />
+            )
+          }
         />
         <Column
           hidden={!actions ? true : false}

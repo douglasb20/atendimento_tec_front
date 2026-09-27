@@ -78,27 +78,39 @@ function ModalNovoAtendimento({ visible, onHide, onCriado }: ModalNovoAtendiment
     const carregar = async () => {
       try {
         setCarregando(true);
-        const [dadosContatos, dadosCanais, dadosSetores] = await Promise.all([
+        const [dadosContatos, dadosCanais] = await Promise.all([
           FetchReq<ContactResponse[]>('ListarContatos'),
           FetchReq<ChannelResponse[]>('ListarCanais'),
-          FetchReq<DepartmentResponse[]>('ListarSetores'),
         ]);
         setContatos(dadosContatos ?? []);
         const conectados = (dadosCanais ?? []).filter(
           (c) => c.channel_status_id === ChannelStatusId.CONECTADO,
         );
         setCanais(dadosCanais ?? []);
-        setSetores(dadosSetores ?? []);
         // Único canal conectado: preenche sozinho, sem perguntar.
         if (conectados.length === 1) setChannelId(conectados[0].id);
       } catch (err) {
-        CatchAlerta(err, 'Erro ao carregar contatos, canais e setores');
+        CatchAlerta(err, 'Erro ao carregar contatos e canais');
       } finally {
         setCarregando(false);
       }
     };
 
+    // Separado do resto: setor é um campo a mais neste formulário, não um
+    // requisito para abrir a conversa. Uma falha aqui (ex.: usuário sem
+    // nenhuma permissão que dê acesso à listagem de setores) não pode
+    // impedir contatos e canais, que já carregaram, de aparecer - o campo de
+    // setor simplesmente some (mesmo padrão do modal de conexão).
+    const carregarSetores = async () => {
+      try {
+        setSetores((await FetchReq<DepartmentResponse[]>('ListarSetores')) ?? []);
+      } catch {
+        setSetores([]);
+      }
+    };
+
     carregar();
+    carregarSetores();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 

@@ -37,8 +37,6 @@ type ModalProps = {
 };
 
 type UsuarioForm = Omit<IUsuariosResponse, 'is_requestpassword' | 'lastlogin_at' | 'created_at'> & {
-  senha?: string;
-  confirma_senha?: string;
   /** O grupo define o que o usuário pode fazer. Nulo é sem acesso a nada. */
   permission_group_id?: number | null;
   /** Os setores em que a pessoa atende - pode ser mais de um. */
@@ -49,8 +47,6 @@ const defaultForm: UsuarioForm = {
   name: '',
   last_name: '',
   email: '',
-  senha: '',
-  confirma_senha: '',
   avatar_url: null,
   permission_group_id: null,
   department_ids: [],
@@ -116,21 +112,6 @@ const ModalFormUser = (props: ModalProps) => {
     name: yup.string().required(msgRequired),
     last_name: yup.string().notRequired(),
     email: yup.string().required(msgRequired).email('Email incorreto'),
-    senha: yup.string().when('id', {
-      is: () => data?.id === undefined,
-      then: (schema) =>
-        schema.required(msgRequired).min(4, 'Senha precisa ter mais de 4 caracteres'),
-      otherwise: (schema) => schema.notRequired(),
-    }),
-    confirma_senha: yup
-      .string()
-      .oneOf([yup.ref('senha')], 'Senha não coincide')
-      .when('senha', {
-        is: () => data?.id === undefined,
-        then: (schema) =>
-          schema.required(msgRequired).min(6, 'Campo precisa ter no mínimo 6 caracteres'),
-        otherwise: (schema) => schema.notRequired(),
-      }),
   });
 
   const { control, handleSubmit, reset } = useForm<UsuarioForm>({
@@ -232,15 +213,11 @@ const ModalFormUser = (props: ModalProps) => {
       };
 
       if (!data?.id) {
-        dataBody['password'] = fields.senha;
         await FetchReq({
           endpoint: 'AdicionarUsuario',
           body: dataBody,
         });
       } else {
-        if (fields.senha !== '') {
-          dataBody['password'] = fields.senha;
-        }
         await FetchReq({
           endpoint: 'AtualizarUsuario',
           body: dataBody,
@@ -252,7 +229,13 @@ const ModalFormUser = (props: ModalProps) => {
         await getUserInfo();
       }
 
-      AlertaCallback('Atendente salvo com sucesso!', () => onConfirm && onConfirm(), 'success');
+      AlertaCallback(
+        !data?.id
+          ? 'Convite enviado!'
+          : 'Atendente salvo com sucesso!',
+        () => onConfirm && onConfirm(),
+        'success',
+      );
       onHide && onHide();
     } catch (err) {
       CatchAlerta(err, 'Erro ao salvar atendente');
@@ -362,7 +345,7 @@ const ModalFormUser = (props: ModalProps) => {
       <Modal
         modal
         className="p-fluid"
-        style={{ width: '60rem' }}
+        style={{ width: '40rem' }}
         visible={visible}
         header={(!data?.id ? 'Adicionar' : 'Alterar') + ' atendente'}
         onHide={onHide}
@@ -430,8 +413,10 @@ const ModalFormUser = (props: ModalProps) => {
                   />
                 </div>
               </div>
-              {/* Nome e sobrenome dividem a linha; e-mail e senha, as seguintes. O
-              grupo e os setores ficam na aba Configuração. */}
+              {/* Nome e sobrenome dividem a linha; e-mail vem em seguida. O
+              grupo e os setores ficam na aba Configuração. Sem campo de
+              senha: o próprio atendente a define ao aceitar o convite por
+              e-mail. */}
               <div className="col-6">
                 <Controller
                   control={control}
@@ -475,7 +460,7 @@ const ModalFormUser = (props: ModalProps) => {
                   )}
                 />
               </div>
-              <div className="col-6">
+              <div className="col-12">
                 <Controller
                   control={control}
                   name="email"
@@ -490,50 +475,6 @@ const ModalFormUser = (props: ModalProps) => {
                         id={field.name}
                         {...field}
                         placeholder="exemplo@exemplo.com"
-                        disabled={!podeSalvar}
-                      />
-                      {getFormErrorMessage(fieldState)}
-                    </>
-                  )}
-                />
-              </div>
-              <div className="col-6">
-                <Controller
-                  control={control}
-                  name="senha"
-                  render={({ field, fieldState }) => (
-                    <>
-                      <LabelPlus
-                        htmlFor={field.name}
-                        text="Senha"
-                        required={!data?.id}
-                      />
-                      <InputText
-                        id={field.name}
-                        {...field}
-                        type="password"
-                        disabled={!podeSalvar}
-                      />
-                      {getFormErrorMessage(fieldState)}
-                    </>
-                  )}
-                />
-              </div>
-              <div className="col-6">
-                <Controller
-                  control={control}
-                  name="confirma_senha"
-                  render={({ field, fieldState }) => (
-                    <>
-                      <LabelPlus
-                        htmlFor={field.name}
-                        text="Confirma senha"
-                        required={!data?.id}
-                      />
-                      <InputText
-                        id={field.name}
-                        {...field}
-                        type="password"
                         disabled={!podeSalvar}
                       />
                       {getFormErrorMessage(fieldState)}

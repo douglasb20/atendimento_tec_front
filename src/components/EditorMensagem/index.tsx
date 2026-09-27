@@ -262,10 +262,15 @@ const EditorMensagem = ({
 
             {comVariaveis && (
               <>
+                {/* `baseZIndex` acima de 1100: o z-index padrão de menu
+                    (1000) é menor que o do `Dialog` (1100), e este editor só
+                    é usado dentro de modais - sem isto o popup abria atrás
+                    do próprio diálogo, invisível. */}
                 <Menu
                   ref={menuVariaveisRef}
                   model={itensVariaveis}
                   popup
+                  baseZIndex={1200}
                   style={{ width: 'auto' }}
                   pt={{ label: { className: 'white-space-nowrap' } }}
                 />
