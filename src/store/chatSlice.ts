@@ -170,6 +170,35 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
       ],
     })),
 
+  /**
+   * Tira uma conversa da lista porque o atendente perdeu o direito de vê-la
+   * (outro assumiu e ele não tem `support.chat:view_others`) - não porque ela
+   * foi finalizada. Mesmo tratamento de `updateChat` quando é a conversa
+   * aberta: sai da tela e desfaz a URL, senão o painel ficaria mostrando uma
+   * conversa que a lista já não tem mais.
+   */
+  removeChat: (chatId) => {
+    set(({ chats, activeChat }) => {
+      const mesmoId = (a: unknown, b: unknown) => String(a) === String(b);
+      const novosChats = chats.filter((c) => !mesmoId(c.id, chatId));
+
+      if (activeChat && mesmoId(activeChat.id, chatId)) {
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(null, '', '/chat');
+        }
+
+        return {
+          chats: novosChats,
+          activeChat: null,
+          messages: [],
+          quoted: { message: null, mode: null },
+        };
+      }
+
+      return { chats: novosChats };
+    });
+  },
+
   setUnreadCount: (chatId, unread_count) => {
     set(({ chats }) => ({
       chats: chats.map((c) =>

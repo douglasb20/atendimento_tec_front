@@ -50,11 +50,7 @@ const AbasConversa = ({ ativa, onTrocar, naoLidasInternas, mostrarInterno = true
   );
 
   return (
-    <div
-      className={classNames('flex border-round-top overflow-hidden mb-2', {
-        'flex-1': mostrarInterno,
-      })}
-    >
+    <div className="flex flex-none border-round-top overflow-hidden mb-2">
       {aba('atendimentos', 'fa-regular fa-comments', 'Atendimentos')}
       {mostrarInterno && aba('interno', 'fa-regular fa-users', 'Interno', naoLidasInternas)}
     </div>

@@ -61,6 +61,7 @@ const ConversationSection = () => {
   const activeChat = useChatStore((s) => s.activeChat);
   const notificationSound = useChatStore((s) => s.notificationSound);
   const updateChat = useChatStore((s) => s.updateChat);
+  const removeChat = useChatStore((s) => s.removeChat);
   const addMessages = useChatStore((s) => s.addMessages);
   const setUnreadCount = useChatStore((s) => s.setUnreadCount);
   const setLoadMessages = useChatStore((s) => s.setLoadMessages);
@@ -303,6 +304,16 @@ const ConversationSection = () => {
       notificarEstado(payload, anterior);
     });
 
+    // Outro atendente assumiu um atendimento que este usuário não tem
+    // permissão de ver de terceiros (`support.chat:view_others`) - o backend
+    // para de mandar `chat_state` dessa conversa e avisa aqui para tirá-la da
+    // lista, já que ela pode ter sido carregada antes (em fila, sem dono,
+    // visível a todo mundo).
+    socket.off('whatsapp:chat_removed');
+    socket.on('whatsapp:chat_removed', ({ id }: { id: string | number }) => {
+      removeChat(id);
+    });
+
     // As funções precisam ser nomeadas: `removeEventListener` compara por
     // referência, e uma arrow nova no cleanup não removia nada. Como o efeito
     // depende do socket, cada reconexão empilhava mais um par de handlers.
@@ -320,6 +331,7 @@ const ConversationSection = () => {
       // Com a referência: sem ela, sairia junto o handler do `MessageItem`.
       socket.off('whatsapp:messages', aoChegarMensagem);
       socket.off('whatsapp:chat_state');
+      socket.off('whatsapp:chat_removed');
       window.removeEventListener('blur', aoDesfocar);
       window.removeEventListener('focus', aoFocar);
     };

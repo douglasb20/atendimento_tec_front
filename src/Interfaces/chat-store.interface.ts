@@ -76,6 +76,10 @@ export type ChatSlice = {
   setChatNotFound: (notFound: boolean) => void;
   addChats: (newChats: SupportChatsResponse[]) => void;
   updateChat: (chat: SupportChatsResponse) => void;
+  /** Tira uma conversa da lista sem passar por `updateChat` - usado quando o
+   *  backend avisa que o atendente perdeu acesso a ela (outro assumiu e ele
+   *  não tem `support.chat:view_others`), não quando ela é finalizada. */
+  removeChat: (chatId: string | number) => void;
   setUnreadCount: (chatId: string, count: number) => void;
   setActiveChat: (chat: SupportChatsResponse | null) => void;
   /** Aplica um patch na conversa aberta, sem esperar o eco do socket. */
