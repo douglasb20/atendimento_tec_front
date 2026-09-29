@@ -15,7 +15,7 @@ interface IProps<T> {
   visible: boolean;
   value?: T;
   onHide: () => void;
-  onStartSession: (numero?: string) => void;
+  onStartSession: (numero?: string) => void | Promise<void>;
   onDisconnectSession: () => void;
   onSincronizarStatus: () => void;
   sincronizando?: boolean;
@@ -27,8 +27,8 @@ const stepValuesQrCode = [
     status: (
       <span>
         Toque em Mais opções
-        <i className="pi pi-ellipsis-v border-1 p-1 border-round-md bg-gray-100"></i> no Android ou
-        em Configurações<i className="pi pi-cog border-1 p-1 border-round-md bg-gray-100"></i> no
+        <i className="pi pi-ellipsis-v border-1 p-1 border-round-md surface-card text-color"></i> no Android ou
+        em Configurações<i className="pi pi-cog border-1 p-1 border-round-md surface-card text-color"></i> no
         Iphone
       </span>
     ),
@@ -53,8 +53,8 @@ const stepValuesPairing = [
     status: (
       <span>
         Toque em Mais opções
-        <i className="pi pi-ellipsis-v border-1 p-1 border-round-md bg-gray-100"></i> no Android ou
-        em Configurações<i className="pi pi-cog border-1 p-1 border-round-md bg-gray-100"></i> no
+        <i className="pi pi-ellipsis-v border-1 p-1 border-round-md surface-card text-color"></i> no Android ou
+        em Configurações<i className="pi pi-cog border-1 p-1 border-round-md surface-card text-color"></i> no
         Iphone
       </span>
     ),
@@ -81,29 +81,47 @@ const stepValuesPairing = [
 /** As três telas do fluxo, no mesmo espírito do WhatsApp Web oficial. */
 type ModoConexao = 'qr' | 'telefone' | 'aguardando_codigo';
 
-/** O código de pareamento em blocos de uma letra - réplica visual do print. */
-const CodigoPareamento = ({ codigo }: { codigo: string }) => (
-  <div className="flex gap-2 justify-content-center flex-wrap">
-    {codigo.split('').map((caractere, indice) =>
-      caractere === '-' ? (
-        <span
+/**
+ * O código de pareamento em caixinhas, um caractere por bloco, com um hífen
+ * solto entre o 4º e o 5º - formato `GCPW-CA6G`. A Evolution devolve os 8
+ * caracteres corridos, sem hífen (`codigo.split('-')` não separava nada) - o
+ * hífen é inserido aqui, sempre entre o 4º e o 5º caractere.
+ */
+const CodigoPareamento = ({ codigo }: { codigo: string }) => {
+  const semHifen = codigo.replace(/-/g, '');
+  const primeiraMetade = semHifen.slice(0, 4);
+  const segundaMetade = semHifen.slice(4);
+
+  const Bloco = ({ caractere, indice }: { caractere: string; indice: number }) => (
+    <span
+      key={indice}
+      className="flex align-items-center justify-content-center border-1 surface-border border-round font-bold text-2xl surface-card text-color"
+      style={{ width: '2.5rem', height: '3rem' }}
+    >
+      {caractere}
+    </span>
+  );
+
+  return (
+    <div className="flex gap-2 align-items-center">
+      {primeiraMetade.split('').map((caractere, indice) => (
+        <Bloco
           key={indice}
-          className="flex align-items-center text-2xl text-500"
-        >
-          -
-        </span>
-      ) : (
-        <span
+          caractere={caractere}
+          indice={indice}
+        />
+      ))}
+      {segundaMetade && <span className="text-2xl font-bold">-</span>}
+      {segundaMetade.split('').map((caractere, indice) => (
+        <Bloco
           key={indice}
-          className="flex align-items-center justify-content-center border-1 surface-border border-round font-bold text-2xl surface-100"
-          style={{ width: '2.5rem', height: '3rem' }}
-        >
-          {caractere}
-        </span>
-      ),
-    )}
-  </div>
-);
+          caractere={caractere}
+          indice={indice}
+        />
+      ))}
+    </div>
+  );
+};
 
 const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
   const { podeAcao, semPermissao } = usePermissoesModulo('channel');
@@ -124,6 +142,7 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
 
   const [modo, setModo] = useState<ModoConexao>('qr');
   const [numero, setNumero] = useState<string | undefined>(undefined);
+  const [pedindoCodigo, setPedindoCodigo] = useState(false);
 
   // Volta ao QR (o padrão) sempre que o modal reabre ou o canal muda de
   // status - sem isto o formulário de telefone ficaria na tela depois de
@@ -140,10 +159,28 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
     if (value?.pairing_code) setModo('aguardando_codigo');
   }, [value?.pairing_code]);
 
-  const pedirPareamento = () => {
+  // Conectou: sai da tela de código/QR sozinho. Sem isto o modal ficava preso
+  // em "aguardando_codigo" mesmo com o status já em "Conectado" no topo, porque
+  // nenhum efeito reagia à mudança de status - só à reabertura do modal.
+  useEffect(() => {
+    if (value?.channel_status_id === 3) setModo('qr');
+  }, [value?.channel_status_id]);
+
+  const pedirPareamento = async () => {
     const digitos = somenteDigitos(numero);
     if (!digitos) return;
-    onStartSession(digitos);
+
+    try {
+      setPedindoCodigo(true);
+      setModo('aguardando_codigo');
+      // Com uma sessão já em andamento (QR ativo), o backend a desconecta
+      // antes de pedir o código - o pedido pode levar mais de um instante, e
+      // sem este estado o botão pareceria travado no clique, como já
+      // aconteceu antes de confirmar a causa.
+      await onStartSession(digitos);
+    } finally {
+      setPedindoCodigo(false);
+    }
   };
 
   return (
@@ -305,7 +342,8 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
                 <Button
                   label="Avançar"
                   onClick={pedirPareamento}
-                  disabled={!somenteDigitos(numero)}
+                  disabled={!somenteDigitos(numero) || pedindoCodigo}
+                  loading={pedindoCodigo}
                 />
 
                 <span
@@ -318,57 +356,62 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
             </div>
           )}
 
-          {value?.channel_status_id === 2 && modo === 'aguardando_codigo' && (
-            <div className="col-12 grid px-4">
-              <div className="field col-8 flex flex-column gap-3">
+          {modo === 'aguardando_codigo' && (
+            <div className="col-12 px-4">
+              {/* Número em cima, código embaixo dele - réplica do WhatsApp
+                  Web oficial ("Insira o código no seu celular"). */}
+              <div className="flex flex-column gap-2 align-items-center text-center mb-4">
                 <span className="text-xl font-semibold">
                   Conectando a conta do WhatsApp{' '}
                   <span className="font-normal text-color-secondary">
                     {paraE164(numero) ?? numero}
                   </span>{' '}
                   <span
-                    className="text-primary underline cursor-pointer text-base"
+                    className="text-primary underline cursor-pointer text-base white-space-nowrap"
                     onClick={() => setModo('telefone')}
                   >
                     (Editar)
                   </span>
                 </span>
 
-                <Timeline
-                  className="w-30rem "
-                  value={stepValuesPairing}
-                  align="left"
-                  content={(item: (typeof stepValuesPairing)[number]) => item.status}
-                  marker={(item: (typeof stepValuesPairing)[number]) => (
-                    <div className="bg-teal-100 flex justify-content-center align-items-center border-teal-400 border-1 border-circle h-2rem w-2rem p-1">
-                      <span className="font-bold text-teal-600">{item.step}</span>
-                    </div>
-                  )}
-                  pt={{
-                    opposite: {
-                      className: 'hidden',
-                    },
-                  }}
-                />
-
-                <span
-                  className="text-primary underline cursor-pointer text-sm"
-                  onClick={() => setModo('qr')}
-                >
-                  Conectar com o QR code
-                </span>
-              </div>
-              <div className="field col-4 flex flex-column justify-content-center align-items-center gap-3">
                 {!value?.pairing_code ? (
-                  <div className="flex flex-column justify-content-center align-items-center ">
-                    <ProgressSpinner className="mb-3 w-4rem h-4rem" />
-                    <span className="font-semibold text-xl">Gerando código</span>
-                    <span>Por favor, aguarde...</span>
+                  <div className="flex align-items-center gap-2">
+                    <ProgressSpinner
+                      className="w-2rem h-2rem"
+                      strokeWidth="6"
+                    />
+                    <span className="text-sm text-color-secondary">
+                      {pedindoCodigo ? 'Gerando código...' : 'Aguardando código...'}
+                    </span>
                   </div>
                 ) : (
                   <CodigoPareamento codigo={value.pairing_code} />
                 )}
               </div>
+
+              <Timeline
+                className="w-30rem "
+                value={stepValuesPairing}
+                align="left"
+                content={(item: (typeof stepValuesPairing)[number]) => item.status}
+                marker={(item: (typeof stepValuesPairing)[number]) => (
+                  <div className="bg-teal-100 flex justify-content-center align-items-center border-teal-400 border-1 border-circle h-2rem w-2rem p-1">
+                    <span className="font-bold text-teal-600">{item.step}</span>
+                  </div>
+                )}
+                pt={{
+                  opposite: {
+                    className: 'hidden',
+                  },
+                }}
+              />
+
+              <span
+                className="text-primary underline cursor-pointer text-sm"
+                onClick={() => setModo('qr')}
+              >
+                Conectar com o QR code
+              </span>
             </div>
           )}
         </div>
