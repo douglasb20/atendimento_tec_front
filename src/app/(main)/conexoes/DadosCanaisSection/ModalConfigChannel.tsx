@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import QRCode from 'qrcode.react';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
@@ -7,6 +7,7 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import { Timeline } from 'primereact/timeline';
 import { classNames } from 'primereact/utils';
 
+import InputTelefone, { paraE164, somenteDigitos } from '@/components/InputTelefone';
 import { ChannelResponse } from '@/Interfaces';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
@@ -14,13 +15,13 @@ interface IProps<T> {
   visible: boolean;
   value?: T;
   onHide: () => void;
-  onStartSession: () => void;
+  onStartSession: (numero?: string) => void;
   onDisconnectSession: () => void;
   onSincronizarStatus: () => void;
   sincronizando?: boolean;
 }
 
-const stepValues = [
+const stepValuesQrCode = [
   { status: <span>Abra o WhatsApp no seu celular.</span>, step: 1 },
   {
     status: (
@@ -44,6 +45,66 @@ const stepValues = [
   { status: <span>Escaneie o QR code para confirmar</span>, step: 4 },
 ];
 
+/** Mesmos 4 passos, adaptados ao texto de pareamento por número - réplica do
+ *  fluxo do WhatsApp Web oficial ("Entrar com número de telefone"). */
+const stepValuesPairing = [
+  { status: <span>Abra o WhatsApp no seu celular.</span>, step: 1 },
+  {
+    status: (
+      <span>
+        Toque em Mais opções
+        <i className="pi pi-ellipsis-v border-1 p-1 border-round-md bg-gray-100"></i> no Android ou
+        em Configurações<i className="pi pi-cog border-1 p-1 border-round-md bg-gray-100"></i> no
+        Iphone
+      </span>
+    ),
+    step: 2,
+  },
+  {
+    status: (
+      <span>
+        Toque em "<b>Dispositivos Conectados</b>" e, em seguida, em "<b>Conectar um Dispositivo</b>"
+      </span>
+    ),
+    step: 3,
+  },
+  {
+    status: (
+      <span>
+        Toque em "<b>Conectar com número de telefone</b>" e insira o código exibido
+      </span>
+    ),
+    step: 4,
+  },
+];
+
+/** As três telas do fluxo, no mesmo espírito do WhatsApp Web oficial. */
+type ModoConexao = 'qr' | 'telefone' | 'aguardando_codigo';
+
+/** O código de pareamento em blocos de uma letra - réplica visual do print. */
+const CodigoPareamento = ({ codigo }: { codigo: string }) => (
+  <div className="flex gap-2 justify-content-center flex-wrap">
+    {codigo.split('').map((caractere, indice) =>
+      caractere === '-' ? (
+        <span
+          key={indice}
+          className="flex align-items-center text-2xl text-500"
+        >
+          -
+        </span>
+      ) : (
+        <span
+          key={indice}
+          className="flex align-items-center justify-content-center border-1 surface-border border-round font-bold text-2xl surface-100"
+          style={{ width: '2.5rem', height: '3rem' }}
+        >
+          {caractere}
+        </span>
+      ),
+    )}
+  </div>
+);
+
 const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
   const { podeAcao, semPermissao } = usePermissoesModulo('channel');
 
@@ -60,6 +121,30 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
     onSincronizarStatus,
     sincronizando = false,
   } = props;
+
+  const [modo, setModo] = useState<ModoConexao>('qr');
+  const [numero, setNumero] = useState<string | undefined>(undefined);
+
+  // Volta ao QR (o padrão) sempre que o modal reabre ou o canal muda de
+  // status - sem isto o formulário de telefone ficaria na tela depois de
+  // conectar, ou reaparecia sozinho ao reabrir outro canal.
+  useEffect(() => {
+    if (!visible) return;
+    setModo('qr');
+    setNumero(undefined);
+  }, [visible, value?.id]);
+
+  // O código chegou (a Evolution respondeu ao pedido de pareamento): avança
+  // para a tela que o exibe, sem exigir um clique a mais.
+  useEffect(() => {
+    if (value?.pairing_code) setModo('aguardando_codigo');
+  }, [value?.pairing_code]);
+
+  const pedirPareamento = () => {
+    const digitos = somenteDigitos(numero);
+    if (!digitos) return;
+    onStartSession(digitos);
+  };
 
   return (
     <>
@@ -140,16 +225,16 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
               />
             </div>
           </div>
-          {value?.channel_status_id === 2 && (
+          {value?.channel_status_id === 2 && modo === 'qr' && (
             <div className="col-12 grid px-4">
               <div className="field col-8 flex flex-column gap-3">
                 <span className="mb-5 text-3xl font-semibold">Etapas para acessar</span>
                 <Timeline
                   className="w-30rem "
-                  value={stepValues}
+                  value={stepValuesQrCode}
                   align="left"
-                  content={(item: (typeof stepValues)[number]) => item.status}
-                  marker={(item: (typeof stepValues)[number]) => (
+                  content={(item: (typeof stepValuesQrCode)[number]) => item.status}
+                  marker={(item: (typeof stepValuesQrCode)[number]) => (
                     <div className="bg-teal-100 flex justify-content-center align-items-center border-teal-400 border-1 border-circle h-2rem w-2rem p-1">
                       <span className="font-bold text-teal-600">{item.step}</span>
                     </div>
@@ -161,7 +246,7 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
                   }}
                 />
               </div>
-              <div className="field col-4 flex justify-content-center align-items-center">
+              <div className="field col-4 flex flex-column justify-content-center align-items-center gap-3">
                 {!value?.qr_code && (
                   <div className="flex flex-column justify-content-center align-items-center ">
                     <ProgressSpinner className="mb-3 w-4rem h-4rem" />
@@ -184,6 +269,104 @@ const ModalConfigChannel = (props: IProps<ChannelResponse>) => {
                     bgColor="#ffffff"
                     fgColor="#000000"
                   />
+                )}
+
+                {/* Réplica do WhatsApp Web oficial: o link fica abaixo do QR,
+                    e leva ao formulário de telefone - as duas modalidades
+                    coexistem, o atendente escolhe a cada tentativa. */}
+                <span
+                  className="text-primary underline cursor-pointer text-sm"
+                  onClick={() => setModo('telefone')}
+                >
+                  Entrar com número de telefone
+                </span>
+              </div>
+            </div>
+          )}
+
+          {value?.channel_status_id === 2 && modo === 'telefone' && (
+            <div className="col-12 flex flex-column align-items-center gap-4 px-4 py-5">
+              <div
+                className="flex flex-column gap-3"
+                style={{ maxWidth: '22rem', width: '100%' }}
+              >
+                <span className="text-2xl font-semibold text-center">
+                  Insira o número de telefone
+                </span>
+                <span className="text-color-secondary text-sm text-center">
+                  Selecione o país e insira o número, com WhatsApp já ativo nele.
+                </span>
+
+                <InputTelefone
+                  value={numero}
+                  onChange={setNumero}
+                />
+
+                <Button
+                  label="Avançar"
+                  onClick={pedirPareamento}
+                  disabled={!somenteDigitos(numero)}
+                />
+
+                <span
+                  className="text-primary underline cursor-pointer text-sm text-center"
+                  onClick={() => setModo('qr')}
+                >
+                  Conectar com o QR code
+                </span>
+              </div>
+            </div>
+          )}
+
+          {value?.channel_status_id === 2 && modo === 'aguardando_codigo' && (
+            <div className="col-12 grid px-4">
+              <div className="field col-8 flex flex-column gap-3">
+                <span className="text-xl font-semibold">
+                  Conectando a conta do WhatsApp{' '}
+                  <span className="font-normal text-color-secondary">
+                    {paraE164(numero) ?? numero}
+                  </span>{' '}
+                  <span
+                    className="text-primary underline cursor-pointer text-base"
+                    onClick={() => setModo('telefone')}
+                  >
+                    (Editar)
+                  </span>
+                </span>
+
+                <Timeline
+                  className="w-30rem "
+                  value={stepValuesPairing}
+                  align="left"
+                  content={(item: (typeof stepValuesPairing)[number]) => item.status}
+                  marker={(item: (typeof stepValuesPairing)[number]) => (
+                    <div className="bg-teal-100 flex justify-content-center align-items-center border-teal-400 border-1 border-circle h-2rem w-2rem p-1">
+                      <span className="font-bold text-teal-600">{item.step}</span>
+                    </div>
+                  )}
+                  pt={{
+                    opposite: {
+                      className: 'hidden',
+                    },
+                  }}
+                />
+
+                <span
+                  className="text-primary underline cursor-pointer text-sm"
+                  onClick={() => setModo('qr')}
+                >
+                  Conectar com o QR code
+                </span>
+              </div>
+              <div className="field col-4 flex flex-column justify-content-center align-items-center gap-3">
+                {!value?.pairing_code ? (
+                  <div className="flex flex-column justify-content-center align-items-center ">
+                    <ProgressSpinner className="mb-3 w-4rem h-4rem" />
+                    <span className="font-semibold text-xl">Gerando código</span>
+                    <span>Por favor, aguarde...</span>
+                  </div>
+                ) : (
+                  <CodigoPareamento codigo={value.pairing_code} />
                 )}
               </div>
             </div>

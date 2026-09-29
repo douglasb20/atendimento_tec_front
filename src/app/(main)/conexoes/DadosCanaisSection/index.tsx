@@ -291,11 +291,14 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     }
   };
 
-  const onStartSession = async () => {
+  /**
+   * `numero`, quando informado, pede o código de pareamento (conectar por
+   * telefone) em vez do QR - as duas modalidades coexistem no modal.
+   */
+  const onStartSession = async (numero?: string) => {
     try {
       if (activeChannel) {
-        // Inicia a sessão para o canal ativo
-        await FetchReq('IniciarSessao', [activeChannel.id]);
+        await FetchReq('IniciarSessao', [activeChannel.id, numero ?? '']);
       }
     } catch (err) {
       CatchAlerta(err, 'Erro ao iniciar sessão.');

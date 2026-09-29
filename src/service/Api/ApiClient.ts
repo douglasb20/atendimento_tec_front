@@ -103,7 +103,9 @@ export const ListUrl = {
   AtualizarCanal: { url: '/channels/{{channel_id}}', method: 'PATCH' },
   RemoverCanal: { url: '/channels/{{channel_id}}', method: 'DELETE' },
   AssinarAnexoCanal: { url: '/channels/assinar-anexo', method: 'POST' },
-  IniciarSessao: { url: '/channels/{{channel_id}}/start', method: 'GET' },
+  // `number`, quando informado, pede o código de pareamento (conectar por
+  // telefone) em vez do QR - vazio, o backend ignora e segue no QR de sempre.
+  IniciarSessao: { url: '/channels/{{channel_id}}/start?number={{number}}', method: 'GET' },
   ReiniciarCanal: { url: '/channels/{{channel_id}}/reiniciar', method: 'POST' },
   FinalizarSessao: { url: '/channels/{{channel_id}}/terminate', method: 'GET' },
 

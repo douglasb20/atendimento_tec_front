@@ -21,6 +21,8 @@ export type ChannelResponse = {
   session_id: string;
   channel_status_id: number;
   qr_code: string | null;
+  /** Código de pareamento (`XXXX-XXXX`), para conectar por telefone sem QR. */
+  pairing_code: string | null;
   is_connected: number;
   connected_at: string | null;
   disconnected_at: string | null;
