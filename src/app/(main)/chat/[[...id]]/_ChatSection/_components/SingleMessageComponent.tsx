@@ -9,6 +9,7 @@ import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
 import { DateToBR, fixHeartEmoji } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import { jaAnimou, marcaComoAnimada } from '@/service/Outbox/jaAnimadas';
+import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import QuotedMessageItem from './QuotedMessageItem';
 import PlayerAudio from './PlayerAudio';
 
@@ -118,6 +119,11 @@ const SingleMessageComponent = ({
   // Só a ação, nunca a lista: assinar `messages` aqui faria cada bolha
   // re-renderizar a cada mensagem nova da conversa.
   const setVideoPreview = useChatStore((s) => s.setVideoPreview);
+  const { ajustes } = useAjustesAtendimento();
+
+  // Apagada e com o conteúdo exibido: borda vermelha na bolha inteira e ícone
+  // no rodapé - mais visível numa lista longa que só o ícone pequeno sozinho.
+  const apagadaComConteudo = message.is_deleted && ajustes.mostrar_conteudo_mensagem_apagada;
 
   const InterpretedContent = useMemo(() => fixHeartEmoji(content), [content]);
 
@@ -194,9 +200,11 @@ const SingleMessageComponent = ({
   //
   // Na bolha própria, `text-primary-contrast` em vez de `text-white`: nos modos
   // escuros a primária é clara, e branco sobre ela não contrasta.
-  const messageClass = from_me
-    ? 'align-self-end border-primary-300 bg-primary-500 text-primary-contrast'
-    : 'align-self-start border-300 surface-200 text-color';
+  const messageClass = apagadaComConteudo
+    ? `${from_me ? 'align-self-end' : 'align-self-start'} border-red-400 ${from_me ? 'bg-primary-500 text-primary-contrast' : 'surface-200 text-color'}`
+    : from_me
+      ? 'align-self-end border-primary-300 bg-primary-500 text-primary-contrast'
+      : 'align-self-start border-300 surface-200 text-color';
 
   return (
     <div
@@ -214,14 +222,7 @@ const SingleMessageComponent = ({
           <i className="fa-regular fa-eye-slash" />
           <span>Mensagem removida do sistema</span>
         </div>
-      ) : message.is_deleted ? (
-        // Revogada pelo autor: o conteúdo não existe mais, então nada do corpo
-        // original é exibido - só o aviso, como no WhatsApp.
-        <div className="flex align-items-center gap-2 font-italic opacity-80">
-          <i className="fa-regular fa-ban" />
-          <span>Mensagem apagada</span>
-        </div>
-      ) : (
+      ) : message.is_deleted && !ajustes.mostrar_conteudo_mensagem_apagada ? null : (
         <>
           {message.has_quoted && (
             <QuotedMessageItem
@@ -386,8 +387,20 @@ const SingleMessageComponent = ({
           </div>
         </>
       )}
-      <div className="w-full text-right flex align-items-end justify-content-end gap-1 ">
-        <span className="text-xs">{ArrumaData(message.datetime)}</span>
+      <div className="w-full text-right flex flex-wrap-nowrap align-items-end justify-content-end gap-1 ">
+        {apagadaComConteudo && (
+          // Revogada pelo autor, com o ajuste ligado: o corpo original aparece
+          // normalmente, e só um ícone discreto - na mesma linha do horário/
+          // check, como se fosse mais um indicador de status - marca que foi
+          // apagada, sem competir com o conteúdo.
+          <span className="white-space-nowrap">
+            <i
+              className="fa-regular fa-ban text-xs text-red-400"
+              title="Mensagem apagada"
+            />
+          </span>
+        )}
+        <span className="text-xs white-space-nowrap">{ArrumaData(message.datetime)}</span>
         {message.from_me && (
           <span>
             <i className={`fa ${ProccessAck(message.ack)} text-xs`}></i>

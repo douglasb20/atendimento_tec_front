@@ -13,6 +13,7 @@ export const AJUSTES_ATENDIMENTO_PADRAO = {
   ordenar_atendimento_por_ultima_mensagem: false,
   notificar_mensagem_chatbot: true,
   carregar_mensagens_anteriores: false,
+  mostrar_conteudo_mensagem_apagada: false,
 };
 
 export type AjustesAtendimento = typeof AJUSTES_ATENDIMENTO_PADRAO;

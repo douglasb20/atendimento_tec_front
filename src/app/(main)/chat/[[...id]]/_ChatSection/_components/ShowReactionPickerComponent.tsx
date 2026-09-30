@@ -36,8 +36,10 @@ const ShowReactionPickerComponent = ({ message, bottomEl }: ShowReactionComponen
     }
   };
 
-  // Revogada não tem a que reagir, e pendente ainda não existe no WhatsApp.
-  if (message.is_deleted || message.pending) return null;
+  // Pendente ainda não existe no WhatsApp, então não há reação possível.
+  // Revogada continua permitindo reação - o WhatsApp aceita reagir a uma
+  // mensagem apagada normalmente (só o conteúdo some para o contato).
+  if (message.pending) return null;
 
   // A reação chega ao WhatsApp do cliente como qualquer resposta: sem alguém
   // ter assumido a conversa, ela sairia sem dono - a mesma razão pela qual a

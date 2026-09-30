@@ -119,7 +119,11 @@ export function Alerta(
  * @param {string} title Titulo do alerta
  */
 export function CatchAlerta(error: any, title: string, redirecionamento = null) {
-  let message: string = '';
+  // O Nest manda `message` como array quando o `class-validator` acusa mais
+  // de uma violação ao mesmo tempo (ex.: vários campos inválidos num único
+  // PATCH) - sem tratar isso à parte, o React rendeririza o array cru dentro
+  // do JSX, e as strings saem coladas, sem separador nenhum entre elas.
+  let message: string | string[] = '';
   if (isAxiosError(error)) {
     const errorAxios: AxiosError<IResponseError> = error;
     if (errorAxios?.response) {
@@ -136,16 +140,29 @@ export function CatchAlerta(error: any, title: string, redirecionamento = null) 
     }
   }
 
+  // Mais de uma violação vira lista com marcador, não texto corrido colado -
+  // é o caso mais comum de vir array (vários campos inválidos de uma vez).
+  const conteudo = Array.isArray(message) ? (
+    <ul className="text-left m-0 pl-4 flex flex-column gap-1">
+      {message.map((linha, indice) => (
+        <li key={indice}>{linha}</li>
+      ))}
+    </ul>
+  ) : (
+    <span>{message}</span>
+  );
+
   MySwal.fire({
-    title: <span className="text-10 font-semibold">{title}</span>,
-    html: <i>{message}</i>,
+    title: <span className="text-xl font-semibold">{title}</span>,
+    html: <div className="text-base text-color-secondary mt-2">{conteudo}</div>,
     icon: 'error',
+    iconColor: 'var(--red-500)',
     willClose: () => redirecionamento !== null && window.location.assign(redirecionamento),
     footer: (
       <Button
         autoFocus
-        className="px-4 pl-1"
-        label="OK"
+        label="Entendi"
+        severity="danger"
         type="button"
         onClick={() => Swal.close()}
       />
@@ -420,7 +437,9 @@ export const getFormErrorMessage = (state: ControllerFieldState) => {
 export const RemoveTZDate = (date: string) => date.replace(/(.000\+00\:00)/g, '').trim();
 
 export const ThrowError = (error, title) => {
-  let message: string = '';
+  // Repassado adiante como está: quem trata (`CatchAlerta`) já sabe lidar
+  // com os dois formatos.
+  let message: string | string[] = '';
   if (isAxiosError(error)) {
     const errorAxios: AxiosError<IResponseError> = error;
     if (errorAxios?.response?.data) {

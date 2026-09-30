@@ -52,7 +52,7 @@ const GeneralProvider = ({ children }) => {
         pt: {
           button: {
             root: {
-              className: 'p-button-sm',
+              className: 'p-button-sm shadow-none',
             },
           },
           inputtext: {

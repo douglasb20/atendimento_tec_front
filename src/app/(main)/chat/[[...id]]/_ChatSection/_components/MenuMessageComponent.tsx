@@ -65,11 +65,16 @@ const MenuMessageComponent = ({ menuModel, message, bottomEl }: MenuMessageProps
   // quem não o conduz.
   const podeAgirNoWhatsapp = podeAgirNoAtendimento(activeChat, usuarioId);
 
-  // Revogada não tem conteúdo para responder, citar ou baixar; pendente ainda
-  // não existe no WhatsApp, então nenhuma ação de lá se aplica.
-  // Oculta entra na mesma regra da revogada: não há conteúdo a citar,
-  // baixar ou editar.
-  const semAcoes = message.is_deleted || message.pending || !!message.hidden_at;
+  // Pendente ainda não existe no WhatsApp, então nenhuma ação de lá se
+  // aplica; oculta não tem conteúdo a citar, baixar ou editar.
+  const semAcoes = message.pending || !!message.hidden_at;
+
+  // Revogada: o WhatsApp permite reagir/responder normalmente (só o
+  // conteúdo some para o contato, a mensagem em si continua existindo na
+  // conversa) - `reply` não entra em `semAcoes`. Editar, apagar de novo e
+  // baixar mídia continuam bloqueados (não há o que fazer com algo já
+  // revogado), então esses seguem em `semAcoes`.
+  const semAcoesRevogavel = semAcoes || message.is_deleted;
 
   const newModel = menuModel.map((item) => {
     const newItem: MenuItem = { ...item };
@@ -94,11 +99,11 @@ const MenuMessageComponent = ({ menuModel, message, bottomEl }: MenuMessageProps
       // seleção. O que não couber na revogação do WhatsApp é ocultado só do
       // nosso lado; o que já está oculto não tem o que apagar de novo.
       case 'select':
-        newItem.visible = !semAcoes;
+        newItem.visible = !semAcoesRevogavel;
         break;
       case 'download':
         // Mídia expirada pela retenção não tem arquivo no storage para baixar.
-        newItem.visible = !semAcoes && message.has_media && !message.media_expired;
+        newItem.visible = !semAcoesRevogavel && message.has_media && !message.media_expired;
         break;
     }
 

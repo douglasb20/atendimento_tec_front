@@ -52,6 +52,19 @@ export type ChannelResponse = {
   despedida_anexo_mimetype: string | null;
   despedida_anexo_tipo: TipoAnexo | null;
   despedida_anexo_url?: string;
+  /** Liga a resolução automática por inatividade - desligado, os campos
+   * abaixo ficam preenchidos mas inertes. */
+  inatividade_ativa: boolean;
+  /** Minutos sem mensagem de nenhum dos dois lados até finalizar sozinho. */
+  inatividade_resolver_em_minutos: number | null;
+  /** Minutos antes de `inatividade_resolver_em_minutos` em que o aviso é
+   * enviado ao cliente - precisa ser menor que ele. */
+  inatividade_avisar_em_minutos: number | null;
+  /** Enviada ao cliente ao se aproximar da resolução por inatividade. Mesmas
+   * variáveis de `mensagem_despedida`, sem anexo. */
+  inatividade_mensagem_aviso: string | null;
+  /** Ao finalizar por inatividade, envia também `mensagem_despedida` - opt-in. */
+  inatividade_enviar_despedida: boolean;
   /** Os setores atendidos por este canal - só vem populado por
    * `GET /channels/:id` (`findChannelComSetores`), não na listagem. */
   departments?: { id: number; name: string }[];

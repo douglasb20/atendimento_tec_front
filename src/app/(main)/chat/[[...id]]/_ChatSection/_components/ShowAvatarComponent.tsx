@@ -8,6 +8,21 @@ type ShowAvatarComponentProps = {
 };
 
 const ShowAvatarComponent = ({ message, activeChat }: ShowAvatarComponentProps) => {
+  // Mensagem automática não tem atendente por trás - mostrar o avatar de quem
+  // está atendendo a conversa atribuiria a ele algo que o sistema mandou
+  // sozinho (saudação, despedida, aviso de inatividade).
+  if (message.is_automatic) {
+    return (
+      <div
+        className="mx-2 flex-none flex justify-content-center align-items-center border-circle surface-200"
+        style={{ width: 40, height: 40 }}
+        title="Mensagem automática do sistema"
+      >
+        <i className="pi pi-cog text-primary" style={{ fontSize: '1.1rem' }} />
+      </div>
+    );
+  }
+
   // `undefined` em vez do caminho padrão: o `Avatar` já resolve a ausência, e
   // deixar isso com ele é o que garante o mesmo desfecho quando a URL existe
   // mas falha ao carregar - o caso comum, já que a foto vem do WhatsApp com

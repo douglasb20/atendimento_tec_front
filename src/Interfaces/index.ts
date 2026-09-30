@@ -51,7 +51,10 @@ export type JWTToken = {
 };
 
 export interface IResponseError {
-  message: string;
+  // O Nest manda array quando o `class-validator` acusa mais de uma
+  // violação ao mesmo tempo, string nos demais erros (ex.: `BadRequestException`
+  // com um texto só).
+  message: string | string[];
   error: string;
   statusCode: number;
 }

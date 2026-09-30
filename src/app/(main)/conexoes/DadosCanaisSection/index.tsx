@@ -110,7 +110,16 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   const onSubmitForm = async (
     data: Pick<
       ChannelResponse,
-      'name' | 'id' | 'mensagem_saudacao' | 'mensagem_despedida' | 'department_ids'
+      | 'name'
+      | 'id'
+      | 'mensagem_saudacao'
+      | 'mensagem_despedida'
+      | 'department_ids'
+      | 'inatividade_ativa'
+      | 'inatividade_resolver_em_minutos'
+      | 'inatividade_avisar_em_minutos'
+      | 'inatividade_mensagem_aviso'
+      | 'inatividade_enviar_despedida'
     >,
     anexoSaudacao: EstadoAnexo,
     anexoDespedida: EstadoAnexo,
@@ -130,6 +139,11 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
         mensagem_saudacao: data.mensagem_saudacao?.trim() || null,
         mensagem_despedida: data.mensagem_despedida?.trim() || null,
         department_ids: data.department_ids ?? [],
+        inatividade_ativa: Boolean(data.inatividade_ativa),
+        inatividade_resolver_em_minutos: data.inatividade_resolver_em_minutos ?? null,
+        inatividade_avisar_em_minutos: data.inatividade_avisar_em_minutos ?? null,
+        inatividade_mensagem_aviso: data.inatividade_mensagem_aviso?.trim() || null,
+        inatividade_enviar_despedida: Boolean(data.inatividade_enviar_despedida),
         ...anexos,
       };
 

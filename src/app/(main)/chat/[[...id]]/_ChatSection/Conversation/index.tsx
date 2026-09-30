@@ -19,6 +19,7 @@ import ModalNovoAtendimento from './ModalNovoAtendimento';
 import AbasConversa, { AbaConversa } from '../../_ChatInterno/AbasConversa';
 import ListaColegas from '../../_ChatInterno/ListaColegas';
 import { podeTocarSom, useAvisarEvento } from '@/hooks/useAvisarEvento';
+import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import { useChatInterno } from '@/hooks/useChatInterno';
 import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -72,12 +73,40 @@ const ConversationSection = () => {
   const { setBreadcrumbs } = useLayoutStore();
   const { FetchReq } = useApi();
   const [grupoAtivo, setGrupoAtivo] = useState<GrupoAtendimento>('todos');
+  // Direção da ordenação da lista, à escolha do atendente - não mexe em qual
+  // campo ordena (isso é o ajuste global `ordenar_atendimento_por_ultima_mensagem`,
+  // decidido pelo admin), só inverte a direção. Por navegador/dispositivo
+  // (`localStorage`), não por conta: cada atendente decide na própria tela.
+  // Lida na inicialização do estado (não em `useEffect`) para a lista já
+  // nascer na ordem certa, sem piscar na ordem padrão por um instante.
+  const [ordemAscendente, setOrdemAscendente] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem('chat_ordem_ascendente') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const alternarOrdem = () => {
+    setOrdemAscendente((atual) => {
+      const novo = !atual;
+      try {
+        window.localStorage.setItem('chat_ordem_ascendente', String(novo));
+      } catch {
+        // Sem acesso ao localStorage (aba anônima com bloqueio, por exemplo):
+        // a troca ainda funciona nesta sessão, só não persiste.
+      }
+      return novo;
+    });
+  };
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
   const windowFocusedRef = useRef(true);
   const activeChatRef = useRef(activeChat);
 
   const { avisar } = useAvisarEvento();
   const { usuarioId } = useUsuarioLogado();
+  const { ajustes } = useAjustesAtendimento();
 
   /**
    * Espelha a lista para o handler do socket.
@@ -95,7 +124,7 @@ const ConversationSection = () => {
   // Refiltra só quando a lista ou o grupo mudam; sem isto, cada mensagem nova
   // recriaria o array e re-renderizaria todos os itens.
   /**
-   * Conversas do grupo escolhido, da mais recente para a mais antiga.
+   * Conversas do grupo escolhido, na direção que o atendente escolheu.
    *
    * A ordenação precisa acontecer aqui, e não só no backend: a listagem inicial
    * vem ordenada, mas o socket adiciona e atualiza conversas ao longo do tempo,
@@ -107,9 +136,9 @@ const ConversationSection = () => {
         const quando = (c: SupportChatsResponse) =>
           new Date(c.updated_at ?? c.created_at).getTime() || 0;
 
-        return quando(b) - quando(a);
+        return ordemAscendente ? quando(a) - quando(b) : quando(b) - quando(a);
       }),
-    [chats, grupoAtivo],
+    [chats, grupoAtivo, ordemAscendente],
   );
 
   useEffect(() => {
@@ -416,11 +445,28 @@ const ConversationSection = () => {
         </div>
       ) : (
         <>
-      <div className="flex align-items-center justify-content-between gap-2 mb-2">
+      <div className="flex align-items-center justify-content-between gap-1 border-bottom-1 surface-border pb-2 pt-3 mb-2 pr-2">
         <FiltroAtendimentos
           chats={chats}
           grupoAtivo={grupoAtivo}
           onSelecionar={setGrupoAtivo}
+        />
+              <Button
+                icon={`pi ${ordemAscendente ? 'pi-sort-amount-up' : 'pi-sort-amount-down'}`}
+                onClick={alternarOrdem}
+                style={{width: '1.5rem', height: '1.5rem'}}
+          text
+          rounded
+          className="p-0"
+          severity="secondary"
+          tooltip={
+            ordemAscendente
+              ? 'Mais antigas primeiro'
+              : 'Mais recentes primeiro'
+          }
+          tooltipOptions={{ position: 'top' }}
+                aria-label="Inverter ordenação da lista"
+                size="small"
         />
       </div>
 
@@ -543,10 +589,21 @@ const ConversationSection = () => {
                 <div className="flex align-items-center gap-2 mt-1 min-w-0">
                   <div className="flex-1 text-sm text-600 text-overflow-ellipsis white-space-nowrap overflow-hidden lastMessagePreview">
                     {conversation?.last_message_type === 'revoked' ? (
-                      <span className="font-italic text-600">
-                        <i className="fa-regular fa-ban mr-1" />
-                        Mensagem apagada
-                      </span>
+                      ajustes.mostrar_conteudo_mensagem_apagada ? (
+                        <span className="font-italic text-600">
+                          <i className="fa-regular fa-ban mr-1" />
+                          <Interweave
+                            content={fixHeartEmoji(
+                              conversation?.last_message?.replace(/\n/g, ' '),
+                            )}
+                          />
+                        </span>
+                      ) : (
+                        <span className="font-italic text-600">
+                          <i className="fa-regular fa-ban mr-1" />
+                          Mensagem apagada
+                        </span>
+                      )
                     ) : (
                       <Interweave
                         content={fixHeartEmoji(conversation?.last_message?.replace(/\n/g, ' '))}

@@ -1,13 +1,14 @@
 import { ContactResponse } from './contact.interface';
 import { UserResponse } from './user.interface';
 
-/** Espelha `support_chat_status` no banco; os dois últimos são finais. */
+/** Espelha `support_chat_status` no banco; os três últimos são finais. */
 export enum SupportChatStatusId {
   AGUARDANDO = 1,
   EM_ANDAMENTO = 2,
   EM_FILA = 3,
   FINALIZADO_SEM_RESPOSTA = 4,
   FINALIZADO = 5,
+  FINALIZADO_POR_INATIVIDADE = 6,
 }
 
 /**
@@ -20,7 +21,8 @@ export enum SupportChatStatusId {
  */
 export const ehAtendimentoFinalizado = (statusId?: number): boolean =>
   statusId === SupportChatStatusId.FINALIZADO ||
-  statusId === SupportChatStatusId.FINALIZADO_SEM_RESPOSTA;
+  statusId === SupportChatStatusId.FINALIZADO_SEM_RESPOSTA ||
+  statusId === SupportChatStatusId.FINALIZADO_POR_INATIVIDADE;
 
 /**
  * Se a conversa aceita ação do atendente - responder, reagir, citar, apagar.
@@ -117,6 +119,9 @@ export interface SupportChatMessageResponse {
   ack: number;
   type: string;
   from_me: boolean;
+  /** Gerada pelo sistema (saudação, despedida, aviso), não digitada pelo
+   * atendente - mesmo assim `from_me = true`. */
+  is_automatic: boolean;
   content: string;
   has_media: boolean;
   media_url: string;
