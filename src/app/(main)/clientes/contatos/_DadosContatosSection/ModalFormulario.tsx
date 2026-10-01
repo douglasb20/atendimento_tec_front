@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Checkbox } from 'primereact/checkbox';
 import { Dialog as Modal } from 'primereact/dialog';
+import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { TabPanel, TabView } from 'primereact/tabview';
@@ -9,8 +10,10 @@ import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
-import { getFormErrorMessage, msgRequired } from '@/service/Util';
-import { ContactResponse, ValorCampoForm } from '@/Interfaces';
+import { CatchAlerta, getFormErrorMessage, msgRequired } from '@/service/Util';
+import useApi from '@/service/Api/ApiClient';
+import { ClientResponse, ContactResponse, ValorCampoForm } from '@/Interfaces';
+import ModalClienteChat from '@/app/(main)/chat/[[...id]]/_ChatSection/_components/ModalClienteChat';
 import CamposPersonalizados from '@/components/CamposPersonalizados';
 import EditorAvatarContato from '@/components/EditorAvatarContato';
 import InputTelefone, { paraE164 } from '@/components/InputTelefone';
@@ -25,7 +28,7 @@ import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
  */
 export type ContactFormFields = Pick<
   ContactResponse,
-  'id' | 'name' | 'last_name' | 'phone' | 'ignore_support'
+  'id' | 'name' | 'last_name' | 'phone' | 'ignore_support' | 'client_id' | 'has_no_client'
 > & {
   /** Campos personalizados escolhidos para este contato. */
   campos?: ValorCampoForm[];
@@ -52,6 +55,8 @@ const defaultForm: ContactFormFields = {
   last_name: '',
   phone: '',
   ignore_support: false,
+  client_id: null,
+  has_no_client: false,
   campos: [],
 };
 
@@ -61,6 +66,8 @@ const schema = yup.object({
   last_name: yup.string().notRequired(),
   phone: yup.string().notRequired(),
   ignore_support: yup.boolean().notRequired(),
+  client_id: yup.number().nullable().notRequired(),
+  has_no_client: yup.boolean().notRequired(),
   // Adicionou a linha, tem que preencher: uma linha pela metade não significa
   // nada, e o backend a recusaria.
   campos: yup.array().of(
@@ -80,7 +87,11 @@ function ModalFormulario(props: ModalProps) {
   // formulário abre em somente leitura - quem tem `:view` consulta o cadastro.
   const somenteLeitura = data?.id ? !podeEditar : !podeAdicionar;
 
-  const { control, handleSubmit, reset } = useForm<ContactFormFields>({
+  const { FetchReq } = useApi();
+  const [clientes, setClientes] = useState<ClientResponse[]>([]);
+  const [modalClienteAberto, setModalClienteAberto] = useState(false);
+
+  const { control, handleSubmit, reset, setValue, watch } = useForm<ContactFormFields>({
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
   });
@@ -91,6 +102,14 @@ function ModalFormulario(props: ModalProps) {
     avatarKey: string | null;
     changedAvatar: boolean;
   } | null>(null);
+
+  const semCliente = watch('has_no_client');
+
+  /** O cliente recém-criado entra na lista e já fica escolhido. */
+  const aoCriarCliente = (cliente: ClientResponse) => {
+    setClientes((atuais) => [cliente, ...atuais]);
+    setValue('client_id', cliente.id, { shouldValidate: true });
+  };
 
   const modalFooter = () => {
     return (
@@ -137,6 +156,10 @@ function ModalFormulario(props: ModalProps) {
           valor: v.valor,
         })),
       });
+
+      FetchReq<ClientResponse[]>('ListarClientes')
+        .then((lista) => setClientes(Array.isArray(lista) ? lista : []))
+        .catch((erro) => CatchAlerta(erro, 'Não foi possível carregar os clientes'));
     }
   }, [visible]);
   return (
@@ -243,6 +266,74 @@ function ModalFormulario(props: ModalProps) {
           />
         </div>
 
+        <div className="col-12">
+          <Controller
+            control={control}
+            name="client_id"
+            render={({ field, fieldState }) => (
+              <>
+                <LabelPlus
+                  htmlFor={field.name}
+                  text="Cliente"
+                />
+                {/* O botão ao lado abre o cadastro por cima deste modal. */}
+                <div className="flex gap-2">
+                  <Dropdown
+                    id={field.name}
+                    value={field.value}
+                    onChange={(e) => field.onChange(e.value ?? null)}
+                    options={clientes.map((c) => ({ label: c.nome, value: c.id }))}
+                    placeholder="Selecione o cliente"
+                    filter
+                    showClear
+                    disabled={somenteLeitura || semCliente}
+                    emptyMessage="Nenhum cliente cadastrado"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    icon="fa-regular fa-plus"
+                    outlined
+                    disabled={somenteLeitura || semCliente}
+                    tooltip="Cadastrar novo cliente"
+                    tooltipOptions={{ position: 'left' }}
+                    onClick={() => setModalClienteAberto(true)}
+                  />
+                </div>
+                {getFormErrorMessage(fieldState)}
+              </>
+            )}
+          />
+        </div>
+
+        <div className="col-12">
+          <Controller
+            control={control}
+            name="has_no_client"
+            render={({ field }) => (
+              <div className="flex align-items-center gap-2">
+                <Checkbox
+                  inputId={field.name}
+                  checked={Boolean(field.value)}
+                  disabled={somenteLeitura}
+                  onChange={(e) => {
+                    field.onChange(e.checked);
+                    // É ou um, ou o outro: isento de cliente não tem vínculo.
+                    if (e.checked) setValue('client_id', null);
+                  }}
+                />
+                <label
+                  htmlFor={field.name}
+                  className="cursor-pointer"
+                >
+                  Contato sem cliente (fornecedor, parceiro etc - dispensa
+                  vínculo com cliente para finalizar atendimento)
+                </label>
+              </div>
+            )}
+          />
+        </div>
+
         {/* Os campos personalizados que quem edita escolher para este contato.
             O catálogo diz o que pode ser usado; a escolha é linha a linha. */}
         <div className="col-12">
@@ -290,6 +381,12 @@ function ModalFormulario(props: ModalProps) {
           </div>
         </TabPanel>
       </TabView>
+
+      <ModalClienteChat
+        visible={modalClienteAberto}
+        onHide={() => setModalClienteAberto(false)}
+        onConfirm={aoCriarCliente}
+      />
     </Modal>
   );
 }

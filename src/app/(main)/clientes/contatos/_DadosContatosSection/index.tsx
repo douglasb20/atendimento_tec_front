@@ -109,6 +109,9 @@ export default function DadosContatosSection({ data }: DadosContatosProps) {
           .filter((c) => c.custom_field_id && c.valor?.trim())
           .map((c) => ({ custom_field_id: c.custom_field_id, valor: c.valor.trim() })),
         ignore_support: Boolean(fields.ignore_support),
+        // `null` desfaz o vínculo; o backend aplica o corpo por cima do cadastro.
+        client_id: fields.client_id ?? null,
+        has_no_client: Boolean(fields.has_no_client),
         ...(fields.changedAvatar && {
           avatar_url: fields.avatarKey,
           changed_avatar: true,
