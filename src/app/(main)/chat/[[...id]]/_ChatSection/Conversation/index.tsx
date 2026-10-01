@@ -15,6 +15,7 @@ import { Button } from 'primereact/button';
 import { classNames } from 'primereact/utils';
 
 import AcoesConversa from './AcoesConversa';
+import { resumoDoContato } from '@/service/Vcard';
 import ModalNovoAtendimento from './ModalNovoAtendimento';
 import AbasConversa, { AbaConversa } from '../../_ChatInterno/AbasConversa';
 import ListaColegas from '../../_ChatInterno/ListaColegas';
@@ -42,6 +43,9 @@ const previaDoWhatsapp = (msg: { type?: string; content?: string }): string => {
     sticker: '💬 Figurinha',
     location: '📍 Localização',
   };
+
+  const contato = resumoDoContato(msg.type, msg.content);
+  if (contato) return `👤 ${contato}`;
 
   // Com legenda, ela diz mais que o rótulo do tipo.
   return msg.content?.trim().slice(0, 120) || rotulos[msg.type ?? ''] || 'Nova mensagem';
@@ -470,7 +474,7 @@ const ConversationSection = () => {
         />
       </div>
 
-      <ul className="list-none flex-1 m-0 p-0 overflow-auto">
+      <ul className="list-none flex-1 m-0 p-0 overflow-auto chat-rolagem-oculta">
         {chatsVisiveis.length === 0 ? (
           // Ternário, não `&&` seguido do map: como irmãos, o React trata os
           // dois como uma lista e cobra `key` do primeiro.
@@ -604,6 +608,17 @@ const ConversationSection = () => {
                           Mensagem apagada
                         </span>
                       )
+                    ) : resumoDoContato(
+                        conversation?.last_message_type,
+                        conversation?.last_message,
+                      ) ? (
+                      <span>
+                        <i className="fa-regular fa-address-card mr-1" />
+                        {resumoDoContato(
+                          conversation?.last_message_type,
+                          conversation?.last_message,
+                        )}
+                      </span>
                     ) : (
                       <Interweave
                         content={fixHeartEmoji(conversation?.last_message?.replace(/\n/g, ' '))}

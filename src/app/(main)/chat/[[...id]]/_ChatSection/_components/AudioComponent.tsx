@@ -23,22 +23,26 @@ export default function AudioComponent({
   return (
     <div className="flex flex-row w-full p-fluid gap-2 py-1">
       <div className="w-full max-h-10rem shadow-none border-none flex align-items-center gap-3 select-none pl-2">
-        <span className="text-gray-500 flex-shrink-0">
+        <span className="chat-gravacao-rotulo text-gray-500 flex-shrink-0">
           {statusRecording === 'recording' && 'Gravando mensagem...'}
           {statusRecording === 'paused' && 'Pausado'}
           {statusRecording === 'sending' && 'Enviando mensagem...'}
         </span>
         {/* Some ao enviar: aí não há mais microfone aberto para medir. */}
         {statusRecording !== 'sending' && (
-          <OndaGravacao
-            stream={stream}
-            pausado={statusRecording === 'paused'}
-          />
+          // `min-w-0` + `flex-1`: sem eles o canvas impõe a largura intrínseca
+          // e a onda não ocupa o espaço que sobra na barra.
+          <div className="flex-1 min-w-0">
+            <OndaGravacao
+              stream={stream}
+              pausado={statusRecording === 'paused'}
+            />
+          </div>
         )}
       </div>
       {statusRecording !== 'sending' && (
         <>
-          <div className="flex align-items-center justify-content-center w-5rem select-none">
+          <div className="chat-gravacao-tempo flex align-items-center justify-content-center flex-shrink-0 w-5rem select-none">
             <span className="text-900">
               {Math.floor(duration / 60)
                 .toString()
@@ -48,7 +52,7 @@ export default function AudioComponent({
           </div>
           <button
             title={statusRecording === 'recording' ? 'Pausar mensagem' : 'Retomar mensagem'}
-            className="flex cursor-pointer hover:bg-primary-100 justify-content-center align-items-center w-3rem h-3rem align-self-end border-circle border-none bg-transparent"
+            className="flex cursor-pointer hover:bg-primary-100 justify-content-center align-items-center flex-shrink-0 w-3rem h-3rem align-self-end border-circle border-none bg-transparent"
             onClick={() => {
               if (statusRecording === 'recording') {
                 onPause();
@@ -62,7 +66,7 @@ export default function AudioComponent({
             />
           </button>
           <button
-            className="flex cursor-pointer hover:bg-red-700 justify-content-center align-items-center w-3rem h-3rem align-self-end border-circle border-none bg-red-500"
+            className="flex cursor-pointer hover:bg-red-700 justify-content-center align-items-center flex-shrink-0 w-3rem h-3rem align-self-end border-circle border-none bg-red-500"
             onClick={onCancel}
             title="Cancelar gravação"
           >
@@ -76,7 +80,7 @@ export default function AudioComponent({
           {
             'pointer-events-none opacity-50': statusRecording === 'sending',
           },
-          'flex bg-primary-500 cursor-pointer hover:bg-primary-800 justify-content-center align-items-center w-3rem h-3rem align-self-end border-circle border-none',
+          'flex bg-primary-500 cursor-pointer hover:bg-primary-800 justify-content-center align-items-center flex-shrink-0 w-3rem h-3rem align-self-end border-circle border-none',
         )}
         onClick={onSendAudio}
         title="Enviar mensagem de áudio"

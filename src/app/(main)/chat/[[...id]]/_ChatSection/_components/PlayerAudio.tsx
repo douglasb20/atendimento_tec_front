@@ -215,7 +215,7 @@ const PlayerAudio = ({ url, mimetype, proprio = false }: PlayerAudioProps) => {
 
   return (
     <div
-      className="flex align-items-center gap-2 select-none"
+      className="player-audio flex align-items-center gap-2 select-none"
       style={{ minWidth: 220 }}
     >
       <audio

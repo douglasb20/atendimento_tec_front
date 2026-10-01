@@ -524,7 +524,7 @@ const Messages = () => {
     <>
       <div
         ref={bottomEl}
-        className="message-box relative border-right-1 border-left-1 border-noround-top border-bottom-1 border-primary-700 flex flex-1 flex-column bg-gray-50 border-round p-3 overflow-y-auto overflow-x-hidden"
+        className="message-box chat-caixa-mensagens relative border-right-1 border-left-1 border-noround-top border-bottom-1 border-primary-700 flex flex-1 flex-column bg-gray-50 border-round p-3 overflow-y-auto overflow-x-hidden"
       >
         <div className="flex flex-column z-0 w-full">
           <BotaoAnterior
@@ -621,7 +621,7 @@ const Messages = () => {
                     {
                       'mb-4': msg.has_reaction,
                     },
-                    `relative flex message-item ${msg.from_me ? 'flex-row-reverse' : 'flex-row'} mb-1`,
+                    `relative flex message-item chat-mensagem-item ${msg.from_me ? 'flex-row-reverse' : 'flex-row'} mb-1`,
                   )}
                   style={{ maxWidth: '70%', minWidth: '10%' }}
                 >

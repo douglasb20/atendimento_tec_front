@@ -1,12 +1,10 @@
 'use client';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { SupportChatsResponse } from '@/Interfaces';
-import { useLayoutStore } from '@/layout/context/layoutcontext';
 import useApi from '@/service/Api/ApiClient';
 import { useChatStore } from '@/store/useChatStore';
-import { Breadcrumb } from '@/types';
 import ConversationSection from './Conversation';
 import CabecalhoInterno from '../_ChatInterno/CabecalhoInterno';
 import JanelaInterna from '../_ChatInterno/JanelaInterna';
@@ -26,9 +24,7 @@ export default function ChatSection(props: ChatSectionProps) {
   const setChatNotFound = useChatStore((s) => s.setChatNotFound);
   const { FetchReq } = useApi();
   const [rendered, setRendered] = useState(false);
-  const { setBreadcrumbs } = useLayoutStore();
   const params = useParams();
-  const pathname = usePathname();
 
   const getChatMessages = async (chatId: number) => {
     try {
@@ -53,15 +49,6 @@ export default function ChatSection(props: ChatSectionProps) {
     setRendered(true);
   }, []);
 
-  const onChangeBreadcrumbs = () => {
-    const breadcrumbs: Breadcrumb[] = [
-      { labels: ['Dashboard', 'Atendimentos', 'Chat'], to: `/chat/${params?.id?.[0]}` },
-    ];
-    // Substitui em vez de concatenar: a trilha nomeia onde se está agora, e
-    // acumulando ela ganhava uma entrada repetida a cada troca de conversa.
-    setBreadcrumbs(breadcrumbs);
-  };
-
   const loadConversationMessage = async () => {
     try {
       setLoadMessages(true);
@@ -81,12 +68,6 @@ export default function ChatSection(props: ChatSectionProps) {
   };
 
   useEffect(() => {
-    if (params?.id?.[0] !== undefined) {
-      onChangeBreadcrumbs();
-    }
-  }, [pathname]);
-
-  useEffect(() => {
     loadInit();
   }, []);
 
@@ -94,15 +75,26 @@ export default function ChatSection(props: ChatSectionProps) {
   const modoInterno = useChatInternoStore((s) => s.modo);
   const conversaInternaNoPainel = Boolean(conversaInterna) && modoInterno === 'painel';
 
+  const activeChat = useChatStore((s) => s.activeChat);
+  const chatNotFound = useChatStore((s) => s.chatNotFound);
+  const loadMessages = useChatStore((s) => s.loadMessages);
+  // Em tela estreita cabe uma coluna só, como no app do WhatsApp: com conversa
+  // aberta (ou carregando/não encontrada) ela toma a tela e a lista some; sem
+  // conversa, é a lista que aparece. A lista só esconde, não desmonta - os
+  // listeners de socket dela continuam vivos.
+  const conversaAberta =
+    Boolean(activeChat) || chatNotFound || loadMessages || conversaInternaNoPainel;
+
   return (
     rendered && (
       <React.Fragment>
-        <div className="col-5 md:col-4 lg:col-3 h-full"
-          style={{ maxWidth: '35rem' }}>
+        <div
+          className={`chat-lista ${conversaAberta ? 'chat-lista--oculta' : ''}`}
+        >
           <ConversationSection />
         </div>
-        <div className="flex-1 h-full"
-          style={{padding: '0.5rem'}}
+        <div
+          className={`chat-conversa ${conversaAberta ? '' : 'chat-conversa--oculta'}`}
         >
           {/* A conversa interna toma o painel, como no atendimento: é o modo
               normal de uso. O popup existe para quem quiser falar com o colega

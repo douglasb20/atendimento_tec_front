@@ -15,10 +15,7 @@ export default async function DashboardPage() {
 
   return (
     <Fragment>
-      <div
-        className="grid p-fluid "
-        style={{ minHeight: '87vh', height: '87vh' }}
-      >
+      <div className="grid p-fluid chat-layout">
         <ChatSection conversations={dataSupportChats} />
       </div>
     </Fragment>

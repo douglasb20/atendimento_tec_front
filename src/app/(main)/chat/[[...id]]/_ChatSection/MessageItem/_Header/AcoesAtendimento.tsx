@@ -114,7 +114,7 @@ const AcoesAtendimento = ({
   }
 
   return (
-    <div className="flex align-items-center gap-2 flex-none">
+    <div className="chat-header__acoes flex align-items-center gap-2 flex-none">
       {aguardando && podeAgir && (
         <>
           <Button

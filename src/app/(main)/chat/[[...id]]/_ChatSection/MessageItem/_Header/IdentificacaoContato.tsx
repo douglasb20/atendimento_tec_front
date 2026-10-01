@@ -1,18 +1,13 @@
 'use client';
 
-import { formatDistanceToNowStrict, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-
 import { classNames } from 'primereact/utils';
 
 import Avatar from '@/components/Avatar';
 import { ContactResponse } from '@/Interfaces';
-import { DateToBR, Mask, nomeCompleto, nomeExibicao } from '@/service/Util';
+import { Mask, nomeCompleto, nomeExibicao } from '@/service/Util';
 
 type IdentificacaoContatoProps = {
   contato?: ContactResponse;
-  /** Data da última movimentação da conversa. */
-  ultimaInteracao?: string | null;
   /** Abre o painel com os dados completos. */
   onAbrirDetalhes?: () => void;
 };
@@ -49,7 +44,6 @@ const mascaraTelefone = (telefone?: string) => {
 
 const IdentificacaoContato = ({
   contato,
-  ultimaInteracao,
   onAbrirDetalhes,
 }: IdentificacaoContatoProps) => {
   const telefone = mascaraTelefone(contato?.phone);
@@ -90,7 +84,9 @@ const IdentificacaoContato = ({
           {/* O contraste com a linha de baixo é o que dá hierarquia aqui:
               nome grande e escuro, metadado pequeno e claro. */}
           <span
-            className="text-xl font-semibold text-900 line-height-1 white-space-nowrap overflow-hidden text-overflow-ellipsis"
+            // `line-height-1` com `overflow-hidden` recortava o topo das
+            // maiúsculas (o "G" do nome): a caixa fica menor que a fonte.
+            className="text-xl font-semibold text-900 line-height-2 white-space-nowrap overflow-hidden text-overflow-ellipsis"
             title={nomeExibicao(contato)}
           >
             {titulo}
@@ -122,19 +118,6 @@ const IdentificacaoContato = ({
         {/* Some em tela estreita: o nome e as ações têm prioridade. */}
         <div className="hidden md:flex align-items-center gap-2 text-sm text-500 line-height-1 min-w-0">
           {telefone && <span className="white-space-nowrap">{telefone}</span>}
-          {telefone && ultimaInteracao && <span className="text-300">•</span>}
-          {ultimaInteracao && (
-            <span
-              className="white-space-nowrap overflow-hidden text-overflow-ellipsis"
-              title={DateToBR(ultimaInteracao, 'P HH:mm')}
-            >
-              Última interação{' '}
-              {formatDistanceToNowStrict(parseISO(ultimaInteracao), {
-                addSuffix: true,
-                locale: ptBR,
-              })}
-            </span>
-          )}
         </div>
       </div>
     </button>

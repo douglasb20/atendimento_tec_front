@@ -130,17 +130,27 @@ const Header = () => {
 
   return (
     <>
-      <div className="flex align-items-center gap-3 surface-100 border-1 border-primary-700 border-round-top px-3 py-1">
+      <div className="chat-header flex align-items-center gap-3 surface-100 border-1 border-primary-700 border-round-top px-3 py-1">
+        {/* Só em tela estreita, onde a conversa substitui a lista: é o
+            caminho de volta, como a seta do app do WhatsApp. */}
+        <button
+          type="button"
+          title="Voltar para a lista"
+          onClick={fecharConversa}
+          className="chat-voltar"
+        >
+          <i className="fa-solid fa-arrow-left" />
+        </button>
+
         <IdentificacaoContato
           contato={activeChat.contact}
-          ultimaInteracao={activeChat.updated_at ?? activeChat.created_at}
           onAbrirDetalhes={() => setDetalhesAberto(true)}
         />
 
         {/* Protocolo e tempo são metadado, não ação: ficam à direita, na mesma
             linha e separados por um divisor fino, para lerem como um grupo sem
             precisarem de caixa própria. */}
-        <div className="hidden md:flex align-items-center gap-3 flex-none">
+        <div className="chat-header__meta hidden md:flex align-items-center gap-3 flex-none">
           <BadgeProtocolo protocolo={activeChat.protocol} />
 
           {emAndamento && activeChat.answered_at && (
@@ -153,10 +163,12 @@ const Header = () => {
           {/* Depois do tempo, e não antes: a pergunta "isto é meu?" só existe
               quando alguém já assumiu. */}
           {emAndamento && activeChat.user && (
-            <>
+            // Em tela estreita some junto com o divisor: a linha de metadados
+            // já não tem largura para o nome e o avatar de quem atende.
+            <span className="chat-header__atendente">
               <Divisor />
               <AtendenteAtual atendente={activeChat.user} />
-            </>
+            </span>
           )}
         </div>
 

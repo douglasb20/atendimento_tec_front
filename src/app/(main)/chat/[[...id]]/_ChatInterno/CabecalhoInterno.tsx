@@ -33,6 +33,15 @@ const CabecalhoInterno = () => {
 
   return (
     <div className="flex align-items-center gap-2 surface-100 border-bottom-1 surface-border px-3 py-2">
+      <button
+        type="button"
+        title="Voltar para a lista"
+        onClick={fechar}
+        className="chat-voltar"
+      >
+        <i className="fa-solid fa-arrow-left" />
+      </button>
+
       <div className="relative flex-shrink-0">
         <Avatar
           src={ativo.avatar_url}

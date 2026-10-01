@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { resumoDoContato } from '@/service/Vcard';
 import Interweave from '@/components/Interweave';
 import { descreveMidia, fixHeartEmoji, nomeCompleto } from '@/service/Util';
 import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
@@ -42,6 +43,11 @@ function QuotedMessageItem({
               ) : (
                 <span>{midia.rotulo}</span>
               )}
+            </span>
+          ) : resumoDoContato(quoted.type, quoted.content) ? (
+            <span className="flex align-items-center gap-2 text-clamp text-white">
+              <i className="fa-regular fa-address-card text-sm" />
+              {resumoDoContato(quoted.type, quoted.content)}
             </span>
           ) : (
             <span className="text-clamp text-white">

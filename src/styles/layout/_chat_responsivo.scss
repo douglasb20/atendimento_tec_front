@@ -1,0 +1,286 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Chat: lista e conversa em tela estreita
+//
+// Acima de 900px as duas colunas ficam lado a lado. Abaixo, cabe uma só, como
+// no app do WhatsApp: a conversa aberta toma a tela e a lista some (só
+// `display: none`, sem desmontar - os listeners de socket dela seguem vivos).
+// Escrito à mão, sem utilitários do PrimeFlex: todos carregam `!important` e
+// brigariam com o `display` aqui.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// A trilha "Dashboard / Atendimentos / Chat" não ajuda numa tela que já se
+// explica sozinha, e ocupava uma faixa acima do painel. Some em todas as
+// larguras; `:has` restringe ao chat, sem tocar nas outras páginas.
+.layout-content-wrapper:has(.chat-layout) .content-breadcrumb {
+  display: none;
+}
+
+.chat-layout {
+  height: 87vh;
+  min-height: 87vh;
+}
+
+.chat-lista {
+  flex: 0 0 auto;
+  width: 33.3333%;
+  max-width: 35rem;
+  height: 100%;
+  padding: 0.5rem;
+}
+
+.chat-conversa {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  padding: 0.5rem;
+}
+
+// Botões que só existem num dos dois layouts. `button.` sobe a
+// especificidade para vencer o `display` dos utilitários do PrimeFlex.
+button.chat-so-mobile {
+  display: none !important;
+}
+
+.chat-voltar {
+  display: none;
+  flex: none;
+  padding: 0;
+  line-height: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+}
+
+@media (min-width: 992px) {
+  .chat-lista {
+    width: 25%;
+  }
+}
+
+// Sem `display: contents` o `span` que agrupa divisor e atendente quebraria o
+// `gap` do grupo de metadados no layout largo.
+.chat-header__atendente {
+  display: contents;
+}
+
+// Até 1199px o cabeçalho não comporta contato, protocolo, tempo, atendente e
+// ações numa linha (o protocolo chegava a se sobrepor ao contato). Protocolo,
+// tempo e atendente descem para uma linha própria, sempre visível.
+@media (max-width: 1199px) {
+  .chat-header {
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+  }
+
+  // Dois seletores: vence o `hidden`/`md:flex` do PrimeFlex, que são !important.
+  .chat-header__atendente {
+    display: none;
+  }
+
+  // Ações ficam na primeira linha, coladas à direita, ao lado do contato.
+  .chat-header__acoes {
+    order: 1;
+    margin-left: auto;
+  }
+
+  .chat-header .chat-header__meta {
+    display: flex !important;
+    // `!important` no `flex`: o `flex-none` do PrimeFlex também é, e sem isso
+    // o grupo não ocupava a linha própria e o cabeçalho não quebrava.
+    flex: 1 0 100% !important;
+    order: 3;
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+    font-size: 0.85rem;
+  }
+}
+
+// Só onde as ações ficam na primeira linha (900px a 1199px): a linha de
+// protocolo e tempo vai para a direita, sob elas. A margem negativa compensa o
+// respiro de baixo do bloco do contato (`p-1` mais a altura do avatar), que a
+// deixava longe do que está acima. No celular ela segue à esquerda.
+@media (min-width: 900px) and (max-width: 1199px) {
+  .chat-header .chat-header__meta {
+    justify-content: flex-end;
+    margin-top: -0.9rem;
+  }
+}
+
+@media (max-width: 899px) {
+  // `dvh` desconta a barra de endereço do navegador móvel, que o `vh` ignora
+  // e deixava o campo de mensagem cortado embaixo.
+  .chat-layout {
+    height: calc(100dvh - 6rem);
+    min-height: 0;
+  }
+
+  .chat-lista,
+  .chat-conversa {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: none;
+    padding: 0;
+  }
+
+  .chat-lista--oculta,
+  .chat-conversa--oculta {
+    display: none;
+  }
+
+
+  // Em celular a rolagem é por gesto: a barra só ocupa espaço (a das abas
+  // aparecia como um traço roxo sobre a lista). O conteúdo continua rolando.
+  .chat-rolagem-oculta {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  // Cabeçalho em duas linhas: seta + contato em cima, ações embaixo dividindo
+  // a largura. Numa linha só, o botão "Finalizar sem atendimento" empurrava o
+  // contato para fora da tela.
+  .chat-header {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  .chat-header .chat-header__meta {
+    order: 1;
+  }
+
+  .chat-header__acoes {
+    order: 2;
+    flex: 1 0 100% !important;
+
+    // Os filhos diretos são os botões (o SplitButton é um só bloco).
+    > * {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .p-button {
+      justify-content: center;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.8rem;
+      line-height: 1.15;
+    }
+  }
+
+  // A bolha usava 70% do painel, medida pensada para tela larga; num celular
+  // isso sobrava menos que o player de áudio (220px) e cortava a mensagem.
+  // `!important` porque o limite original é estilo inline.
+  .chat-mensagem-item {
+    max-width: 92% !important;
+  }
+
+  // O respiro de 2rem do conteúdo come um terço da largura de um celular.
+
+  .layout-content:has(.chat-layout) {
+    padding: 0.5rem;
+  }
+
+  // Sem avatar ao lado da bolha, como no WhatsApp do celular: quem fala já
+  // está dito pelo lado e pela cor, e os ~56px rendem espaço ao conteúdo.
+  .chat-avatar-mensagem {
+    display: none !important;
+  }
+
+  // Em tela cheia a barra encostaria nas laterais da tela; `!important`
+  // porque o `mt-2`/`px-2` vizinhos são utilitários do PrimeFlex.
+  .chat-barra-envio {
+    margin-left: 0.4rem !important;
+    margin-right: 0.4rem !important;
+    // Arredondada como a do app; o `border-round-lg` do PrimeFlex é !important.
+    border-radius: 1.5rem !important;
+  }
+
+  .chat-caixa-mensagens {
+    padding: 0.5rem !important;
+  }
+
+  .chat-mensagem-item .message-balloon {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  // O player reservava 220px; o que sobra da bolha num celular estreito é
+  // menos que isso, e o botão de velocidade saía pela lateral.
+  .player-audio {
+    min-width: 0 !important;
+    gap: 0.4rem !important;
+
+    > span {
+      min-width: 0 !important;
+    }
+
+    > button:last-child {
+      min-width: 0 !important;
+    }
+  }
+
+  // Gravando: o texto "Gravando mensagem..." sai para a onda tomar toda a
+  // largura que sobra (o cronômetro já diz que está gravando), e o tempo
+  // encolhe para os três botões caberem sem virar elipse.
+  .chat-gravacao-rotulo {
+    display: none;
+  }
+
+  .chat-gravacao-tempo {
+    width: 3rem !important;
+    font-size: 0.85rem;
+  }
+
+  button.chat-so-desktop {
+    display: none !important;
+  }
+
+  button.chat-so-mobile {
+    display: flex !important;
+    // Sem o aro dos demais: no app o "+" é um ícone solto ao lado do campo.
+    border: none !important;
+    background: transparent !important;
+  }
+
+  .chat-voltar {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem;
+    font-size: 1.25rem;
+  }
+}
+
+// Celular de verdade: a conversa aberta vira tela cheia, como no app, cobrindo
+// topbar e breadcrumb (a seta do cabeçalho é o caminho de volta). Entre 576px e
+// 899px (tablet) ainda é uma coluna só, mas dentro do shell: o topbar
+// fica e a conversa preenche a área de conteúdo, como o Whaticket faz aos
+// 765px.
+@media (max-width: 575px) {
+  // Conversa aberta vira tela cheia, como no app: cobre topbar e breadcrumb
+  // (a seta do cabeçalho é o caminho de volta) e o card perde borda, sombra e
+  // respiro, para o cabeçalho e o campo de mensagem encostarem nas bordas.
+  // `fixed` em vez de esticar o layout: o topbar e o breadcrumb são de outros
+  // componentes e não sabem do estado do chat. O z-index fica abaixo dos
+  // diálogos do PrimeReact (1100+), que precisam abrir por cima.
+  .chat-conversa:not(.chat-conversa--oculta) {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    height: 100dvh;
+    background: var(--surface-ground);
+
+    > .card {
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+      // Folga embaixo para o campo de mensagem não colar na borda da tela,
+      // somada à área segura de celulares com barra de gestos.
+      padding: 0 0 calc(0.5rem + env(safe-area-inset-bottom)) !important;
+    }
+  }
+}

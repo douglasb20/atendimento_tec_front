@@ -1,3 +1,4 @@
+import { resumoDoContato } from '@/service/Vcard';
 import { useChatStore } from '@/store/useChatStore';
 import Interweave from '@/components/Interweave';
 import { descreveMidia, fixHeartEmoji, nomeCompleto } from '@/service/Util';
@@ -41,6 +42,11 @@ export default function QuotedMessage() {
                 ) : (
                   <span>{midia.rotulo}</span>
                 )}
+              </span>
+            ) : resumoDoContato(mensagem.type, mensagem.content) ? (
+              <span className="flex align-items-center gap-2 text-clamp text-700">
+                <i className="fa-regular fa-address-card text-sm" />
+                {resumoDoContato(mensagem.type, mensagem.content)}
               </span>
             ) : (
               <span className="text-clamp">

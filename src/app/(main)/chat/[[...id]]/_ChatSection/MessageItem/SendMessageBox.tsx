@@ -202,6 +202,7 @@ export default function SendMessageBox() {
   };
 
   const menuAnexoRef = useRef<Menu>(null);
+  const menuAnexoMobileRef = useRef<Menu>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tipoAnexoRef = useRef<TipoAnexo>('document');
 
@@ -745,7 +746,7 @@ export default function SendMessageBox() {
           { hidden: anexos.length > 0 },
           // `surface-0`: o `bg-white dark:bg-gray-700` era sintaxe do Tailwind, que
           // este projeto não usa - o `dark:` nunca valeu, e sobrava o branco fixo.
-          'flex flex-column border-1 border-300 surface-border border-round-lg surface-0 px-2 mt-2',
+          'chat-barra-envio flex flex-column border-1 border-300 surface-border border-round-lg surface-0 px-2 mt-2',
         )}
       >
         <QuotedMessage />
@@ -778,11 +779,19 @@ export default function SendMessageBox() {
               popupAlignment="left"
               popup
             />
+            {/* Em tela estreita o anexo vai para a direita, como no app, então
+                o menu abre alinhado à direita. */}
+            <Menu
+              ref={menuAnexoMobileRef}
+              model={menuAnexos}
+              popupAlignment="right"
+              popup
+            />
             <button
               type="button"
               aria-label="Anexar arquivo"
               onClick={(e) => menuAnexoRef.current?.toggle(e)}
-              className={CLASSE_BOTAO_BARRA}
+              className={`${CLASSE_BOTAO_BARRA} chat-so-desktop`}
               style={ESTILO_BOTAO_BARRA}
             >
               <i className="text-lg fa-regular fa-paperclip text-primary" />
@@ -802,7 +811,7 @@ export default function SendMessageBox() {
                 setIndiceAtivo(0);
                 campoRef.current?.focus();
               }}
-              className={CLASSE_BOTAO_BARRA}
+              className={`${CLASSE_BOTAO_BARRA} chat-so-desktop`}
               style={ESTILO_BOTAO_BARRA}
             >
               <i className="text-lg fa-regular fa-bolt text-primary" />
@@ -900,6 +909,17 @@ export default function SendMessageBox() {
                 />
               )}
             />
+            {/* O "+" do app: só em tela estreita, onde o clipe e o raio saem da
+                esquerda para a barra caber. */}
+            <button
+              type="button"
+              aria-label="Anexar arquivo"
+              onClick={(e) => menuAnexoMobileRef.current?.toggle(e)}
+              className={`${CLASSE_BOTAO_BARRA} chat-so-mobile`}
+              style={ESTILO_BOTAO_BARRA}
+            >
+              <i className="text-lg fa-regular fa-plus text-primary" />
+            </button>
             <button
               className={classNames(
                 {

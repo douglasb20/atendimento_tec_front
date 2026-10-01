@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo, useRef } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { isEqual, parseISO, startOfDay } from 'date-fns';
 import { Image } from 'primereact/image';
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -7,11 +7,13 @@ import { classNames } from 'primereact/utils';
 import Interweave from '@/components/Interweave';
 import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
 import { DateToBR, fixHeartEmoji } from '@/service/Util';
+import { lerContatosCompartilhados } from '@/service/Vcard';
 import { useChatStore } from '@/store/useChatStore';
 import { jaAnimou, marcaComoAnimada } from '@/service/Outbox/jaAnimadas';
 import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import QuotedMessageItem from './QuotedMessageItem';
 import PlayerAudio from './PlayerAudio';
+import ModalContatoCompartilhado from './ModalContatoCompartilhado';
 
 type SingleMessageComponentProps = {
   message: SupportChatMessageResponse;
@@ -127,6 +129,17 @@ const SingleMessageComponent = ({
 
   const InterpretedContent = useMemo(() => fixHeartEmoji(content), [content]);
 
+  // Contato compartilhado: o conteúdo é o JSON cru dos vCards, ilegível como
+  // texto. Lista vazia (formato desconhecido) cai de volta no texto da bolha.
+  const [contatoAberto, setContatoAberto] = useState(false);
+  const contatosCompartilhados = useMemo(
+    () =>
+      message.type === 'vcard' || message.type === 'multi_vcard'
+        ? lerContatosCompartilhados(content)
+        : [],
+    [message.type, content],
+  );
+
   /**
    * Anima **uma vez** por mensagem, e só na que acabou de chegar.
    *
@@ -224,7 +237,7 @@ const SingleMessageComponent = ({
         </div>
       ) : message.is_deleted && !ajustes.mostrar_conteudo_mensagem_apagada ? null : (
         <>
-          {message.has_quoted && (
+          {message.has_quoted && quotedMessage && (
             <QuotedMessageItem
               activeChat={activeChat}
               quoted={quotedMessage}
@@ -383,7 +396,38 @@ const SingleMessageComponent = ({
               </ComProgresso>
             )}
             {exibeMidia && message.type === 'video' && DivWithEmoji()}
-            {!exibeMidia && DivWithEmoji()}
+            {contatosCompartilhados.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setContatoAberto(true)}
+                className={classNames(
+                  from_me ? 'bg-primary-600 text-primary-contrast' : 'surface-200 text-color',
+                  'flex align-items-center gap-3 border-none border-round p-3 mb-2 cursor-pointer text-left',
+                )}
+                style={{ minWidth: '12rem' }}
+              >
+                <i className="fa-regular fa-address-card text-3xl flex-none" />
+                <span className="flex flex-column min-w-0">
+                  <span className="font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                    {contatosCompartilhados[0].nome}
+                  </span>
+                  <span className="text-xs opacity-80">
+                    {contatosCompartilhados.length > 1
+                      ? `+ ${contatosCompartilhados.length - 1} contato${contatosCompartilhados.length > 2 ? 's' : ''}`
+                      : contatosCompartilhados[0].telefones[0].exibicao}
+                  </span>
+                </span>
+              </button>
+            ) : (
+              !exibeMidia && DivWithEmoji()
+            )}
+            {contatosCompartilhados.length > 0 && (
+              <ModalContatoCompartilhado
+                visible={contatoAberto}
+                onHide={() => setContatoAberto(false)}
+                contatos={contatosCompartilhados}
+              />
+            )}
           </div>
         </>
       )}

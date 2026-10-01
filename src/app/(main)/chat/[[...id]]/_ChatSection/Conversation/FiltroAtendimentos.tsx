@@ -109,7 +109,7 @@ const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar }: FiltroAtendimen
   };
 
   return (
-    <div className="flex flex-1 align-items-center justify-content-between gap-1 overflow-x-auto px-2">
+    <div className="flex flex-1 align-items-center justify-content-between gap-1 overflow-x-auto px-2 chat-rolagem-oculta">
       {abasFixas.map(({ id, rotulo, total }) => {
         const ativa = id === grupoAtivo;
 

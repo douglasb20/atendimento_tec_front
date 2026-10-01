@@ -14,7 +14,7 @@ const ShowAvatarComponent = ({ message, activeChat }: ShowAvatarComponentProps) 
   if (message.is_automatic) {
     return (
       <div
-        className="mx-2 flex-none flex justify-content-center align-items-center border-circle surface-200"
+        className="chat-avatar-mensagem mx-2 flex-none flex justify-content-center align-items-center border-circle surface-200"
         style={{ width: 40, height: 40 }}
         title="Mensagem automática do sistema"
       >
@@ -32,7 +32,7 @@ const ShowAvatarComponent = ({ message, activeChat }: ShowAvatarComponentProps) 
     : activeChat?.contact?.avatar_url;
 
   return (
-    <div className="mx-2 overflow-hidden flex flex-none justify-content-center align-items-center">
+    <div className="chat-avatar-mensagem mx-2 overflow-hidden flex flex-none justify-content-center align-items-center">
       <Avatar
         src={avatarUrl}
         alt="Avatar"
