@@ -7,7 +7,7 @@ import { useRef, useState } from 'react';
 
 import {
   ContactResponse,
-  podeAgirNoAtendimento,
+  ehDonoDoAtendimento,
   SupportChatsResponse,
   SupportChatStatusId,
 } from '@/Interfaces';
@@ -53,6 +53,7 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
   // deixar o 403 aparecer depois é pior do que não mostrá-la.
   const { podeEditar: podeAgir, podeAcao } = usePermissoesModulo('support.chat');
   const podeTransferir = podeAcao('transfer');
+  const podePausar = podeAcao('pause');
   const { podeEditar: podeEditarContato } = usePermissoesModulo('contact');
 
   const [modalFinalizar, setModalFinalizar] = useState<ModoFinalizacao | null>(null);
@@ -72,7 +73,8 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
   const aguardando =
     status === SupportChatStatusId.AGUARDANDO || status === SupportChatStatusId.EM_FILA;
   const emAndamento = status === SupportChatStatusId.EM_ANDAMENTO;
-  const souODono = podeAgirNoAtendimento(conversa, usuarioId);
+  const souODono = ehDonoDoAtendimento(conversa, usuarioId);
+  const pausado = emAndamento && Boolean(conversa.paused_at);
 
   const iniciar = async () => {
     try {
@@ -88,6 +90,24 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
       CatchAlerta(erro, 'Não foi possível iniciar o atendimento');
     } finally {
       setIniciando(false);
+    }
+  };
+
+  const alternarPausa = async (endpoint: 'PausarAtendimentoChat' | 'RetomarAtendimentoChat') => {
+    try {
+      const atualizado = await FetchReq<SupportChatsResponse>({
+        endpoint,
+        variables: [conversa.id],
+      });
+
+      updateChat(atualizado);
+    } catch (erro) {
+      CatchAlerta(
+        erro,
+        endpoint === 'PausarAtendimentoChat'
+          ? 'Não foi possível pausar o atendimento'
+          : 'Não foi possível retomar o atendimento',
+      );
     }
   };
 
@@ -124,16 +144,38 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
 
     ...(emAndamento && souODono && podeAgir
       ? [
-          {
-            label: 'Finalizar',
-            icon: 'fa-regular fa-check',
-            command: () => setModalFinalizar('normal'),
-          },
-          {
-            label: 'Finalizar sem despedida',
-            icon: 'fa-regular fa-circle-check',
-            command: () => setModalFinalizar('sem-despedida'),
-          },
+          // Pausado não finaliza: o lugar de "Finalizar" passa a ser "Retomar".
+          ...(pausado
+            ? podePausar
+              ? [
+                  {
+                    label: 'Retomar',
+                    icon: 'fa-regular fa-play',
+                    command: () => alternarPausa('RetomarAtendimentoChat'),
+                  },
+                ]
+              : []
+            : [
+                {
+                  label: 'Finalizar',
+                  icon: 'fa-regular fa-check',
+                  command: () => setModalFinalizar('normal'),
+                },
+                {
+                  label: 'Finalizar sem despedida',
+                  icon: 'fa-regular fa-circle-check',
+                  command: () => setModalFinalizar('sem-despedida'),
+                },
+                ...(podePausar
+                  ? [
+                      {
+                        label: 'Pausar atendimento',
+                        icon: 'fa-regular fa-pause',
+                        command: () => alternarPausa('PausarAtendimentoChat'),
+                      },
+                    ]
+                  : []),
+              ]),
           { separator: true },
           // `support.chat:transfer`, permissão própria - não é a de editar.
           ...(podeTransferir

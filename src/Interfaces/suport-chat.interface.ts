@@ -49,6 +49,17 @@ export const ehAtendimentoAtivo = (statusId?: number): boolean =>
  * segue existindo para o que depende só do estado da conversa.
  */
 export const podeAgirNoAtendimento = (
+  chat?: Pick<SupportChatsResponse, 'support_chat_status_id' | 'user_id' | 'paused_at'> | null,
+  usuarioLogadoId?: number | null,
+): boolean => ehDonoDoAtendimento(chat, usuarioLogadoId) && !chat?.paused_at;
+
+/**
+ * Se **este** atendente é o dono do atendimento em andamento, pausado ou não.
+ *
+ * Distinto de `podeAgirNoAtendimento`: o dono de um atendimento pausado
+ * continua dono (retoma, transfere, abre os dados), mas não escreve nele.
+ */
+export const ehDonoDoAtendimento = (
   chat?: Pick<SupportChatsResponse, 'support_chat_status_id' | 'user_id'> | null,
   usuarioLogadoId?: number | null,
 ): boolean => {
@@ -81,6 +92,11 @@ export interface SupportChatsResponse {
   created_at: string;
   /** Instante em que o atendimento foi assumido - origem do cronômetro. */
   answered_at: string | null;
+  /** Preenchido enquanto o atendimento está pausado; a conversa segue
+   * `EM_ANDAMENTO`. Ausente em payloads antigos. */
+  paused_at?: string | null;
+  /** Soma das pausas já encerradas - o cronômetro as desconta. */
+  paused_total_seconds?: number;
   finished_at: string | null;
   observation_user: string | null;
   updated_at: string | null;
@@ -102,7 +118,7 @@ export interface SupportChatsResponse {
 export interface SupportChatEventResponse {
   id: string;
   support_chat_id: string;
-  tipo: 'transferencia';
+  tipo: 'transferencia' | 'pausa' | 'retomada';
   motivo: string | null;
   created_at: string;
   userOrigem: UserResponse | null;
@@ -132,6 +148,8 @@ export interface SupportChatMessageResponse {
   media_type: string;
   media_size: null;
   has_quoted: boolean;
+  /** Recebida como encaminhada - só identificação visual. */
+  is_forwarded?: boolean;
   quoted_msg_id: string;
   quoted_msg: string;
 

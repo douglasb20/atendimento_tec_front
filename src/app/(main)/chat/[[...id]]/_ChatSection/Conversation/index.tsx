@@ -32,6 +32,39 @@ import FiltroAtendimentos, {
   GrupoAtendimento,
 } from './FiltroAtendimentos';
 
+/**
+ * Prévia de mídia na lista de conversas, como o WhatsApp oficial: ícone + rótulo
+ * (ou a legenda, quando há). Voz gravada mostra o microfone com a duração; o
+ * áudio arquivo/encaminhado, os fones com "Áudio". O `last_message` de áudio é
+ * só a duração, e sem este tratamento aparecia "00:06" solto na lista.
+ */
+const previaDeMidia = (tipo?: string, texto?: string): { icone: string; texto: string } | null => {
+  const legenda = texto?.trim();
+
+  switch (tipo) {
+    case 'image':
+      return { icone: 'fa-camera', texto: legenda || 'Foto' };
+    case 'video':
+      return { icone: 'fa-video', texto: legenda || 'Vídeo' };
+    case 'sticker':
+      return { icone: 'fa-note-sticky', texto: 'Figurinha' };
+    case 'document':
+      return { icone: 'fa-file', texto: legenda || 'Documento' };
+    case 'ptt':
+      return { icone: 'fa-microphone', texto: legenda || 'Mensagem de voz' };
+    case 'audio':
+      return { icone: 'fa-headphones', texto: 'Áudio' };
+    case 'location':
+      return { icone: 'fa-location-dot', texto: 'Localização' };
+    case 'view_once':
+      return { icone: 'fa-circle-1', texto: 'Visualização única' };
+    case 'payment':
+      return { icone: 'fa-money-bill-transfer', texto: 'Chave Pix' };
+    default:
+      return null;
+  }
+};
+
 /** O texto da notificação: mídia vira rótulo, texto aparece cortado. */
 const previaDoWhatsapp = (msg: { type?: string; content?: string }): string => {
   const rotulos: Record<string, string> = {
@@ -544,9 +577,15 @@ const ConversationSection = () => {
                 />
                 {/* Sobre o avatar, o estado deixa de disputar espaço com o nome
                     e fica onde o olho já está. */}
+                {/* Verde: em atendimento; laranja: pausado; vermelho: sem dono
+                    (aguardando ou em fila). */}
                 <span
                   className={classNames(
-                    grupoDaConversa(conversation) === 'fila' ? 'bg-orange-400' : 'bg-green-500',
+                    grupoDaConversa(conversation) === 'fila'
+                      ? 'bg-red-500'
+                      : conversation.paused_at
+                        ? 'bg-orange-400'
+                        : 'bg-green-500',
                     'absolute border-circle',
                   )}
                   style={{
@@ -556,7 +595,13 @@ const ConversationSection = () => {
                     bottom: 0,
                     boxShadow: '0 0 0 2px var(--surface-0)',
                   }}
-                  title={grupoDaConversa(conversation) === 'fila' ? 'Aguardando' : 'Em atendimento'}
+                  title={
+                    grupoDaConversa(conversation) === 'fila'
+                      ? 'Aguardando'
+                      : conversation.paused_at
+                        ? 'Pausado'
+                        : 'Em atendimento'
+                  }
                 />
               </div>
               <div className="flex flex-1 flex-column min-w-0">
@@ -608,6 +653,16 @@ const ConversationSection = () => {
                           Mensagem apagada
                         </span>
                       )
+                    ) : previaDeMidia(
+                        conversation?.last_message_type,
+                        conversation?.last_message,
+                      ) ? (
+                      <span>
+                        <i
+                          className={`fa-regular ${previaDeMidia(conversation?.last_message_type, conversation?.last_message).icone} mr-1`}
+                        />
+                        {previaDeMidia(conversation?.last_message_type, conversation?.last_message).texto}
+                      </span>
                     ) : resumoDoContato(
                         conversation?.last_message_type,
                         conversation?.last_message,

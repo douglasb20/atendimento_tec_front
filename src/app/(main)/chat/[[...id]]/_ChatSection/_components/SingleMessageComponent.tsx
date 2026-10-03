@@ -12,6 +12,7 @@ import { useChatStore } from '@/store/useChatStore';
 import { jaAnimou, marcaComoAnimada } from '@/service/Outbox/jaAnimadas';
 import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import QuotedMessageItem from './QuotedMessageItem';
+import VideoGif from './VideoGif';
 import PlayerAudio from './PlayerAudio';
 import ModalContatoCompartilhado from './ModalContatoCompartilhado';
 
@@ -140,6 +141,52 @@ const SingleMessageComponent = ({
     [message.type, content],
   );
 
+  // Localização: a primeira linha do conteúdo são as coordenadas; nome e
+  // endereço, quando há, vêm nas seguintes. Conteúdo fora desse formato (nome
+  // solto, de mensagens antigas) cai de volta no texto da bolha.
+  const localizacao = useMemo(() => {
+    if (message.type !== 'location') return null;
+
+    const [coordenadas, nome, endereco] = (content ?? '').split('\n');
+    const [lat, lng] = (coordenadas ?? '').split(',').map((v) => Number(v));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || !coordenadas?.includes(',')) return null;
+
+    return {
+      coordenadas,
+      nome: nome || null,
+      endereco: endereco || null,
+      url: `https://www.google.com/maps?q=${lat},${lng}`,
+    };
+  }, [message.type, content]);
+
+  // Chave Pix: o conteúdo é o JSON montado pelo back. Fora desse formato cai
+  // de volta no texto da bolha.
+  const pix = useMemo(() => {
+    if (message.type !== 'payment') return null;
+    try {
+      const dados = JSON.parse(content ?? '');
+      return dados?.key
+        ? (dados as {
+            merchant_name: string | null;
+            key: string;
+            key_type: string | null;
+            valor: number | null;
+          })
+        : null;
+    } catch {
+      return null;
+    }
+  }, [message.type, content]);
+  const [pixCopiado, setPixCopiado] = useState(false);
+
+  const copiarPix = async () => {
+    try {
+      await navigator.clipboard.writeText(pix.key);
+      setPixCopiado(true);
+      setTimeout(() => setPixCopiado(false), 2000);
+    } catch {}
+  };
+
   /**
    * Anima **uma vez** por mensagem, e só na que acabou de chegar.
    *
@@ -225,7 +272,14 @@ const SingleMessageComponent = ({
         `relative w-auto border-1 p-2 mb-1 border-round-lg message-item-${from_me ? 'from-me' : 'from-them'} ${messageClass}`,
         { 'mensagem-entrando': animar },
       )}
-      style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+      // Figurinha sem balão, como no WhatsApp: a imagem (webp, animada ou não)
+      // flutua sobre o fundo, só com o horário embaixo.
+      style={{
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        ...(message.type === 'sticker' &&
+          exibeMidia && { background: 'transparent', borderColor: 'transparent' }),
+      }}
     >
       {message.hidden_at ? (
         // Removida só do nosso lado ("apagar para mim"): no WhatsApp do contato
@@ -237,6 +291,12 @@ const SingleMessageComponent = ({
         </div>
       ) : message.is_deleted && !ajustes.mostrar_conteudo_mensagem_apagada ? null : (
         <>
+          {message.is_forwarded && (
+            <div className="flex align-items-center gap-1 mb-1 text-xs font-italic opacity-70">
+              <i className="fa-regular fa-share" />
+              <span>Encaminhada</span>
+            </div>
+          )}
           {message.has_quoted && quotedMessage && (
             <QuotedMessageItem
               activeChat={activeChat}
@@ -246,7 +306,7 @@ const SingleMessageComponent = ({
           <div className="flex flex-column text-base ">
             {/* Expirada pela retenção: o arquivo saiu do storage, mas a
                 mensagem e a legenda continuam no histórico. */}
-            {message.has_media && message.media_expired && (
+            {message.has_media && message.media_expired && message.type !== 'location' && (
               <div
                 className={classNames(
                   from_me ? 'bg-primary-600' : 'surface-200',
@@ -318,6 +378,19 @@ const SingleMessageComponent = ({
               </ComProgresso>
             )}
             {exibeMidia && message.type === 'image' && DivWithEmoji()}
+            {exibeMidia && message.type === 'sticker' && (
+              <ComProgresso progresso={message.progresso}>
+                {/* `<img>` e não o `Image` do PrimeReact: sem preview/zoom, e o
+                    webp animado toca nativamente. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  key={message.media_url}
+                  src={message.media_url}
+                  alt="Figurinha"
+                  style={{ width: '10rem', maxWidth: '100%', height: 'auto', display: 'block' }}
+                />
+              </ComProgresso>
+            )}
             {/* Voz gravada (`ptt`) e arquivo de áudio anexado (`audio`) tocam do
                 mesmo jeito; o que muda é a origem, e o nome só existe no
                 segundo caso. */}
@@ -356,8 +429,24 @@ const SingleMessageComponent = ({
               <ComProgresso progresso={message.progresso}>
                 <div
                   className="mb-2 relative "
-                  style={{ maxWidth: 250, maxHeight: 370, borderRadius: 8, overflow: 'hidden' }}
+                  // GIF (vídeo em loop do WhatsApp) maior que o vídeo comum: é o conteúdo
+                  // da mensagem, e em 250px ficava pequeno demais.
+                  style={{
+                    // Largura fixa no GIF: só o teto não bastava, porque a
+                    // caixa encolhia ao tamanho intrínseco do vídeo (pequeno).
+                    ...(message.is_gif && { width: 380 }),
+                    maxWidth: message.is_gif ? '100%' : 250,
+                    maxHeight: message.is_gif ? 640 : 370,
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                  }}
                 >
+                  {message.is_gif ? (
+                    <VideoGif
+                      src={message.media_url}
+                      type={message.media_type}
+                    />
+                  ) : (
                   <video
                     // Mesmo motivo do `Image`: trocar o src de um <source> não
                     // recarrega o vídeo (exigiria `load()`), então a instância
@@ -365,9 +454,9 @@ const SingleMessageComponent = ({
                     key={message.media_url}
                     controls={false}
                     className="w-full h-full pointer-events-none "
-                    autoPlay={message.is_gif}
-                    loop={message.is_gif}
-                    muted={message.is_gif}
+                    autoPlay={false}
+                    loop={false}
+                    muted={false}
                     playsInline
                     style={{
                       objectFit: 'fill',
@@ -379,6 +468,7 @@ const SingleMessageComponent = ({
                     />
                     Seu navegador não suporta o elemento de vídeo.
                   </video>
+                  )}
                   {!message.is_gif && !enviandoMidia && (
                     <div
                       className="button-play absolute top-0 left-0 w-full h-full flex align-items-center justify-content-center "
@@ -418,6 +508,109 @@ const SingleMessageComponent = ({
                   </span>
                 </span>
               </button>
+            ) : message.type === 'view_once' ? (
+              // Como o WhatsApp oficial: o conteúdo não chega a este aparelho,
+              // só o aviso de que existe, para o atendente ver no celular.
+              <div className="flex align-items-center gap-2 font-italic opacity-80">
+                <i className="fa-regular fa-circle-1 text-lg flex-none" />
+                <span>{content}</span>
+              </div>
+            ) : pix ? (
+              // Cartão no estilo do WhatsApp: ícone Pix redondo + titular + tipo e
+              // chave numa linha só (cortada), divisor e o botão de copiar.
+              <div
+                className={classNames(
+                  from_me ? 'bg-primary-600 text-primary-contrast' : 'surface-200 text-color',
+                  'flex flex-column border-round mb-2 overflow-hidden',
+                )}
+                style={{ width: '21rem', maxWidth: '100%' }}
+              >
+                <div className="flex align-items-center gap-3 p-3">
+                  <span
+                    className="flex align-items-center justify-content-center border-circle flex-none"
+                    style={{
+                      width: '3rem',
+                      height: '3rem',
+                      background: 'rgba(37, 211, 102, 0.18)',
+                    }}
+                  >
+                    <i
+                      className="fa-brands fa-pix text-2xl"
+                      style={{ color: '#25d366' }}
+                    />
+                  </span>
+                  <span className="flex flex-column min-w-0">
+                    <span className="font-medium text-lg white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                      {pix.merchant_name ?? 'Chave Pix'}
+                    </span>
+                    <span className="text-base opacity-80 white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                      {{
+                        EVP: 'Chave aleatória',
+                        CPF: 'CPF',
+                        CNPJ: 'CNPJ',
+                        EMAIL: 'E-mail',
+                        PHONE: 'Telefone',
+                      }[pix.key_type ?? ''] ?? 'Chave'}
+                      : {pix.key}
+                    </span>
+                    {pix.valor && (
+                      <span className="text-base font-medium">
+                        {pix.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={copiarPix}
+                  className="flex align-items-center justify-content-center gap-2 border-none border-top-1 p-3 cursor-pointer bg-transparent font-medium text-base"
+                  style={{ color: '#25d366', borderTopColor: 'rgba(255, 255, 255, 0.15)' }}
+                >
+                  <i className={`fa-regular ${pixCopiado ? 'fa-check' : 'fa-copy'}`} />
+                  {pixCopiado ? 'Chave copiada' : 'Copiar chave Pix'}
+                </button>
+              </div>
+            ) : localizacao ? (
+              <a
+                href={localizacao.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={classNames(
+                  from_me ? 'bg-primary-600 text-primary-contrast' : 'surface-200 text-color',
+                  'flex flex-column border-round mb-2 no-underline overflow-hidden',
+                )}
+                style={{ minWidth: '14rem', maxWidth: '18rem', color: 'inherit' }}
+              >
+                {/* Miniatura do mapa que o próprio WhatsApp envia; o pino fica no
+                    centro, que é onde o WhatsApp a centraliza. Sem miniatura
+                    (mensagens antigas, ou expirada pela retenção), só o texto. */}
+                {exibeMidia && (
+                  <span className="relative flex" style={{ lineHeight: 0 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={message.media_url}
+                      alt="Mapa da localização"
+                      style={{ width: '100%', display: 'block' }}
+                    />
+                    <i
+                      className="fa-solid fa-location-dot text-3xl text-red-500 absolute"
+                      style={{ left: '50%', top: '50%', transform: 'translate(-50%, -100%)' }}
+                    />
+                  </span>
+                )}
+                <span className="flex align-items-center gap-2 p-2">
+                  {!exibeMidia && (
+                    <i className="fa-solid fa-location-dot text-2xl flex-none text-red-500" />
+                  )}
+                  <span className="flex flex-column min-w-0">
+                    <span className="font-medium">{localizacao.nome ?? 'Localização'}</span>
+                    <span className="text-xs opacity-80">
+                      {localizacao.endereco ?? localizacao.coordenadas}
+                    </span>
+                    <span className="text-xs underline">Abrir no mapa</span>
+                  </span>
+                </span>
+              </a>
             ) : (
               !exibeMidia && DivWithEmoji()
             )}

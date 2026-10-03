@@ -6,7 +6,7 @@ import useApi from '@/service/Api/ApiClient';
 import {
   ContactResponse,
   ehAtendimentoFinalizado,
-  podeAgirNoAtendimento,
+  ehDonoDoAtendimento,
   SupportChatsResponse,
   SupportChatStatusId,
 } from '@/Interfaces';
@@ -59,6 +59,7 @@ const Header = () => {
   const { podeEditar: podeAgir, podeAcao, carregado: permissoesCarregadas } =
     usePermissoesModulo('support.chat');
   const podeTransferir = podeAcao('transfer');
+  const podePausar = podeAcao('pause');
   const { podeEditar: podeEditarContato } = usePermissoesModulo('contact');
 
   const [modalAberto, setModalAberto] = useState<ModalAberto>(null);
@@ -69,6 +70,7 @@ const Header = () => {
   const [focarClienteAoAbrir, setFocarClienteAoAbrir] = useState(false);
   const [modoFinalizar, setModoFinalizar] = useState<ModoFinalizar>('normal');
   const [iniciando, setIniciando] = useState(false);
+  const [pausando, setPausando] = useState(false);
   const [detalhesAberto, setDetalhesAberto] = useState(false);
 
   if (!activeChat) return null;
@@ -81,7 +83,8 @@ const Header = () => {
     (status === SupportChatStatusId.AGUARDANDO || status === SupportChatStatusId.EM_FILA);
   // Finalizar e transferir são do dono: o backend recusa de qualquer forma, e
   // oferecer o botão só para vê-lo falhar é pior do que não mostrá-lo.
-  const souODono = podeAgirNoAtendimento(activeChat, usuarioId);
+  const souODono = ehDonoDoAtendimento(activeChat, usuarioId);
+  const pausado = emAndamento && Boolean(activeChat.paused_at);
 
   /** Abre o diálogo de encerramento no modo pedido. */
   const abrirFinalizacao = (modo: ModoFinalizar) => {
@@ -126,6 +129,26 @@ const Header = () => {
     }
   };
 
+  const alternarPausa = async (endpoint: 'PausarAtendimentoChat' | 'RetomarAtendimentoChat') => {
+    try {
+      setPausando(true);
+      const atualizado = await FetchReq<SupportChatsResponse>({
+        endpoint,
+        variables: [activeChat.id],
+      });
+      patchActiveChat(atualizado);
+    } catch (erro) {
+      CatchAlerta(
+        erro,
+        endpoint === 'PausarAtendimentoChat'
+          ? 'Não foi possível pausar o atendimento'
+          : 'Não foi possível retomar o atendimento',
+      );
+    } finally {
+      setPausando(false);
+    }
+  };
+
   const aoSalvarContato = (contato: ContactResponse) => patchActiveChat({ contact: contato });
 
   return (
@@ -156,7 +179,11 @@ const Header = () => {
           {emAndamento && activeChat.answered_at && (
             <>
               <Divisor />
-              <Cronometro inicio={activeChat.answered_at} />
+              <Cronometro
+                inicio={activeChat.answered_at}
+                pausadoEm={activeChat.paused_at}
+                pausadoTotalSegundos={activeChat.paused_total_seconds}
+              />
             </>
           )}
 
@@ -182,7 +209,7 @@ const Header = () => {
             emAndamento={emAndamento}
             souODono={souODono}
             finalizado={finalizado}
-            processando={iniciando}
+            processando={iniciando || pausando}
             onIniciar={iniciarAtendimento}
             onFinalizar={() => abrirFinalizacao('normal')}
             onFinalizarSemDespedida={() => abrirFinalizacao('sem-despedida')}
@@ -191,6 +218,10 @@ const Header = () => {
             onSelecionarMensagens={entrarModoSelecao}
             onEditarContato={() => setModalAberto('contato')}
             onTransferir={() => setModalAberto('transferir')}
+            pausado={pausado}
+            onPausar={() => alternarPausa('PausarAtendimentoChat')}
+            onRetomar={() => alternarPausa('RetomarAtendimentoChat')}
+            podePausar={podePausar}
             podeAgir={podeAgir}
             podeTransferir={podeTransferir}
             podeEditarContato={podeEditarContato}

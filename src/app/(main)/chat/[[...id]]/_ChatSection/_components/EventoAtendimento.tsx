@@ -21,16 +21,27 @@ const EventoAtendimento = ({ evento }: EventoAtendimentoProps) => {
   const origem = nomeCompleto(evento.userOrigem) || 'Atendente removido';
 
   // Destino nulo não é falta de dado: é a devolução para a espera.
-  const texto = evento.userDestino
-    ? `${origem} transferiu para ${nomeCompleto(evento.userDestino)}`
-    : `${origem} devolveu para a espera`;
+  const texto =
+    evento.tipo === 'pausa'
+      ? `${origem} pausou o atendimento`
+      : evento.tipo === 'retomada'
+        ? `${origem} retomou o atendimento`
+        : evento.userDestino
+          ? `${origem} transferiu para ${nomeCompleto(evento.userDestino)}`
+          : `${origem} devolveu para a espera`;
+  const icone =
+    evento.tipo === 'pausa'
+      ? 'fa-pause'
+      : evento.tipo === 'retomada'
+        ? 'fa-play'
+        : 'fa-right-left';
 
   return (
     <div className="flex align-items-center gap-2 my-3 px-2">
       <div className="flex-1 border-top-1 border-300" />
       <span className="flex flex-column align-items-center text-xs text-500 white-space-nowrap">
         <span>
-          <i className="fa-regular fa-right-left mr-1" />
+          <i className={`fa-regular ${icone} mr-1`} />
           {texto} · {DateToBR(evento.created_at, 'Pp')}
         </span>
         {/* O motivo quebra a linha em vez de alongar a faixa: é texto livre e

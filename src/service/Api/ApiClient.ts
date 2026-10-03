@@ -131,6 +131,8 @@ export const ListUrl = {
   SendMessage: { url: '/support-chats/{{support_chat_id}}/send-message', method: 'POST' },
   SendReaction: { url: '/support-chats/{{support_chat_id}}/send-reaction', method: 'POST' },
   IniciarAtendimentoChat: { url: '/support-chats/{{support_chat_id}}/iniciar', method: 'POST' },
+  PausarAtendimentoChat: { url: '/support-chats/{{support_chat_id}}/pausar', method: 'POST' },
+  RetomarAtendimentoChat: { url: '/support-chats/{{support_chat_id}}/retomar', method: 'POST' },
   CriarAtendimentoNovo: { url: '/support-chats/nova', method: 'POST' },
   MarcarConversaLida: {
     url: '/support-chats/{{support_chat_id}}/marcar-lida',

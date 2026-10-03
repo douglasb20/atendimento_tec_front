@@ -21,6 +21,12 @@ type AcoesAtendimentoProps = {
   onSelecionarMensagens: () => void;
   onEditarContato: () => void;
   onTransferir: () => void;
+  /** Atendimento pausado: "Finalizar" vira "Retomar". */
+  pausado: boolean;
+  onPausar: () => void;
+  onRetomar: () => void;
+  /** `support.chat:pause` - pausar e retomar. */
+  podePausar: boolean;
   /** `support.chat:update` - iniciar e finalizar. */
   podeAgir: boolean;
   /** `support.chat:transfer`, permissão própria. */
@@ -49,6 +55,10 @@ const AcoesAtendimento = ({
   onSelecionarMensagens,
   onEditarContato,
   onTransferir,
+  pausado,
+  onPausar,
+  onRetomar,
+  podePausar,
   podeAgir,
   podeTransferir,
   podeEditarContato,
@@ -66,22 +76,42 @@ const AcoesAtendimento = ({
    * mantêm a conversa aberta.
    */
   const itensAcoes: MenuItem[] = [
-    {
-      label: 'Finalizar sem despedida',
-      icon: 'fa-regular fa-circle-check',
-      command: onFinalizarSemDespedida,
-    },
-    { separator: true },
+    // Pausado não finaliza (nem sem despedida): é preciso retomar antes.
+    ...(!pausado
+      ? [
+          {
+            label: 'Finalizar sem despedida',
+            icon: 'fa-regular fa-circle-check',
+            command: onFinalizarSemDespedida,
+          },
+          { separator: true },
+        ]
+      : []),
+    ...(!pausado && podePausar
+      ? [
+          {
+            label: 'Pausar atendimento',
+            icon: 'fa-regular fa-pause',
+            command: onPausar,
+          },
+        ]
+      : []),
     {
       label: 'Marcar como não lida',
       icon: 'fa-regular fa-envelope',
       command: onMarcarNaoLida,
     },
-    {
-      label: 'Selecionar mensagens',
-      icon: 'fa-regular fa-list-check',
-      command: onSelecionarMensagens,
-    },
+    // Pausado não escreve nem apaga nada, então selecionar mensagens (que serve
+    // a apagá-las) fica de fora.
+    ...(!pausado
+      ? [
+          {
+            label: 'Selecionar mensagens',
+            icon: 'fa-regular fa-list-check',
+            command: onSelecionarMensagens,
+          },
+        ]
+      : []),
     // Abre o formulário de edição, não um painel de leitura - por isso exige
     // `contact:update`.
     ...(podeEditarContato
@@ -153,12 +183,13 @@ const AcoesAtendimento = ({
           para as demais. */}
       {emAndamento && souODono && podeAgir && (
         <SplitButton
-          label="Finalizar"
-          icon="fa-regular fa-check"
-          severity="success"
+          label={pausado ? (podePausar ? 'Retomar' : 'Pausado') : 'Finalizar'}
+          icon={pausado ? 'fa-regular fa-play' : 'fa-regular fa-check'}
+          severity={pausado ? 'warning' : 'success'}
           outlined
           size='small'
-          onClick={onFinalizar}
+          // Sem a permissão de pausar não há como retomar: o botão só informa.
+          onClick={pausado ? (podePausar ? onRetomar : undefined) : onFinalizar}
           model={itensAcoes}
           // Largura pelo item mais longo: o menu herda a medida do gatilho, e
           // "Finalizar sem despedida" quebrava em duas linhas.

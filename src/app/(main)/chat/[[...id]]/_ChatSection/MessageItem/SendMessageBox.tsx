@@ -20,6 +20,7 @@ import {
   ehAtendimentoAtivo,
   ehAtendimentoFinalizado,
   ModeQuoted,
+  ehDonoDoAtendimento,
   podeAgirNoAtendimento,
   UserInfo,
 } from '@/Interfaces';
@@ -692,7 +693,10 @@ export default function SendMessageBox() {
   // `podeAgirNoAtendimento` é a mesma regra usada pela reação e pelo menu de
   // mensagem: uma só definição de "posso escrever nesta conversa".
   const deOutroAtendente =
-    !finalizado && !naoAssumido && !podeAgirNoAtendimento(activeChat, usuarioId);
+    !finalizado && !naoAssumido && !ehDonoDoAtendimento(activeChat, usuarioId);
+  // Dono, mas pausou: a caixa trava até retomar (o cliente ainda escreve).
+  const pausado =
+    !finalizado && !naoAssumido && !deOutroAtendente && !podeAgirNoAtendimento(activeChat, usuarioId);
 
   // Enquanto o cookie não foi lido, `usuarioId` é nulo e todo atendimento
   // pareceria alheio - o rodapé piscaria bloqueado para o próprio dono.
@@ -702,8 +706,14 @@ export default function SendMessageBox() {
   // botão Iniciar, e responder antes disso deixaria o atendimento sem dono e
   // sem tempo contado. Já com outro dono, escrever faria o cliente ouvir duas
   // vozes no mesmo atendimento.
-  if (naoAssumido || finalizado || deOutroAtendente) {
-    const icone = finalizado ? 'fa-circle-check' : deOutroAtendente ? 'fa-eye' : 'fa-lock';
+  if (naoAssumido || finalizado || deOutroAtendente || pausado) {
+    const icone = finalizado
+      ? 'fa-circle-check'
+      : deOutroAtendente
+        ? 'fa-eye'
+        : pausado
+          ? 'fa-pause'
+          : 'fa-lock';
 
     return (
       <div className="flex align-items-center justify-content-center gap-2 border-1 border-300 surface-100 border-round-lg p-3 mt-2 text-600">
@@ -713,7 +723,9 @@ export default function SendMessageBox() {
             ? 'Atendimento finalizado - este histórico é somente leitura.'
             : deOutroAtendente
               ? `Atendimento de ${nomeCompleto(activeChat?.user) || 'outro atendente'} - somente leitura.`
-              : 'Inicie o atendimento para responder.'}
+              : pausado
+                ? 'Atendimento pausado - retome para responder.'
+                : 'Inicie o atendimento para responder.'}
         </span>
       </div>
     );
