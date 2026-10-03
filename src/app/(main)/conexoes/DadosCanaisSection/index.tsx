@@ -120,6 +120,9 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       | 'inatividade_avisar_em_minutos'
       | 'inatividade_mensagem_aviso'
       | 'inatividade_enviar_despedida'
+      | 'rejeitar_chamadas'
+      | 'rejeitar_chamadas_enviar_mensagem'
+      | 'rejeitar_chamadas_mensagem'
     >,
     anexoSaudacao: EstadoAnexo,
     anexoDespedida: EstadoAnexo,
@@ -144,6 +147,9 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
         inatividade_avisar_em_minutos: data.inatividade_avisar_em_minutos ?? null,
         inatividade_mensagem_aviso: data.inatividade_mensagem_aviso?.trim() || null,
         inatividade_enviar_despedida: Boolean(data.inatividade_enviar_despedida),
+        rejeitar_chamadas: Boolean(data.rejeitar_chamadas),
+        rejeitar_chamadas_enviar_mensagem: Boolean(data.rejeitar_chamadas_enviar_mensagem),
+        rejeitar_chamadas_mensagem: data.rejeitar_chamadas_mensagem?.trim() || null,
         ...anexos,
       };
 

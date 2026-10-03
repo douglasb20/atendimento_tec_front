@@ -65,6 +65,13 @@ export type ChannelResponse = {
   inatividade_mensagem_aviso: string | null;
   /** Ao finalizar por inatividade, envia também `mensagem_despedida` - opt-in. */
   inatividade_enviar_despedida: boolean;
+
+  /** Rejeita toda chamada recebida (quem rejeita é o provider). */
+  rejeitar_chamadas: boolean;
+  /** Envia a mensagem abaixo ao rejeitar. Só vale com a rejeição ligada. */
+  rejeitar_chamadas_enviar_mensagem: boolean;
+  /** Texto enviado ao rejeitar - chega ao cliente, mas não aparece na conversa. */
+  rejeitar_chamadas_mensagem: string | null;
   /** Os setores atendidos por este canal - só vem populado por
    * `GET /channels/:id` (`findChannelComSetores`), não na listagem. */
   departments?: { id: number; name: string }[];

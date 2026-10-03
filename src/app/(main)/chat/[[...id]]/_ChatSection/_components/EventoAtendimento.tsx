@@ -21,8 +21,16 @@ const EventoAtendimento = ({ evento }: EventoAtendimentoProps) => {
   const origem = nomeCompleto(evento.userOrigem) || 'Atendente removido';
 
   // Destino nulo não é falta de dado: é a devolução para a espera.
+  // Chamada: `motivo` carrega `rejeitada:video` / `recebida:voz`, e não um
+  // texto livre como na transferência - por isso não cai na linha de baixo.
+  const [situacao, midia] = evento.tipo === 'chamada' ? (evento.motivo ?? '').split(':') : [];
+
   const texto =
-    evento.tipo === 'pausa'
+    evento.tipo === 'chamada'
+      ? situacao === 'rejeitada'
+        ? `O cliente tentou uma chamada de ${midia === 'video' ? 'vídeo' : 'voz'} e ela foi recusada automaticamente`
+        : `O cliente está chamando por ${midia === 'video' ? 'vídeo' : 'voz'} - atenda pelo seu aparelho`
+      : evento.tipo === 'pausa'
       ? `${origem} pausou o atendimento`
       : evento.tipo === 'retomada'
         ? `${origem} retomou o atendimento`
@@ -30,7 +38,11 @@ const EventoAtendimento = ({ evento }: EventoAtendimentoProps) => {
           ? `${origem} transferiu para ${nomeCompleto(evento.userDestino)}`
           : `${origem} devolveu para a espera`;
   const icone =
-    evento.tipo === 'pausa'
+    evento.tipo === 'chamada'
+      ? situacao === 'rejeitada'
+        ? 'fa-phone-slash'
+        : 'fa-phone'
+      : evento.tipo === 'pausa'
       ? 'fa-pause'
       : evento.tipo === 'retomada'
         ? 'fa-play'
@@ -46,7 +58,7 @@ const EventoAtendimento = ({ evento }: EventoAtendimentoProps) => {
         </span>
         {/* O motivo quebra a linha em vez de alongar a faixa: é texto livre e
             pode ser longo. */}
-        {evento.motivo && (
+        {evento.motivo && evento.tipo !== 'chamada' && (
           <span
             className="text-400 font-italic white-space-normal text-center"
             style={{ maxWidth: '28rem' }}

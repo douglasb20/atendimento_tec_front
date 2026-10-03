@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { SupportChatMessageResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta } from '@/service/Util';
+import PlayerAudio from './PlayerAudio';
 
 type ModalEditarMensagemProps = {
   visible: boolean;
@@ -26,6 +27,67 @@ const JANELA_EDICAO_MIN = 15;
  * reposto do outro lado.
  */
 const semPrefixo = (conteudo?: string) => (conteudo ?? '').replace(/^\*[^*]+:\*\n/, '');
+
+/**
+ * A mídia da mensagem, para quem edita ver o que está legendando.
+ *
+ * Só exibição: o WhatsApp não permite trocar o arquivo de uma mensagem já
+ * enviada, apenas a legenda. Mídia expirada pela retenção (ou ainda sem URL)
+ * não tem o que mostrar - o campo de texto aparece sozinho, como antes.
+ */
+const PreviewMidia = ({ mensagem }: { mensagem: SupportChatMessageResponse }) => {
+  if (!mensagem.has_media || mensagem.media_expired || !mensagem.media_url) return null;
+
+  const moldura = 'border-round overflow-hidden surface-100 flex justify-content-center';
+
+  if (mensagem.type === 'image' || mensagem.type === 'sticker') {
+    return (
+      <div className={moldura}>
+        {/* `<img>` e não o `Image` do Next: o otimizador dá timeout contra o
+            Backblaze, e aqui é uma miniatura só. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={mensagem.media_url}
+          alt={mensagem.file_name ?? 'Imagem da mensagem'}
+          style={{ maxHeight: '14rem', maxWidth: '100%', objectFit: 'contain' }}
+        />
+      </div>
+    );
+  }
+
+  if (mensagem.type === 'video') {
+    return (
+      <div className={moldura}>
+        <video
+          src={mensagem.media_url}
+          controls
+          style={{ maxHeight: '14rem', maxWidth: '100%' }}
+        />
+      </div>
+    );
+  }
+
+  if (mensagem.type === 'ptt' || mensagem.type === 'audio') {
+    return (
+      <div className="surface-100 border-round p-2">
+        <PlayerAudio
+          url={mensagem.media_url}
+          mimetype={mensagem.media_type}
+        />
+      </div>
+    );
+  }
+
+  // Documento e o que mais houver: nome do arquivo, que é o que identifica.
+  return (
+    <div className="flex align-items-center gap-2 surface-100 border-round p-3">
+      <i className="fa-regular fa-file text-xl flex-none" />
+      <span className="white-space-nowrap overflow-hidden text-overflow-ellipsis">
+        {mensagem.file_name ?? 'Documento'}
+      </span>
+    </div>
+  );
+};
 
 const ModalEditarMensagem = ({
   visible,
@@ -83,6 +145,8 @@ const ModalEditarMensagem = ({
         label="Salvar alteração"
         icon="fa-regular fa-check"
         loading={salvando}
+        // Texto vazio é recusado pelo backend (`edit-message`), inclusive com
+        // mídia - apagar a legenda por completo não é possível por aqui.
         disabled={expirou || semMudanca || !texto.trim()}
         onClick={salvar}
       />
@@ -101,13 +165,15 @@ const ModalEditarMensagem = ({
       footer={rodape}
     >
       <div className="flex flex-column gap-2">
+        <PreviewMidia mensagem={mensagem} />
+
         <InputTextarea
           rows={4}
           autoResize
           autoFocus
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          placeholder="Escreva a mensagem"
+          placeholder={mensagem.has_media ? 'Escreva a legenda' : 'Escreva a mensagem'}
           disabled={expirou}
         />
 

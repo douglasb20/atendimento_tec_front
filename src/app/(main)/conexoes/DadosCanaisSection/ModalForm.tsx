@@ -51,6 +51,9 @@ const defaultValues = {
   inatividade_avisar_em_minutos: STEP_MINUTOS_AVISAR,
   inatividade_mensagem_aviso: '',
   inatividade_enviar_despedida: false,
+  rejeitar_chamadas: false,
+  rejeitar_chamadas_enviar_mensagem: false,
+  rejeitar_chamadas_mensagem: '',
   department_ids: [],
 };
 
@@ -73,6 +76,8 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
   const inatividadeAtiva = watch('inatividade_ativa');
   const inatividadeResolverEm = watch('inatividade_resolver_em_minutos');
   const inatividadeAvisarEm = watch('inatividade_avisar_em_minutos');
+  const rejeitarChamadas = watch('rejeitar_chamadas');
+  const rejeitarChamadasEnviarMensagem = watch('rejeitar_chamadas_enviar_mensagem');
 
   const anexoVazio: EstadoAnexo = { arquivoNovo: null, removeuAnexo: false };
   const [anexoSaudacao, setAnexoSaudacao] = useState<EstadoAnexo>(anexoVazio);
@@ -211,59 +216,61 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
           header="Geral"
           leftIcon="fa-regular fa-sliders mr-2"
         >
-        <div className="formgrid grid gap-3">
-          <div className="col-12 p-fluid">
-            <LabelPlus
-              text="Nome da conexão"
-              required
-            />
-            <Controller
-              control={control}
-              name="name"
-              rules={{
-                required: msgRequired,
-              }}
-              render={({ field, fieldState }) => (
-                <>
-                  <InputText
-                    {...field}
-                    placeholder="Ex.: Suporte"
-                    disabled={somenteLeitura}
+            <div className="formgrid grid gap-3">
+              <div className="col-12 grid m-0 p-0">
+                <div className="col-6 p-fluid">
+                  <LabelPlus
+                    text="Nome da conexão"
+                    required
                   />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
+                  <Controller
+                    control={control}
+                    name="name"
+                    rules={{
+                      required: msgRequired,
+                    }}
+                    render={({ field, fieldState }) => (
+                      <>
+                        <InputText
+                          {...field}
+                          placeholder="Ex.: Suporte"
+                          disabled={somenteLeitura}
+                        />
+                        {getFormErrorMessage(fieldState)}
+                      </>
+                    )}
+                  />
+                </div>
 
-          {setores.length > 0 && (
-            <div className="col-12 p-fluid">
-              <Controller
-                control={control}
-                name="department_ids"
-                render={({ field }) => (
-                  <>
-                    <LabelPlus
-                      htmlFor={field.name}
-                      text="Setores"
-                      textHelp="Os setores atendidos por esta conexão - pode ser mais de um. Sem chatbot ativo, se todos estiverem fora do horário de atendimento, a conexão manda a mensagem de ausência do primeiro setor vinculado em vez da saudação."
+                {setores.length > 0 && (
+                  <div className="col-6 p-fluid">
+                    <Controller
+                      control={control}
+                      name="department_ids"
+                      render={({ field }) => (
+                        <>
+                          <LabelPlus
+                            htmlFor={field.name}
+                            text="Setores"
+                            textHelp="Os setores atendidos por esta conexão - pode ser mais de um. Sem chatbot ativo, se todos estiverem fora do horário de atendimento, a conexão manda a mensagem de ausência do primeiro setor vinculado em vez da saudação."
+                          />
+                          <MultiSelect
+                            id={field.name}
+                            value={field.value ?? []}
+                            onChange={(e) => field.onChange(e.value)}
+                            options={setores}
+                            optionLabel="name"
+                            optionValue="id"
+                            display="chip"
+                            placeholder="Nenhum setor"
+                            disabled={somenteLeitura}
+                          />
+                        </>
+                      )}
                     />
-                    <MultiSelect
-                      id={field.name}
-                      value={field.value ?? []}
-                      onChange={(e) => field.onChange(e.value)}
-                      options={setores}
-                      optionLabel="name"
-                      optionValue="id"
-                      display="chip"
-                      placeholder="Nenhum setor"
-                      disabled={somenteLeitura}
-                    />
-                  </>
+                  </div>
                 )}
-              />
-            </div>
-          )}
+              </div>
 
           <div className="col-12">
             <LabelPlus
@@ -480,6 +487,98 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
                 Além do encerramento, envia também a mensagem de despedida configurada na aba
                 "Geral". Desligado, a conversa só é encerrada, sem mensagem adicional.
               </small>
+            </div>
+          </div>
+        </TabPanel>
+
+        <TabPanel
+          header="Preferências"
+          leftIcon="fa-regular fa-sliders mr-2"
+        >
+          <div className="formgrid grid">
+            <div className="col-12">
+              <Controller
+                control={control}
+                name="rejeitar_chamadas"
+                render={({ field }) => (
+                  <div className="flex align-items-center gap-3">
+                    <InputSwitch
+                      inputId={field.name}
+                      checked={Boolean(field.value)}
+                      onChange={(e) => {
+                        const ligado = Boolean(e.value);
+                        field.onChange(ligado);
+                        // Desligar a rejeição desliga o envio junto: mensagem
+                        // de rejeição sem rejeição não significa nada, e o
+                        // campo ficaria preenchido mas inerte.
+                        if (!ligado) setValue('rejeitar_chamadas_enviar_mensagem', false);
+                      }}
+                      disabled={somenteLeitura}
+                    />
+                    <label
+                      htmlFor={field.name}
+                      className="text-900 font-medium"
+                    >
+                      Rejeitar chamadas automaticamente
+                    </label>
+                  </div>
+                )}
+              />
+              <small className="text-500 block mt-1">
+                Toda chamada recebida neste número é recusada na hora, sem tocar. Desligado, a
+                chamada toca normalmente no aparelho e a conversa apenas registra que ela houve.
+              </small>
+            </div>
+
+            <div className="col-12 mt-4">
+              <Controller
+                control={control}
+                name="rejeitar_chamadas_enviar_mensagem"
+                render={({ field }) => (
+                  <div className="flex align-items-center gap-3">
+                    <InputSwitch
+                      inputId={field.name}
+                      checked={Boolean(field.value)}
+                      onChange={(e) => field.onChange(Boolean(e.value))}
+                      disabled={somenteLeitura || !rejeitarChamadas}
+                    />
+                    <label
+                      htmlFor={field.name}
+                      className="text-900 font-medium"
+                    >
+                      Enviar mensagem ao rejeitar
+                    </label>
+                  </div>
+                )}
+              />
+              <small className="text-500 block mt-1">
+                A mensagem chega ao cliente, mas <strong>não aparece na conversa</strong>: o
+                atendente vê apenas o registro de que a chamada foi rejeitada.
+              </small>
+            </div>
+
+            <div className="col-12 mt-4">
+              <LabelPlus
+                text="Mensagem de rejeição"
+                textHelp="Enviada ao cliente quando a chamada é recusada. Não aparece na conversa."
+                required={rejeitarChamadasEnviarMensagem}
+              />
+              <Controller
+                control={control}
+                name="rejeitar_chamadas_mensagem"
+                render={({ field }) => (
+                  <EditorMensagem
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    placeholder="Ex.: Olá {{nome}}! Não atendemos por chamadas. Envie sua dúvida por mensagem que respondemos por aqui."
+                    comPreVisualizacao
+                    rows={3}
+                    disabled={
+                      somenteLeitura || !rejeitarChamadas || !rejeitarChamadasEnviarMensagem
+                    }
+                  />
+                )}
+              />
             </div>
           </div>
         </TabPanel>

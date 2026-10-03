@@ -117,6 +117,26 @@
   display: flex !important;
 }
 
+/**
+ * Chevron de ações da mensagem (responder, editar, apagar...).
+ *
+ * Nasce com `hidden` do PrimeFlex (`display: none`) e só aparece com o ponteiro
+ * sobre a bolha - mesmo padrão do `.box-reaction` acima. O `!important` é para
+ * vencer o `.hidden` do PrimeFlex, que também o usa.
+ *
+ * Em tela por toque não há hover: fica sempre visível, senão não haveria como
+ * abrir o menu no celular.
+ */
+.message-balloon:hover .message-chevron {
+  display: block !important;
+}
+
+@media (hover: none) {
+  .message-chevron {
+    display: block !important;
+  }
+}
+
 .no-scroll {
   pointer-events: none;
   touch-action: none;

@@ -135,6 +135,11 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
               supportChatStatus: chat.supportChatStatus ?? activeChat.supportChatStatus,
               // O webhook às vezes traz uma mensagem só neste campo.
               supportChatMessages: activeChat.supportChatMessages,
+              // Eventos (chamada, pausa, transferência) só vêm quando o
+              // backend acabou de gravar um - fora isso o `chat_state` não os
+              // carrega, e mantê-los do estado atual evita que a linha já
+              // exibida suma a cada evento de socket.
+              supportChatEvents: chat.supportChatEvents ?? activeChat.supportChatEvents,
             }
           : activeChat,
       };

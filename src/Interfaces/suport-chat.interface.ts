@@ -118,7 +118,7 @@ export interface SupportChatsResponse {
 export interface SupportChatEventResponse {
   id: string;
   support_chat_id: string;
-  tipo: 'transferencia' | 'pausa' | 'retomada';
+  tipo: 'transferencia' | 'pausa' | 'retomada' | 'chamada';
   motivo: string | null;
   created_at: string;
   userOrigem: UserResponse | null;
@@ -164,6 +164,9 @@ export interface SupportChatMessageResponse {
    * segue no aparelho do contato, e aparece como marcador na conversa.
    */
   hidden_at: string | null;
+  /** Enviada pelo sistema e nunca exibida (rejeição de chamada). O back já a
+   * filtra; o campo existe para quem receber o objeto por outro caminho. */
+  is_system_hidden?: boolean;
 
   /**
    * Mídia removida pela política de retenção - distinto de `is_deleted`, que é
