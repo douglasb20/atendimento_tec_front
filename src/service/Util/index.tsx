@@ -515,6 +515,36 @@ export const nomeCompleto = (
   pessoa?: { name?: string | null; last_name?: string | null } | null,
 ): string => [pessoa?.name, pessoa?.last_name].filter(Boolean).join(' ').trim();
 
+/**
+ * Formata o telefone que vem do WhatsApp.
+ *
+ * O número chega no formato do JID (`556492698043`): código do país colado no
+ * DDD. Mascarar direto faria o `55` virar DDD - daí o corte do prefixo antes.
+ * Com o nono dígito são 11 números; sem ele, 10.
+ */
+export const mascaraTelefone = (telefone?: string) => {
+  if (!telefone) return null;
+
+  let digitos = telefone.replace(/\D/g, '');
+
+  // 12 ou 13 dígitos começando em 55 é número brasileiro com o país junto.
+  if (digitos.startsWith('55') && digitos.length > 11) {
+    digitos = digitos.slice(2);
+  }
+
+  if (digitos.length < 10) return telefone;
+
+  // O WhatsApp omite o nono dígito no JID de vários DDDs, devolvendo o celular
+  // com 8 números. Fixo começa em 2-5; de 6 em diante é celular, e aí o 9 que
+  // falta é reposto para o número ficar discável.
+  const [ddd, assinante] = [digitos.slice(0, 2), digitos.slice(2)];
+  if (assinante.length === 8 && Number(assinante[0]) >= 6) {
+    digitos = `${ddd}9${assinante}`;
+  }
+
+  return Mask(digitos, digitos.length > 10 ? '(##) # ####-####' : '(##) ####-####');
+};
+
 export const nomeExibicao = (contato?: {
   name?: string;
   last_name?: string | null;

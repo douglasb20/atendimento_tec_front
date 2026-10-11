@@ -17,7 +17,7 @@ import { classNames } from 'primereact/utils';
 import AcoesConversa from './AcoesConversa';
 import { resumoDoContato } from '@/service/Vcard';
 import ModalNovoAtendimento from './ModalNovoAtendimento';
-import AbasConversa, { AbaConversa } from '../../_ChatInterno/AbasConversa';
+import AbasConversa from '../../_ChatInterno/AbasConversa';
 import ListaColegas from '../../_ChatInterno/ListaColegas';
 import { podeTocarSom, useAvisarEvento } from '@/hooks/useAvisarEvento';
 import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
@@ -407,7 +407,11 @@ const ConversationSection = () => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
 
-  const [abaAtiva, setAbaAtiva] = useState<AbaConversa>('atendimentos');
+  // Na store, não em `useState`: o `fechar` do chat interno precisa devolver
+  // esta coluna à lista de atendimentos junto com a outra. Ver `fechar` em
+  // `useChatInternoStore`.
+  const abaAtiva = useChatInternoStore((s) => s.aba);
+  const setAbaAtiva = useChatInternoStore((s) => s.setAba);
 
   // A aba some para quem não usa o chat interno: sem a permissão, e para o
   // superusuário, que não participa (o backend recusa todas as rotas dele).

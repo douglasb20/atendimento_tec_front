@@ -41,7 +41,17 @@ type ChatInternoStore = {
   modo: 'painel' | 'popup';
   /** Recolhida à barra de título. Só faz sentido no popup. */
   minimizado: boolean;
+  /**
+   * Qual lista a coluna da esquerda mostra: os atendimentos ou os colegas.
+   *
+   * Mora aqui, e não no componente da lista, porque o chat interno ocupa as
+   * **duas** colunas quando está no painel - a lista à esquerda e a conversa
+   * à direita. Fechar precisa devolver as duas de uma vez, e para isso o
+   * `fechar` tem de alcançar esta escolha.
+   */
+  aba: 'atendimentos' | 'interno';
 
+  setAba: (aba: 'atendimentos' | 'interno') => void;
   setColegas: (colegas: ColegaResponse[]) => void;
   setPresencas: (estados: Record<number, EstadoPresenca>) => void;
   marcarPresenca: (userId: number, estado: EstadoPresenca) => void;
@@ -81,6 +91,9 @@ export const useChatInternoStore = create<ChatInternoStore>()((set, get) => ({
   carregandoMensagens: false,
   modo: 'painel',
   minimizado: false,
+  aba: 'atendimentos',
+
+  setAba: (aba) => set({ aba }),
 
   setColegas: (colegas) => set({ colegas }),
 
@@ -134,9 +147,20 @@ export const useChatInternoStore = create<ChatInternoStore>()((set, get) => ({
 
   encaixar: () => set({ modo: 'painel', minimizado: false }),
 
-  // Fechar volta ao painel: deixar o modo em `popup` faria a próxima conversa
-  // abrir destacada sem ninguém ter pedido.
-  fechar: () => set({ ativo: null, modo: 'painel', minimizado: false, mensagens: [] }),
+  /**
+   * Fecha o chat interno e devolve a tela ao atendimento.
+   *
+   * Volta ao painel porque deixar o modo em `popup` faria a próxima conversa
+   * abrir destacada sem ninguém ter pedido.
+   *
+   * E volta a aba para `atendimentos`: no painel o chat interno ocupa as
+   * **duas** colunas, e limpar só o `ativo` liberava a da direita deixando a
+   * lista de colegas na esquerda - a tela continuava "no chat interno", e o
+   * único caminho de volta aos clientes era destacar a janela e trocar a aba
+   * na mão.
+   */
+  fechar: () =>
+    set({ ativo: null, modo: 'painel', minimizado: false, mensagens: [], aba: 'atendimentos' }),
 
   alternarMinimizado: () => set((estado) => ({ minimizado: !estado.minimizado })),
 
@@ -250,6 +274,7 @@ export const useChatInternoStore = create<ChatInternoStore>()((set, get) => ({
       mensagens: [],
       modo: 'painel',
       minimizado: false,
+      aba: 'atendimentos',
     }),
 
   totalNaoLidas: () => get().conversas.reduce((soma, conversa) => soma + conversa.nao_lidas, 0),

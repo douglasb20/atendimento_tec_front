@@ -4,42 +4,12 @@ import { classNames } from 'primereact/utils';
 
 import Avatar from '@/components/Avatar';
 import { ContactResponse } from '@/Interfaces';
-import { Mask, nomeCompleto, nomeExibicao } from '@/service/Util';
+import { mascaraTelefone, nomeCompleto, nomeExibicao } from '@/service/Util';
 
 type IdentificacaoContatoProps = {
   contato?: ContactResponse;
   /** Abre o painel com os dados completos. */
   onAbrirDetalhes?: () => void;
-};
-
-/**
- * Formata o telefone que vem do WhatsApp.
- *
- * O número chega no formato do JID (`556492698043`): código do país colado no
- * DDD. Mascarar direto faria o `55` virar DDD - daí o corte do prefixo antes.
- * Com o nono dígito são 11 números; sem ele, 10.
- */
-const mascaraTelefone = (telefone?: string) => {
-  if (!telefone) return null;
-
-  let digitos = telefone.replace(/\D/g, '');
-
-  // 12 ou 13 dígitos começando em 55 é número brasileiro com o país junto.
-  if (digitos.startsWith('55') && digitos.length > 11) {
-    digitos = digitos.slice(2);
-  }
-
-  if (digitos.length < 10) return telefone;
-
-  // O WhatsApp omite o nono dígito no JID de vários DDDs, devolvendo o celular
-  // com 8 números. Fixo começa em 2-5; de 6 em diante é celular, e aí o 9 que
-  // falta é reposto para o número ficar discável.
-  const [ddd, assinante] = [digitos.slice(0, 2), digitos.slice(2)];
-  if (assinante.length === 8 && Number(assinante[0]) >= 6) {
-    digitos = `${ddd}9${assinante}`;
-  }
-
-  return Mask(digitos, digitos.length > 10 ? '(##) # ####-####' : '(##) ####-####');
 };
 
 const IdentificacaoContato = ({
@@ -79,14 +49,17 @@ const IdentificacaoContato = ({
         style={{ objectFit: 'cover' }}
       />
 
-      <div className="flex flex-column gap-1 min-w-0">
+      <div className="flex flex-column min-w-0">
         <div className="flex align-items-center gap-2 min-w-0">
           {/* O contraste com a linha de baixo é o que dá hierarquia aqui:
               nome grande e escuro, metadado pequeno e claro. */}
           <span
             // `line-height-1` com `overflow-hidden` recortava o topo das
             // maiúsculas (o "G" do nome): a caixa fica menor que a fonte.
-            className="text-xl font-semibold text-900 line-height-2 white-space-nowrap overflow-hidden text-overflow-ellipsis"
+            // `line-height-2` sobra abaixo da linha e afastava o contato, daí
+            // o `line-height-3` (1.5) - folga suficiente para a maiúscula,
+            // sem o vão.
+            className="text-xl font-semibold text-900 line-height-3 white-space-nowrap overflow-hidden text-overflow-ellipsis"
             title={nomeExibicao(contato)}
           >
             {titulo}
@@ -116,7 +89,7 @@ const IdentificacaoContato = ({
         )}
 
         {/* Some em tela estreita: o nome e as ações têm prioridade. */}
-        <div className="hidden md:flex align-items-center gap-2 text-sm text-500 line-height-1 min-w-0">
+        <div className="hidden md:flex align-items-center gap-2 text-sm text-500 line-height-1 min-w-0 mt-1">
           {telefone && <span className="white-space-nowrap">{telefone}</span>}
         </div>
       </div>

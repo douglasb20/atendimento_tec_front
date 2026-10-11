@@ -50,6 +50,23 @@ export const createMessageSlice: StateCreator<MessageSlice & ChatSlice, [], [], 
       };
     }),
 
+  /**
+   * Chamada ao trocar de conversa, de dentro da própria tela de chat.
+   *
+   * O `resetMessageStore` abaixo faria isso, mas só roda ao **sair** da tela
+   * (unmount do layout). Trocar de contato não desmonta nada, então sem esta
+   * limpeza o histórico do contato anterior continuava no estado: aparecia
+   * acima das mensagens do novo, a guarda `anteriores.length > 0` impedia o
+   * histórico certo de carregar, e a rolagem seguia paginando a partir do
+   * atendimento do contato errado.
+   */
+  limpaAnteriores: () =>
+    set(() => ({
+      anteriores: [],
+      totalAnteriores: 0,
+      carregandoAnterior: false,
+    })),
+
   updateMessage: (message) => {
     set(({ messages }) => {
       const exists = messages.some((m) => m.message_id === message.message_id);

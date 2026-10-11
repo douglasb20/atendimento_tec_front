@@ -47,11 +47,28 @@ const Messages = () => {
   const setTotalAnteriores = useChatStore((s) => s.setTotalAnteriores);
   const setCarregandoAnterior = useChatStore((s) => s.setCarregandoAnterior);
   const adicionaAnterior = useChatStore((s) => s.adicionaAnterior);
+  const limpaAnteriores = useChatStore((s) => s.limpaAnteriores);
   const { ajustes } = useAjustesAtendimento();
   const { FetchReq } = useApi();
   const bottomEl = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(0);
   const divRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Esquece o histórico do contato anterior assim que a conversa muda.
+   *
+   * Reage ao `activeChat.id` em vez de limpar em quem troca a conversa: são
+   * vários os caminhos (clique na lista, notificação de transferência, modal
+   * de contato compartilhado, atendimento recém-criado), e todos passam por
+   * aqui. O `resetMessageStore` não cobre isto - só roda ao sair da tela.
+   *
+   * Vem **antes** do efeito que conta: assim o total novo não é apagado logo
+   * depois de chegar.
+   */
+  useEffect(() => {
+    limpaAnteriores();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChat?.id]);
 
   /**
    * Descobre se o contato tem atendimentos anteriores.

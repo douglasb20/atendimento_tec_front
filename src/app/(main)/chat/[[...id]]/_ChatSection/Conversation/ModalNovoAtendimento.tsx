@@ -16,7 +16,7 @@ import {
 } from '@/Interfaces';
 import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta, nomeCompleto } from '@/service/Util';
+import { CatchAlerta, mascaraTelefone, nomeCompleto } from '@/service/Util';
 
 /** Opção sintética: nenhum setor associado à conversa. */
 const SEM_SETOR = { id: null as number | null, name: 'Nenhum', color: null as string | null };
@@ -62,6 +62,21 @@ function ModalNovoAtendimento({ visible, onHide, onCriado }: ModalNovoAtendiment
   // Só contato com WhatsApp confirmado pode abrir conversa - sem isso não há
   // JID para enviar mensagem nenhuma.
   const contatosComJid = contatos.filter((c) => c.remote_jid);
+
+  /**
+   * O que a busca do campo enxerga, por contato.
+   *
+   * O `filterBy` do Dropdown só sabe ler campos do próprio objeto, e o nome do
+   * cliente está um nível abaixo (`client.nome`). Achatar aqui é o que permite
+   * procurar pela empresa - como o atendente costuma se lembrar de quem é -
+   * sem trocar o componente por um de busca manual.
+   */
+  const opcoesDeContato = contatosComJid.map((contato) => ({
+    ...contato,
+    busca: [nomeCompleto(contato), contato.client?.nome, contato.phone]
+      .filter(Boolean)
+      .join(' '),
+  }));
 
   // Atendente associado a setor(es) só escolhe entre os dele - sem setor
   // nenhum associado, vê a lista completa (não há o que restringir).
@@ -219,30 +234,77 @@ function ModalNovoAtendimento({ visible, onHide, onCriado }: ModalNovoAtendiment
           <Dropdown
             value={contactId}
             onChange={(e) => setContactId(e.value)}
-            options={contatosComJid}
+            options={opcoesDeContato}
             optionLabel="name"
             optionValue="id"
             filter
-            filterBy="name,phone"
-            placeholder="Buscar por nome ou telefone..."
-            itemTemplate={(contato: ContactResponse) => (
-              <span className="flex align-items-center gap-2">
-                <Avatar
-                  src={contato.avatar_url}
-                  alt={nomeCompleto(contato) || 'Contato'}
-                  width={32}
-                  height={32}
-                  className="border-circle flex-none"
-                  style={{ objectFit: 'cover' }}
-                />
-                <span className="flex flex-column min-w-0">
-                  <span className="font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis">
-                    {nomeCompleto(contato)}
+            // O campo achatado acima: cobre contato, cliente e telefone numa
+            // string só.
+            filterBy="busca"
+            placeholder="Buscar por cliente, contato ou telefone..."
+            itemTemplate={(contato: ContactResponse) => {
+              // Mesma hierarquia do cabeçalho da conversa
+              // (`IdentificacaoContato`): o cliente é quem nomeia, e o contato
+              // vira subtítulo. Sem cliente, o contato sobe para o título -
+              // repetir o mesmo nome nas duas linhas seria ruído.
+              const cliente = contato.client?.nome?.trim();
+              const nome = nomeCompleto(contato) || 'Contato';
+
+              return (
+                <span className="flex align-items-center gap-2 w-full">
+                  <Avatar
+                    src={contato.avatar_url}
+                    alt={nome}
+                    width={32}
+                    height={32}
+                    className="border-circle flex-none"
+                    style={{ objectFit: 'cover' }}
+                  />
+                  <span className="flex flex-column min-w-0 flex-1">
+                    <span className="font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                      {cliente || nome}
+                    </span>
+                    {cliente && (
+                      <span className="text-color-secondary text-sm white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                        {nome}
+                      </span>
+                    )}
+                    <span className="text-color-secondary text-sm">
+                      {mascaraTelefone(contato.phone)}
+                    </span>
                   </span>
-                  <span className="text-color-secondary text-sm">{contato.phone}</span>
                 </span>
-              </span>
-            )}
+              );
+            }}
+            // Escolhido, o campo repete a hierarquia da lista: o cliente à
+            // frente e o contato ao lado. O `optionLabel` sozinho traria só o
+            // primeiro nome, e quem procurou pela empresa perderia de vista
+            // qual ela era.
+            valueTemplate={(contato: ContactResponse | undefined) => {
+              if (!contato) {
+                return (
+                  <span className="text-color-secondary">
+                    Buscar por cliente, contato ou telefone...
+                  </span>
+                );
+              }
+
+              const cliente = contato.client?.nome?.trim();
+              const nome = nomeCompleto(contato) || 'Contato';
+
+              return (
+                <span className="flex align-items-center gap-2 min-w-0">
+                  <span className="white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                    {cliente || nome}
+                  </span>
+                  {cliente && (
+                    <span className="text-color-secondary text-sm white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                      · {nome}
+                    </span>
+                  )}
+                </span>
+              );
+            }}
             disabled={carregando || !channelId}
             emptyMessage="Nenhum contato com WhatsApp confirmado"
             // `.p-dropdown-item` já é `display: flex`; a borda entra aqui,

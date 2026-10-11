@@ -53,6 +53,14 @@ export type MessageSlice = {
   setCarregandoAnterior: (carregando: boolean) => void;
   /** Acrescenta um atendimento anterior no topo da conversa. */
   adicionaAnterior: (protocolo: ProtocoloAnterior) => void;
+  /**
+   * Esquece o histórico carregado, ao trocar de conversa.
+   *
+   * Separado do `resetMessageStore` porque este só roda ao sair da tela: a
+   * troca de conversa acontece dentro dela, e sem limpar aqui o histórico de
+   * um contato aparecia na conversa do seguinte.
+   */
+  limpaAnteriores: () => void;
   setVideoPreview: (source: string, mime_type?: string) => void;
   setQuotedMessage: (mode: ModeQuoted, message: SupportChatMessageResponse | null) => void;
   setReactionState: (state: {
