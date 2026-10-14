@@ -48,6 +48,9 @@ export const ListUrl = {
 
   BuscarContatoClientId: { url: '/clients/{{client_id}}/contact', method: 'GET' },
 
+  ResumoDashboard: { url: '/dashboard/resumo', method: 'GET' },
+  SerieFinalizadosDashboard: { url: '/dashboard/serie-finalizados', method: 'GET' },
+  MovimentoPorHoraDashboard: { url: '/dashboard/movimento-por-hora', method: 'GET' },
   ListarContatos: { url: '/contacts', method: 'GET' },
   AdicionarContato: { url: '/contacts', method: 'POST' },
   AtualizarContato: { url: '/contacts/contact/{{contact_id}}', method: 'PATCH' },

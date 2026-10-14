@@ -2,6 +2,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    // Gruda no topo ao rolar.
+    //
+    // `sticky`, e não `fixed`, porque o topbar vive dentro do
+    // `.layout-content-wrapper`: continuando no fluxo, ele herda o
+    // `margin-left` que o wrapper ganha conforme o modo da sidebar (static,
+    // overlay, slim, drawer...) sem precisar repetir essa compensação aqui -
+    // e, por não sair do fluxo, não exige `padding-top` no conteúdo nem
+    // desencontra as alturas em `vh` que a tela de chat calcula.
+    position: sticky;
+    top: 0;
+    // Acima do conteúdo, abaixo da sidebar em overlay (999) e do cabeçalho do
+    // chat em tela estreita (1000), que precisam cobrir a tela inteira.
+    z-index: 997;
     // Mesmo fundo do menu lateral: `--menu-bg` é definida pelo tema de menu
     // ativo (colorScheme / primarycolor / transparent), então usar a variável
     // em vez da cor faz o topbar acompanhar a troca de tema sozinho.

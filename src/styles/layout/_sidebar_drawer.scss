@@ -110,7 +110,12 @@
                 .layout-content-wrapper {
                     margin-left: 5.25rem;
                     transition: margin-left 0.3s cubic-bezier(0, 0, 0.2, 1);
-                    overflow-x: hidden;
+                    // `clip`, não `hidden`: os dois recortam o transbordo
+                    // horizontal da animação da sidebar, mas `hidden` torna o
+                    // wrapper um contêiner de rolagem - e aí o `position:
+                    // sticky` do topbar passa a ancorar nele, não na página,
+                    // e o topbar rola junto com o conteúdo.
+                    overflow-x: clip;
                 }
             }
 

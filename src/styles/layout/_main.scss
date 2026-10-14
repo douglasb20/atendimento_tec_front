@@ -3,7 +3,9 @@
 }
 
 html {
-    height: 100vh;
+    // `min-height`, não `height`: travar a altura na viewport fazia o conteúdo
+    // transbordar e rolar num descendente, e não na página - e um `sticky` só
+    // ancora no elemento que de fato rola, então o topbar não grudava.
     min-height: 100vh;
     font-size: $scale;
     scroll-behavior: smooth;
@@ -26,10 +28,11 @@ a {
 }
 
 .layout-container {
+    // Mesma razão do `html` acima: só o piso de altura. Com `height: 100%` o
+    // container ficava preso à viewport e a rolagem saía da página.
     min-height: 100%;
-    height: 100% !important;
 }
 
-#__next{
-    height: inherit;
+#__next {
+    min-height: inherit;
 }
