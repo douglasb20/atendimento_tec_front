@@ -1,6 +1,5 @@
 'use client';
 
-import { parseISO } from 'date-fns';
 import { Button } from 'primereact/button';
 import { Dialog as Modal } from 'primereact/dialog';
 import { InputTextarea } from 'primereact/inputtextarea';
@@ -8,7 +7,12 @@ import { useEffect, useState } from 'react';
 
 import useApi from '@/service/Api/ApiClient';
 import { ContactResponse, SupportChatsResponse } from '@/Interfaces';
-import { CatchAlerta, formatDuracao, nomeExibicao } from '@/service/Util';
+import {
+  CatchAlerta,
+  formatDuracao,
+  nomeExibicao,
+  segundosDeAtendimento,
+} from '@/service/Util';
 import { mostrarToast } from '@/components/ToastGlobal';
 import ModalContatoChat from './ModalContatoChat';
 
@@ -69,9 +73,11 @@ const ModalFinalizarAtendimento = ({
   const semCliente =
     !descarte && !chat?.contact?.client_id && !chat?.contact?.has_no_client;
 
-  const duracao = chat?.answered_at
-    ? formatDuracao(Math.floor((Date.now() - parseISO(chat.answered_at).getTime()) / 1000))
-    : null;
+  // Mesma conta do cronômetro do cabeçalho (`Cronometro`), inclusive o
+  // desconto das pausas: antes o resumo somava o tempo pausado e mostrava uma
+  // duração maior que a do contador na tela.
+  const segundos = segundosDeAtendimento(chat ?? {});
+  const duracao = segundos === null ? null : formatDuracao(segundos);
 
   /** Atalho para não sair deste modal só para marcar a isenção - mesmo campo
    * do cadastro completo (`ModalContatoChat`), só que direto daqui. */

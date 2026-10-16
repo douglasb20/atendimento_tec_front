@@ -557,6 +557,36 @@ export const nomeExibicao = (contato?: {
 };
 
 /**
+ * Segundos de atendimento efetivo, descontadas as pausas.
+ *
+ * `answered_at` marca quando a conversa foi assumida, mas o tempo pausado não
+ * é atendimento: sem descontá-lo, o cronômetro do cabeçalho (que congela na
+ * pausa) e a duração do resumo de finalização divergiam.
+ *
+ * Pausado agora, o relógio para em `paused_at`; retomado, segue de `agora`.
+ */
+export const segundosDeAtendimento = ({
+  answered_at,
+  paused_at,
+  paused_total_seconds = 0,
+  agora = Date.now(),
+}: {
+  answered_at?: string | null;
+  paused_at?: string | null;
+  paused_total_seconds?: number;
+  agora?: number;
+}): number | null => {
+  if (!answered_at) return null;
+
+  const fim = paused_at ? new Date(paused_at).getTime() : agora;
+
+  return Math.max(
+    0,
+    Math.floor((fim - new Date(answered_at).getTime()) / 1000) - (paused_total_seconds ?? 0),
+  );
+};
+
+/**
  * Duração legível a partir de segundos: `MM:SS` até uma hora, `HH:MM:SS` daí
  * em diante. Acompanha o formato usado no backend (`toMMSS`).
  */

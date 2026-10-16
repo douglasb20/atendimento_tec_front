@@ -1,9 +1,8 @@
 'use client';
 
-import { parseISO } from 'date-fns';
 import { useEffect, useState } from 'react';
 
-import { formatDuracao } from '@/service/Util';
+import { formatDuracao, segundosDeAtendimento } from '@/service/Util';
 
 type CronometroProps = {
   /** `answered_at` em ISO - o instante em que o atendimento foi assumido. */
@@ -36,11 +35,13 @@ const Cronometro = ({ inicio, pausadoEm, pausadoTotalSegundos = 0 }: CronometroP
 
   if (!inicio) return null;
 
-  const fim = pausado ? parseISO(pausadoEm).getTime() : agora;
-  const decorrido = Math.max(
-    0,
-    Math.floor((fim - parseISO(inicio).getTime()) / 1000) - pausadoTotalSegundos,
-  );
+  const decorrido =
+    segundosDeAtendimento({
+      answered_at: inicio,
+      paused_at: pausadoEm,
+      paused_total_seconds: pausadoTotalSegundos,
+      agora,
+    }) ?? 0;
 
   return (
     <span
