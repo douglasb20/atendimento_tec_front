@@ -16,7 +16,7 @@ import {
   RelatorioClienteResponse,
 } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta, duracaoCompacta } from '@/service/Util';
+import { CatchAlerta, duracaoCompacta, duracaoEmHoras } from '@/service/Util';
 
 import FiltrosRelatorio, {
   AGRUPAMENTO_PADRAO,
@@ -222,7 +222,7 @@ export default function RelatorioClientesSection({ usuarios, setores, canais }: 
                 </span>
                 <span>
                   Tempo total:{' '}
-                  <strong>{duracaoCompacta(dados.totais.duracao_total_segundos)}</strong>
+                  <strong>{duracaoEmHoras(dados.totais.duracao_total_segundos)}</strong>
                 </span>
                 <span>
                   Espera média:{' '}
@@ -263,7 +263,7 @@ export default function RelatorioClientesSection({ usuarios, setores, canais }: 
             header="Tempo total"
             align="right"
             style={{ minWidth: '8rem' }}
-            body={(linha: LinhaRelatorioCliente) => duracaoCompacta(linha.duracao_total_segundos)}
+            body={(linha: LinhaRelatorioCliente) => duracaoEmHoras(linha.duracao_total_segundos)}
           />
           <Column
             header="Espera média"

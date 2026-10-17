@@ -636,6 +636,26 @@ export const duracaoCompacta = (segundos: number | null | undefined): string => 
 };
 
 /**
+ * Duração em horas, sem nunca virar dias: `45s`, `32min`, `51h 23min`.
+ *
+ * Usada nos totais de "Tempo total" dos relatórios - `2d 3h` exige fazer
+ * conta de cabeça para saber quantas horas são; `51h` já é a resposta.
+ */
+export const duracaoEmHoras = (segundos: number | null | undefined): string => {
+  if (segundos === null || segundos === undefined) return '--';
+
+  const seguro = Math.max(0, Math.floor(segundos));
+  if (seguro < 60) return `${seguro}s`;
+
+  const minutos = Math.round(seguro / 60);
+  if (minutos < 60) return `${minutos}min`;
+
+  const horas = Math.floor(minutos / 60);
+  const restoMinutos = minutos % 60;
+  return restoMinutos === 0 ? `${horas}h` : `${horas}h ${restoMinutos}min`;
+};
+
+/**
  * Como descrever uma mídia citada numa linha.
  *
  * O WhatsApp mostra "📷 Foto" na prévia da resposta; sem isto, citar uma

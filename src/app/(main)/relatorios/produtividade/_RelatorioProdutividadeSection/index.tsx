@@ -14,7 +14,7 @@ import {
   RelatorioProdutividadeResponse,
 } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta, duracaoCompacta } from '@/service/Util';
+import { CatchAlerta, duracaoCompacta, duracaoEmHoras } from '@/service/Util';
 
 import FiltrosRelatorio, { ATALHO_PADRAO, periodoDoAtalho } from './FiltrosRelatorio';
 
@@ -185,7 +185,7 @@ export default function RelatorioProdutividadeSection({ setores, canais }: Props
                 </span>
                 <span>
                   Tempo total:{' '}
-                  <strong>{duracaoCompacta(dados.totais.duracao_total_segundos)}</strong>
+                  <strong>{duracaoEmHoras(dados.totais.duracao_total_segundos)}</strong>
                 </span>
                 <span>
                   Espera média:{' '}
@@ -233,7 +233,7 @@ export default function RelatorioProdutividadeSection({ setores, canais }: Props
             align="right"
             style={{ minWidth: '8rem' }}
             body={(linha: LinhaRelatorioProdutividade) =>
-              duracaoCompacta(linha.duracao_total_segundos)
+              duracaoEmHoras(linha.duracao_total_segundos)
             }
           />
           <Column
