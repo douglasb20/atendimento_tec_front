@@ -300,6 +300,18 @@
   background-color: var(--highlight-bg);
 }
 
+// Chip de filtro com valor escolhido (`components/ChipFiltro`).
+//
+// Mesma razão da `.conversa-ativa`: a escala `--primary-*` é sempre
+// clareada, nos dois modos, e `bg-primary-100` com `text-primary-900`
+// virava um retângulo claro com texto quase invisível no tema escuro.
+// `--highlight-bg`/`--highlight-text-color` o tema resolve por modo.
+.chip-filtro-ativo {
+  background-color: var(--highlight-bg);
+  color: var(--highlight-text-color);
+  border-color: var(--highlight-text-color);
+}
+
 // Texto sobre a cor primária.
 //
 // Não existe utilitário do PrimeFlex para isto, e `text-white` cravado não

@@ -135,10 +135,17 @@ function HorarioSetorTab(
     }));
   };
 
-  const atualizarIntervalo = (weekday: number, indice: number, campo: 'start_time' | 'end_time', valor: string) => {
+  const atualizarIntervalo = (
+    weekday: number,
+    indice: number,
+    campo: 'start_time' | 'end_time',
+    valor: string,
+  ) => {
     setIntervalosPorDia((prev) => ({
       ...prev,
-      [weekday]: prev[weekday].map((intervalo, i) => (i === indice ? { ...intervalo, [campo]: valor } : intervalo)),
+      [weekday]: prev[weekday].map((intervalo, i) =>
+        i === indice ? { ...intervalo, [campo]: valor } : intervalo,
+      ),
     }));
   };
 
@@ -171,7 +178,11 @@ function HorarioSetorTab(
     // aqui antes: evita o round-trip só para descobrir o óbvio - horário
     // ativo sem mensagem deixaria o canal mudo fora do expediente.
     if (scheduleEnabled && !mensagemAusencia.trim()) {
-      Alerta('Informe a mensagem de ausência antes de ativar o horário de atendimento.', 'Atenção', 'warning');
+      Alerta(
+        'Informe a mensagem de ausência antes de ativar o horário de atendimento.',
+        'Atenção',
+        'warning',
+      );
       return;
     }
 
@@ -181,7 +192,11 @@ function HorarioSetorTab(
       await FetchReq({
         endpoint: 'AtualizarHorarioSetor',
         variables: [departmentId],
-        body: { schedule_enabled: scheduleEnabled, intervals, absence_message: mensagemAusencia.trim() || null },
+        body: {
+          schedule_enabled: scheduleEnabled,
+          intervals,
+          absence_message: mensagemAusencia.trim() || null,
+        },
       });
 
       AlertaCallback('Horário de atendimento atualizado com sucesso!', () => {}, 'success');
@@ -205,12 +220,11 @@ function HorarioSetorTab(
   return (
     <div className="flex flex-column gap-4">
       <div className="flex align-items-center justify-content-between gap-2 border-1 border-300 border-round-lg p-3">
-        <div>
-          <span className="font-semibold block">Usar horário de atendimento</span>
-          <span className="text-sm text-color-secondary">
-            Desligado, o setor fica sempre disponível - a configuração abaixo é ignorada.
-          </span>
-        </div>
+        <LabelPlus
+          className="font-semibold"
+          text="Usar horário de atendimento"
+          textHelp="Desligado, o setor fica sempre disponível - a configuração abaixo é ignorada."
+        />
         <InputSwitch
           checked={scheduleEnabled}
           disabled={somenteLeitura}
@@ -267,7 +281,10 @@ function HorarioSetorTab(
                   >
                     <Calendar
                       value={paraData(intervalo.start_time)}
-                      onChange={(e) => e.value && atualizarIntervalo(weekday, indice, 'start_time', paraHora(e.value as Date))}
+                      onChange={(e) =>
+                        e.value &&
+                        atualizarIntervalo(weekday, indice, 'start_time', paraHora(e.value as Date))
+                      }
                       timeOnly
                       hourFormat="24"
                       className="flex-1"
@@ -276,7 +293,10 @@ function HorarioSetorTab(
                     <i className={PrimeIcons.ARROW_RIGHT} />
                     <Calendar
                       value={paraData(intervalo.end_time)}
-                      onChange={(e) => e.value && atualizarIntervalo(weekday, indice, 'end_time', paraHora(e.value as Date))}
+                      onChange={(e) =>
+                        e.value &&
+                        atualizarIntervalo(weekday, indice, 'end_time', paraHora(e.value as Date))
+                      }
                       timeOnly
                       hourFormat="24"
                       className="flex-1"

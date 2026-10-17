@@ -5,7 +5,6 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { TabPanel, TabView } from 'primereact/tabview';
-import { Tooltip } from 'primereact/tooltip';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -177,172 +176,171 @@ function ModalFormulario(props: ModalProps) {
           header="Dados"
           leftIcon="fa-regular fa-user mr-2"
         >
-      <div className="grid">
-        <div className="col-12">
-          <EditorAvatarContato
-            contato={data}
-            disabled={somenteLeitura || !data?.id}
-            onChange={setAvatarPendente}
-            onContatoAtualizado={onContatoAtualizado}
-          />
-        </div>
+          <div className="grid">
+            <div className="col-12">
+              <EditorAvatarContato
+                contato={data}
+                disabled={somenteLeitura || !data?.id}
+                onChange={setAvatarPendente}
+                onContatoAtualizado={onContatoAtualizado}
+              />
+            </div>
 
-        <div className="col-6">
-          <Controller
-            control={control}
-            name="name"
-            render={({ field, fieldState }) => (
-              <>
-                <LabelPlus
-                  htmlFor={field.name}
-                  text="Nome"
-                  required
-                />
-                <InputText
-                  id={field.name}
-                  {...field}
-                  value={field?.value || ''}
-                  placeholder="Nome do contato"
-                  autoComplete="off"
-                  disabled={somenteLeitura}
-                />
-                {getFormErrorMessage(fieldState)}
-              </>
-            )}
-          />
-        </div>
-        <div className="col-6">
-          <Controller
-            control={control}
-            name="last_name"
-            render={({ field, fieldState }) => (
-              <>
-                <LabelPlus
-                  htmlFor={field.name}
-                  text="Sobrenome"
-                />
-                <InputText
-                  id={field.name}
-                  {...field}
-                  value={field?.value || ''}
-                  placeholder="Sobrenome do contato"
-                  autoComplete="off"
-                  disabled={somenteLeitura}
-                />
-                {getFormErrorMessage(fieldState)}
-              </>
-            )}
-          />
-        </div>
-        <div className="col-6">
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field, fieldState }) => (
-              <>
-                <LabelPlus
-                  htmlFor={field.name}
-                  text="Telefone"
-                />
-                {/* O valor circula em E.164 (`+556492698043`); a conversão
+            <div className="col-6">
+              <Controller
+                control={control}
+                name="name"
+                render={({ field, fieldState }) => (
+                  <>
+                    <LabelPlus
+                      htmlFor={field.name}
+                      text="Nome"
+                      required
+                    />
+                    <InputText
+                      id={field.name}
+                      {...field}
+                      value={field?.value || ''}
+                      placeholder="Nome do contato"
+                      autoComplete="off"
+                      disabled={somenteLeitura}
+                    />
+                    {getFormErrorMessage(fieldState)}
+                  </>
+                )}
+              />
+            </div>
+            <div className="col-6">
+              <Controller
+                control={control}
+                name="last_name"
+                render={({ field, fieldState }) => (
+                  <>
+                    <LabelPlus
+                      htmlFor={field.name}
+                      text="Sobrenome"
+                    />
+                    <InputText
+                      id={field.name}
+                      {...field}
+                      value={field?.value || ''}
+                      placeholder="Sobrenome do contato"
+                      autoComplete="off"
+                      disabled={somenteLeitura}
+                    />
+                    {getFormErrorMessage(fieldState)}
+                  </>
+                )}
+              />
+            </div>
+            <div className="col-6">
+              <Controller
+                control={control}
+                name="phone"
+                render={({ field, fieldState }) => (
+                  <>
+                    <LabelPlus
+                      htmlFor={field.name}
+                      text="Telefone"
+                    />
+                    {/* O valor circula em E.164 (`+556492698043`); a conversão
                     para dígitos acontece ao salvar. A máscara nacional antiga
                     lia o `55` do país como DDD e comia dois dígitos. */}
-                <InputTelefone
-                  // Remonta ao abrir: o `PhoneInput` lê o país do valor só na
-                  // montagem, e o modal já existe antes de o `reset` trazer os
-                  // dados - sem a `key` ele ficava preso ao primeiro país da
-                  // lista, com o número em branco.
-                  key={data?.id ?? 'novo'}
-                  id={field.name}
-                  value={paraE164(field.value)}
-                  onChange={(valor) => field.onChange(valor ?? '')}
-                  onBlur={field.onBlur}
-                  invalido={!!fieldState.error}
-                  disabled={somenteLeitura}
-                />
-                {getFormErrorMessage(fieldState)}
-              </>
-            )}
-          />
-        </div>
+                    <InputTelefone
+                      // Remonta ao abrir: o `PhoneInput` lê o país do valor só na
+                      // montagem, e o modal já existe antes de o `reset` trazer os
+                      // dados - sem a `key` ele ficava preso ao primeiro país da
+                      // lista, com o número em branco.
+                      key={data?.id ?? 'novo'}
+                      id={field.name}
+                      value={paraE164(field.value)}
+                      onChange={(valor) => field.onChange(valor ?? '')}
+                      onBlur={field.onBlur}
+                      invalido={!!fieldState.error}
+                      disabled={somenteLeitura}
+                    />
+                    {getFormErrorMessage(fieldState)}
+                  </>
+                )}
+              />
+            </div>
 
-        <div className="col-12">
-          <Controller
-            control={control}
-            name="client_id"
-            render={({ field, fieldState }) => (
-              <>
-                <LabelPlus
-                  htmlFor={field.name}
-                  text="Cliente"
-                />
-                {/* O botão ao lado abre o cadastro por cima deste modal. */}
-                <div className="flex gap-2">
-                  <Dropdown
-                    id={field.name}
-                    value={field.value}
-                    onChange={(e) => field.onChange(e.value ?? null)}
-                    options={clientes.map((c) => ({ label: c.nome, value: c.id }))}
-                    placeholder="Selecione o cliente"
-                    filter
-                    showClear
-                    disabled={somenteLeitura || semCliente}
-                    emptyMessage="Nenhum cliente cadastrado"
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    icon="fa-regular fa-plus"
-                    outlined
-                    disabled={somenteLeitura || semCliente}
-                    tooltip="Cadastrar novo cliente"
-                    tooltipOptions={{ position: 'left' }}
-                    onClick={() => setModalClienteAberto(true)}
-                  />
-                </div>
-                {getFormErrorMessage(fieldState)}
-              </>
-            )}
-          />
-        </div>
+            <div className="col-12">
+              <Controller
+                control={control}
+                name="client_id"
+                render={({ field, fieldState }) => (
+                  <>
+                    <LabelPlus
+                      htmlFor={field.name}
+                      text="Cliente"
+                    />
+                    {/* O botão ao lado abre o cadastro por cima deste modal. */}
+                    <div className="flex gap-2">
+                      <Dropdown
+                        id={field.name}
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.value ?? null)}
+                        options={clientes.map((c) => ({ label: c.nome, value: c.id }))}
+                        placeholder="Selecione o cliente"
+                        filter
+                        showClear
+                        disabled={somenteLeitura || semCliente}
+                        emptyMessage="Nenhum cliente cadastrado"
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        icon="fa-regular fa-plus"
+                        outlined
+                        disabled={somenteLeitura || semCliente}
+                        tooltip="Cadastrar novo cliente"
+                        tooltipOptions={{ position: 'left' }}
+                        onClick={() => setModalClienteAberto(true)}
+                      />
+                    </div>
+                    {getFormErrorMessage(fieldState)}
+                  </>
+                )}
+              />
+            </div>
 
-        <div className="col-12">
-          <Controller
-            control={control}
-            name="has_no_client"
-            render={({ field }) => (
-              <div className="flex align-items-center gap-2">
-                <Checkbox
-                  inputId={field.name}
-                  checked={Boolean(field.value)}
-                  disabled={somenteLeitura}
-                  onChange={(e) => {
-                    field.onChange(e.checked);
-                    // É ou um, ou o outro: isento de cliente não tem vínculo.
-                    if (e.checked) setValue('client_id', null);
-                  }}
-                />
-                <label
-                  htmlFor={field.name}
-                  className="cursor-pointer"
-                >
-                  Contato sem cliente (fornecedor, parceiro etc - dispensa
-                  vínculo com cliente para finalizar atendimento)
-                </label>
-              </div>
-            )}
-          />
-        </div>
+            <div className="col-12">
+              <Controller
+                control={control}
+                name="has_no_client"
+                render={({ field }) => (
+                  <div className="flex align-items-center gap-2">
+                    <Checkbox
+                      inputId={field.name}
+                      checked={Boolean(field.value)}
+                      disabled={somenteLeitura}
+                      onChange={(e) => {
+                        field.onChange(e.checked);
+                        // É ou um, ou o outro: isento de cliente não tem vínculo.
+                        if (e.checked) setValue('client_id', null);
+                      }}
+                    />
+                    <LabelPlus
+                      htmlFor={field.name}
+                      className="cursor-pointer"
+                      text="Contato sem cliente"
+                      textHelp="Para fornecedor, parceiro etc - dispensa o vínculo com cliente para finalizar o atendimento."
+                    />
+                  </div>
+                )}
+              />
+            </div>
 
-        {/* Os campos personalizados que quem edita escolher para este contato.
+            {/* Os campos personalizados que quem edita escolher para este contato.
             O catálogo diz o que pode ser usado; a escolha é linha a linha. */}
-        <div className="col-12">
-          <CamposPersonalizados
-            control={control}
-            aplicaA="contato"
-          />
-        </div>
-      </div>
+            <div className="col-12">
+              <CamposPersonalizados
+                control={control}
+                aplicaA="contato"
+              />
+            </div>
+          </div>
         </TabPanel>
 
         <TabPanel
@@ -362,18 +360,12 @@ function ModalFormulario(props: ModalProps) {
                       disabled={somenteLeitura}
                       onChange={(e) => field.onChange(e.checked)}
                     />
-                    <label
+                    <LabelPlus
                       htmlFor={field.name}
                       className="cursor-pointer"
-                    >
-                      Ignorar atendimento
-                    </label>
-                    <i
-                      className="tooltip-ignorar-atendimento pi pi-info-circle text-sm text-primary"
-                      data-pr-tooltip="Mensagens deste contato são descartadas - não geram conversa nem protocolo."
-                      data-pr-position="right"
+                      text="Ignorar atendimento"
+                      textHelp="Mensagens deste contato são descartadas - não geram conversa nem protocolo."
                     />
-                    <Tooltip target=".tooltip-ignorar-atendimento" />
                   </div>
                 )}
               />

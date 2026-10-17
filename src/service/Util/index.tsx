@@ -605,6 +605,37 @@ export const formatDuracao = (totalSegundos: number): string => {
 };
 
 /**
+ * Duração em formato compacto, pela maior unidade que couber: `45s`,
+ * `32min`, `1h 20min`, `2d 6h`.
+ *
+ * Diferente do `formatDuracao` (`HH:MM:SS`), que é exato mas ilegível de
+ * relance num relatório - `294:34:18` não comunica "12 dias" a ninguém. Aqui
+ * a leitura vem antes da precisão ao segundo; para somar ou fazer gráfico,
+ * a exportação em Excel leva a coluna em segundos crus.
+ *
+ * Abaixo de um minuto mostra os segundos em vez de arredondar para `0min`:
+ * atendimento de 29 segundos existe, e "0min" o faria parecer vazio.
+ */
+export const duracaoCompacta = (segundos: number | null | undefined): string => {
+  if (segundos === null || segundos === undefined) return '--';
+
+  const seguro = Math.max(0, Math.floor(segundos));
+  if (seguro < 60) return `${seguro}s`;
+
+  const minutos = Math.round(seguro / 60);
+  if (minutos < 60) return `${minutos}min`;
+
+  const horas = Math.floor(minutos / 60);
+  const restoMinutos = minutos % 60;
+
+  if (horas < 24) return restoMinutos === 0 ? `${horas}h` : `${horas}h ${restoMinutos}min`;
+
+  const dias = Math.floor(horas / 24);
+  const restoHoras = horas % 24;
+  return restoHoras === 0 ? `${dias}d` : `${dias}d ${restoHoras}h`;
+};
+
+/**
  * Como descrever uma mídia citada numa linha.
  *
  * O WhatsApp mostra "📷 Foto" na prévia da resposta; sem isto, citar uma

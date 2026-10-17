@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta } from '@/service/Util';
+import { CatchAlerta, duracaoCompacta } from '@/service/Util';
 
 /** Os quatro números da home, como o backend os devolve. */
 type ResumoDashboard = {
@@ -12,29 +12,6 @@ type ResumoDashboard = {
   emAtendimento: number;
   /** Em segundos; `null` enquanto não houver atendimento finalizado. */
   tempoMedioSegundos: number | null;
-};
-
-/**
- * Duração aproximada, para caber no card.
- *
- * O `formatDuracao` do `Util` dá `HH:MM:SS`, que é exato mas ilegível de
- * relance - "2:15:33" num card grande pesa mais do que informa. Aqui a maior
- * unidade basta: quem precisa do número cheio vai ao relatório.
- */
-const duracaoCurta = (segundos: number | null): string => {
-  if (segundos === null) return '--';
-
-  const minutos = Math.round(segundos / 60);
-  if (minutos < 60) return `${minutos}min`;
-
-  const horas = Math.floor(minutos / 60);
-  const resto = minutos % 60;
-
-  if (horas < 24) return resto === 0 ? `${horas}h` : `${horas}h ${resto}min`;
-
-  const dias = Math.floor(horas / 24);
-  const horasRestantes = horas % 24;
-  return horasRestantes === 0 ? `${dias}d` : `${dias}d ${horasRestantes}h`;
 };
 
 type Card = {
@@ -138,7 +115,7 @@ const CardsResumo = () => {
     },
     {
       titulo: 'Tempo médio',
-      valor: duracaoCurta(resumo?.tempoMedioSegundos ?? null),
+      valor: duracaoCompacta(resumo?.tempoMedioSegundos ?? null),
       icone: 'fa-regular fa-clock',
       cor: 'purple',
       ajuda: 'Duração média dos atendimentos finalizados, sem contar as pausas',

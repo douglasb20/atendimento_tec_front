@@ -87,13 +87,6 @@ const AppMenu = () => {
           ],
         },
         {
-          // Escondido por ora: a rota `/relatorios` ainda não existe.
-          label: 'Relatórios',
-          icon: `${PrimeIcons.BOOK} pi-fw`,
-          to: '/relatorios',
-          visible: false,
-        },
-        {
           label: 'Clientes',
           icon: `${PrimeIcons.USERS} pi-fw`,
           items: [
@@ -197,6 +190,39 @@ const AppMenu = () => {
           icon: `${PrimeIcons.LINK} pi-fw`,
           to: '/conexoes',
           visible: liberado(pode('channel:view')),
+        },
+        {
+          // Submenu, e não item único: cada relatório tem **permissão
+          // própria** - produtividade por atendente é dado de supervisão, e
+          // pode caber a um grupo que não vê o resto.
+          label: 'Relatórios',
+          icon: `${PrimeIcons.BOOK} pi-fw`,
+          items: [
+            {
+              label: 'Atendimentos',
+              icon: 'pi pi-list pi-fw',
+              to: '/relatorios/atendimentos',
+              visible: liberado(pode('report.attendance:view')),
+            },
+            {
+              label: 'Produtividade',
+              icon: 'pi pi-chart-bar pi-fw',
+              to: '/relatorios/produtividade',
+              visible: liberado(pode('report.productivity:view')),
+            },
+            {
+              label: 'Por Cliente',
+              icon: 'pi pi-building pi-fw',
+              to: '/relatorios/clientes',
+              visible: liberado(pode('report.client:view')),
+            },
+            {
+              label: 'Analítico por Cliente',
+              icon: 'pi pi-search pi-fw',
+              to: '/relatorios/analitico-cliente',
+              visible: liberado(pode('report.client_detail:view')),
+            },
+          ],
         },
         {
           // Gestão de negócio do administrador do cliente - separado de

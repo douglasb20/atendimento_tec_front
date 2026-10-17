@@ -10,6 +10,7 @@ export * from './contact.interface';
 export * from './client.interface';
 export * from './custom-field.interface';
 export * from './tag.interface';
+export * from './report.interface';
 export * from './permission-group.interface';
 export * from './quick-reply.interface';
 export * from './service-alert.interface';

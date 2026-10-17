@@ -12,6 +12,8 @@ import useApi from '@/service/Api/ApiClient';
 import { Alerta, CatchAlerta } from '@/service/Util';
 import { useAjustesAtendimentoStore } from '@/store/useAjustesAtendimentoStore';
 
+import LabelPlus from '@/components/LabelPlus';
+
 type Props = { data: AjusteAtendimento[] };
 
 export default function DadosAtendimentoSection({ data }: Props) {
@@ -76,14 +78,13 @@ export default function DadosAtendimentoSection({ data }: Props) {
                   checked={valorAtual(a)}
                   onChange={(e) => alterar(a.chave, Boolean(e.value))}
                 />
-                <label
+                <LabelPlus
                   htmlFor={a.chave}
                   className="text-900 font-medium"
-                >
-                  {a.rotulo}
-                </label>
+                  text={a.rotulo}
+                  textHelp={a.descricao}
+                />
               </div>
-              <small className="text-500 block mt-1">{a.descricao}</small>
             </div>
           ))}
         </div>

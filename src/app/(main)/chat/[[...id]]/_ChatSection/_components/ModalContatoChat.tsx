@@ -8,7 +8,6 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputMask } from 'primereact/inputmask';
 import { InputText } from 'primereact/inputtext';
 import { TabPanel, TabView } from 'primereact/tabview';
-import { Tooltip } from 'primereact/tooltip';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
@@ -175,161 +174,160 @@ const ModalContatoChat = ({
             header="Dados"
             leftIcon="fa-regular fa-user mr-2"
           >
-        <div className="grid">
-          <div className="col-12">
-            <EditorAvatarContato
-              contato={contatoAtual}
-              onChange={setAvatarPendente}
-              onContatoAtualizado={(atualizado) => {
-                setContatoAtual(atualizado);
-                onConfirm(atualizado);
-              }}
-            />
-          </div>
+            <div className="grid">
+              <div className="col-12">
+                <EditorAvatarContato
+                  contato={contatoAtual}
+                  onChange={setAvatarPendente}
+                  onContatoAtualizado={(atualizado) => {
+                    setContatoAtual(atualizado);
+                    onConfirm(atualizado);
+                  }}
+                />
+              </div>
 
-          <div className="col-12 md:col-4">
-            <Controller
-              control={control}
-              name="name"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Nome"
-                    required
-                  />
-                  <InputText
-                    id={field.name}
-                    {...field}
-                    value={field?.value || ''}
-                    placeholder="Nome do contato"
-                    autoComplete="off"
-                  />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
+              <div className="col-12 md:col-4">
+                <Controller
+                  control={control}
+                  name="name"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <LabelPlus
+                        htmlFor={field.name}
+                        text="Nome"
+                        required
+                      />
+                      <InputText
+                        id={field.name}
+                        {...field}
+                        value={field?.value || ''}
+                        placeholder="Nome do contato"
+                        autoComplete="off"
+                      />
+                      {getFormErrorMessage(fieldState)}
+                    </>
+                  )}
+                />
+              </div>
 
-          <div className="col-12 md:col-3">
-            <Controller
-              control={control}
-              name="last_name"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Sobrenome"
-                  />
-                  <InputText
-                    id={field.name}
-                    {...field}
-                    value={field?.value || ''}
-                    placeholder="Sobrenome"
-                    autoComplete="off"
-                  />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
+              <div className="col-12 md:col-3">
+                <Controller
+                  control={control}
+                  name="last_name"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <LabelPlus
+                        htmlFor={field.name}
+                        text="Sobrenome"
+                      />
+                      <InputText
+                        id={field.name}
+                        {...field}
+                        value={field?.value || ''}
+                        placeholder="Sobrenome"
+                        autoComplete="off"
+                      />
+                      {getFormErrorMessage(fieldState)}
+                    </>
+                  )}
+                />
+              </div>
 
-          <div className="col-12 md:col-5">
-            <Controller
-              control={control}
-              name="phone"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Telefone"
-                  />
-                  <InputMask
-                    id={field.name}
-                    {...field}
-                    placeholder="(00) 00000-0000"
-                    mask={
-                      field?.value?.replace(/\D/g, '').length > 10
-                        ? Masks.CELULAR
-                        : Masks.FIXO_OPCIONAL
-                    }
-                    value={field?.value || ''}
-                  />
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
+              <div className="col-12 md:col-5">
+                <Controller
+                  control={control}
+                  name="phone"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <LabelPlus
+                        htmlFor={field.name}
+                        text="Telefone"
+                      />
+                      <InputMask
+                        id={field.name}
+                        {...field}
+                        placeholder="(00) 00000-0000"
+                        mask={
+                          field?.value?.replace(/\D/g, '').length > 10
+                            ? Masks.CELULAR
+                            : Masks.FIXO_OPCIONAL
+                        }
+                        value={field?.value || ''}
+                      />
+                      {getFormErrorMessage(fieldState)}
+                    </>
+                  )}
+                />
+              </div>
 
-          <div className="col-12">
-            <Controller
-              control={control}
-              name="client_id"
-              render={({ field, fieldState }) => (
-                <>
-                  <LabelPlus
-                    htmlFor={field.name}
-                    text="Cliente"
-                  />
-                  {/* O botão ao lado abre o cadastro por cima deste modal: sem
+              <div className="col-12">
+                <Controller
+                  control={control}
+                  name="client_id"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <LabelPlus
+                        htmlFor={field.name}
+                        text="Cliente"
+                      />
+                      {/* O botão ao lado abre o cadastro por cima deste modal: sem
                       isso, associar um cliente novo obrigaria a sair do chat. */}
-                  <div className="flex gap-2">
-                    <Dropdown
-                      id={field.name}
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.value)}
-                      options={clientes.map((c) => ({ label: c.nome, value: c.id }))}
-                      placeholder="Selecione o cliente"
-                      filter
-                      showClear
-                      disabled={semCliente}
-                      emptyMessage="Nenhum cliente cadastrado"
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      icon="fa-regular fa-plus"
-                      outlined
-                      disabled={semCliente}
-                      tooltip="Cadastrar novo cliente"
-                      tooltipOptions={{ position: 'left' }}
-                      onClick={() => setModalClienteAberto(true)}
-                    />
-                  </div>
-                  {getFormErrorMessage(fieldState)}
-                </>
-              )}
-            />
-          </div>
+                      <div className="flex gap-2">
+                        <Dropdown
+                          id={field.name}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.value)}
+                          options={clientes.map((c) => ({ label: c.nome, value: c.id }))}
+                          placeholder="Selecione o cliente"
+                          filter
+                          showClear
+                          disabled={semCliente}
+                          emptyMessage="Nenhum cliente cadastrado"
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          icon="fa-regular fa-plus"
+                          outlined
+                          disabled={semCliente}
+                          tooltip="Cadastrar novo cliente"
+                          tooltipOptions={{ position: 'left' }}
+                          onClick={() => setModalClienteAberto(true)}
+                        />
+                      </div>
+                      {getFormErrorMessage(fieldState)}
+                    </>
+                  )}
+                />
+              </div>
 
-          <div className="col-12">
-            <Controller
-              control={control}
-              name="has_no_client"
-              render={({ field }) => (
-                <div className="flex align-items-center gap-2">
-                  <Checkbox
-                    inputId={field.name}
-                    checked={Boolean(field.value)}
-                    onChange={(e) => {
-                      field.onChange(e.checked);
-                      // Marcar isenta de cliente - o vínculo, se houver,
-                      // deixa de fazer sentido (é ou um, ou o outro).
-                      if (e.checked) setValue('client_id', null);
-                    }}
-                  />
-                  <label
-                    htmlFor={field.name}
-                    className="cursor-pointer"
-                  >
-                    Contato sem cliente (fornecedor, parceiro etc - dispensa
-                    vínculo com cliente para finalizar atendimento)
-                  </label>
-                </div>
-              )}
-            />
-          </div>
-        </div>
+              <div className="col-12">
+                <Controller
+                  control={control}
+                  name="has_no_client"
+                  render={({ field }) => (
+                    <div className="flex align-items-center gap-2">
+                      <Checkbox
+                        inputId={field.name}
+                        checked={Boolean(field.value)}
+                        onChange={(e) => {
+                          field.onChange(e.checked);
+                          // Marcar isenta de cliente - o vínculo, se houver,
+                          // deixa de fazer sentido (é ou um, ou o outro).
+                          if (e.checked) setValue('client_id', null);
+                        }}
+                      />
+                      <LabelPlus
+                        htmlFor={field.name}
+                        className="cursor-pointer"
+                        text="Contato sem cliente"
+                        textHelp="Para fornecedor, parceiro etc - dispensa o vínculo com cliente para finalizar o atendimento."
+                      />
+                    </div>
+                  )}
+                />
+              </div>
+            </div>
           </TabPanel>
 
           <TabPanel
@@ -348,18 +346,12 @@ const ModalContatoChat = ({
                         checked={Boolean(field.value)}
                         onChange={(e) => field.onChange(e.checked)}
                       />
-                      <label
+                      <LabelPlus
                         htmlFor={field.name}
                         className="cursor-pointer"
-                      >
-                        Ignorar atendimento
-                      </label>
-                      <i
-                        className="tooltip-ignorar-atendimento pi pi-info-circle text-sm text-primary"
-                        data-pr-tooltip="Mensagens deste contato são descartadas - não geram conversa nem protocolo."
-                        data-pr-position="right"
+                        text="Ignorar atendimento"
+                        textHelp="Mensagens deste contato são descartadas - não geram conversa nem protocolo."
                       />
-                      <Tooltip target=".tooltip-ignorar-atendimento" />
                     </div>
                   )}
                 />

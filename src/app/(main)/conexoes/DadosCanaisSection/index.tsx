@@ -16,7 +16,6 @@ import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 
 import DtCanais from './DtCanais';
-import ModalConfigChannel from './ModalConfigChannel';
 import ModalForm, { EstadoAnexo } from './ModalForm';
 
 type DadosCanaisProps = {
@@ -30,10 +29,11 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   const [canais, setCanais] = useState(data || []);
   const [sincronizando, setSincronizando] = useState(false);
   const [activeChannel, setActiveChannel] = useState<ChannelResponse | null>(null);
-  const [modalVisible, setModalVisible] = useState({
-    configChannel: false,
-    formChannel: false,
-  });
+  const [modalVisible, setModalVisible] = useState({ formChannel: false });
+  // A conexão virou uma aba do próprio cadastro; esta flag diz ao modal para
+  // abrir já nela, que é o que o badge de status do topbar pede ao mandar
+  // `/conexoes?canal=<id>`.
+  const [abrirNaConexao, setAbrirNaConexao] = useState(false);
 
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
@@ -51,19 +51,22 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   // Sem permissão de criar, o botão não aparece: a chamada seria recusada
   // pelo backend de qualquer forma.
   const ButtonsHeader: IButtonsOthers[] = [
-        {
-          label: 'Adicionar',
-          icon: PrimeIcons.PLUS,
-          action: () => AbrirModalForm(null),
-          bgColor: 'primary p-button-outlined',
-          disabled: !podeAdicionar,
-          tooltip: podeAdicionar ? undefined : semPermissao,
-        },
+    {
+      label: 'Adicionar',
+      icon: PrimeIcons.PLUS,
+      action: () => AbrirModalForm(null),
+      bgColor: 'primary p-button-outlined',
+      disabled: !podeAdicionar,
+      tooltip: podeAdicionar ? undefined : semPermissao,
+    },
   ];
 
   const acoesTable: IActionTable<ChannelResponse>[] = [
     {
-      // Sempre visível: sem `:update` o cadastro abre em somente leitura.
+      // Sempre visível: sem `:update` o cadastro abre em somente leitura. A
+      // aba "Conexão" dentro dele é que exige `channel:config` - conectar e
+      // desconectar continua sendo permissão à parte, só deixou de ser um
+      // item de menu próprio.
       label: podeEditar ? 'Editar conexão' : 'Visualizar conexão',
       tooltip: podeEditar ? 'Editar conexão' : 'Ver conexão',
       icon: podeEditar ? 'pi pi-fw pi-file-edit' : 'pi pi-fw pi-eye',
@@ -71,21 +74,9 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       command: (data) => AbrirModalForm(data),
     },
     {
-      // `channel:config`, não `:update`: o modal conecta e desconecta a
-      // sessão. Escondido e não desabilitado porque não há o que ler ali - a
-      // tela é de ações.
-      isHidden: () => !podeConfigurar,
-      label: 'Configurar conexão',
-      tooltip: 'Configurar conexão',
-      icon: 'pi pi-fw pi-cog',
-      bgcolor: 'info py-2',
-      command: (data) => AbrirModalConfig(data.id!),
-    },
-    {
       // Só em canal conectado: a Evolution recusa reiniciar sessão fechada, e
       // desconectado é caso de conectar, não de reiniciar.
-      isHidden: (data) =>
-        !podeConfigurar || data?.channel_status_id !== ChannelStatusId.CONECTADO,
+      isHidden: (data) => !podeConfigurar || data?.channel_status_id !== ChannelStatusId.CONECTADO,
       label: 'Reiniciar conexão',
       tooltip: 'Reiniciar conexão',
       icon: 'pi pi-fw pi-refresh',
@@ -120,6 +111,8 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       | 'inatividade_avisar_em_minutos'
       | 'inatividade_mensagem_aviso'
       | 'inatividade_enviar_despedida'
+      | 'inatividade_usar_mensagem_propria'
+      | 'inatividade_mensagem_finalizacao'
       | 'rejeitar_chamadas'
       | 'rejeitar_chamadas_enviar_mensagem'
       | 'rejeitar_chamadas_mensagem'
@@ -147,6 +140,8 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
         inatividade_avisar_em_minutos: data.inatividade_avisar_em_minutos ?? null,
         inatividade_mensagem_aviso: data.inatividade_mensagem_aviso?.trim() || null,
         inatividade_enviar_despedida: Boolean(data.inatividade_enviar_despedida),
+        inatividade_usar_mensagem_propria: Boolean(data.inatividade_usar_mensagem_propria),
+        inatividade_mensagem_finalizacao: data.inatividade_mensagem_finalizacao?.trim() || null,
         rejeitar_chamadas: Boolean(data.rejeitar_chamadas),
         rejeitar_chamadas_enviar_mensagem: Boolean(data.rejeitar_chamadas_enviar_mensagem),
         rejeitar_chamadas_mensagem: data.rejeitar_chamadas_mensagem?.trim() || null,
@@ -186,7 +181,8 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     }
   };
 
-  const AbrirModalForm = async (canal: ChannelResponse = null) => {
+  const AbrirModalForm = async (canal: ChannelResponse = null, naAbaConexao = false) => {
+    setAbrirNaConexao(naAbaConexao);
     // A listagem não traz `departments` (custaria o join em toda consulta -
     // ver `findChannelComSetores`); reconsulta o canal individual para o
     // MultiSelect de setores abrir pré-marcado.
@@ -202,17 +198,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     setModalVisible((prev) => ({ ...prev, formChannel: false }));
     await sleep(1 / 2);
     setActiveChannel(null);
-  };
-
-  const AbrirModalConfig = async (id: number) => {
-    await BuscarCanal(id);
-    setModalVisible((prev) => ({ ...prev, configChannel: true }));
-  };
-
-  const FecharModalConfig = async () => {
-    setModalVisible((prev) => ({ ...prev, configChannel: false }));
-    await sleep(1 / 2);
-    setActiveChannel(null);
+    setAbrirNaConexao(false);
   };
 
   const ReloadCanais = async (use_loading = true): Promise<void> => {
@@ -340,14 +326,17 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     activeChannelRef.current = activeChannel;
   }, [activeChannel]);
 
-  // `/conexoes?canal=<id>` abre direto a configuração daquele canal - é como o
-  // badge de status do topbar leva o atendente até aqui. O parâmetro é
-  // removido em seguida para o modal não reabrir a cada voltar/avançar.
+  // `/conexoes?canal=<id>` abre o cadastro daquele canal já na aba "Conexão" -
+  // é como o badge de status do topbar leva o atendente até aqui. O parâmetro
+  // é removido em seguida para o modal não reabrir a cada voltar/avançar.
+  //
+  // Só o `id` é passado: `AbrirModalForm` recarrega o canal inteiro antes de
+  // abrir, e é esse retorno que alimenta o formulário.
   useEffect(() => {
     const id = Number(searchParams.get('canal'));
     if (!id) return;
 
-    AbrirModalConfig(id);
+    AbrirModalForm({ id } as ChannelResponse, true);
     router.replace('/conexoes');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -407,20 +396,16 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
             value={canais}
           />
         </div>
-        <ModalConfigChannel
-          visible={modalVisible.configChannel}
-          value={activeChannel}
-          onHide={FecharModalConfig}
-          onStartSession={onStartSession}
-          onDisconnectSession={onDisconnectSession}
-          onSincronizarStatus={onSincronizarStatus}
-          sincronizando={sincronizando}
-        />
         <ModalForm
           visible={modalVisible.formChannel}
           value={activeChannel}
           onHide={FecharModalForm}
           onComplete={onSubmitForm}
+          onStartSession={onStartSession}
+          onDisconnectSession={onDisconnectSession}
+          onSincronizarStatus={onSincronizarStatus}
+          sincronizando={sincronizando}
+          abrirNaConexao={abrirNaConexao}
         />
       </>
     )

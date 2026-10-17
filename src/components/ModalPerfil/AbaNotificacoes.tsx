@@ -12,6 +12,8 @@ import useApi from '@/service/Api/ApiClient';
 import { Alerta, CatchAlerta } from '@/service/Util';
 import { usePreferenciasStore } from '@/store/usePreferenciasStore';
 
+import LabelPlus from '@/components/LabelPlus';
+
 type Props = {
   itens: PreferenciaParaTela[];
   carregando: boolean;
@@ -115,8 +117,11 @@ const AbaNotificacoes = ({ itens, carregando, onSalvo }: Props) => {
       </span>
 
       <div className="flex-1">
-        <span className="block font-medium">{item.rotulo}</span>
-        <small className="text-color-secondary">{item.descricao}</small>
+        <LabelPlus
+          className="font-medium"
+          text={item.rotulo}
+          textHelp={item.descricao}
+        />
       </div>
 
       <InputSwitch

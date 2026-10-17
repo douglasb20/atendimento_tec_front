@@ -51,6 +51,14 @@ export const ListUrl = {
   ResumoDashboard: { url: '/dashboard/resumo', method: 'GET' },
   SerieFinalizadosDashboard: { url: '/dashboard/serie-finalizados', method: 'GET' },
   MovimentoPorHoraDashboard: { url: '/dashboard/movimento-por-hora', method: 'GET' },
+
+  // Relatórios. Os filtros vão por query string, montada por quem chama - o
+  // `AjeitaUrl` troca placeholders de path, não monta query.
+  RelatorioAtendimentos: { url: '/reports/attendance', method: 'GET' },
+  RelatorioProdutividade: { url: '/reports/productivity', method: 'GET' },
+  RelatorioCliente: { url: '/reports/client', method: 'GET' },
+  BuscarClienteOuContatoRelatorio: { url: '/reports/client-detail/search', method: 'GET' },
+  ResolverClienteOuContatoRelatorio: { url: '/reports/client-detail/resolve', method: 'GET' },
   ListarContatos: { url: '/contacts', method: 'GET' },
   AdicionarContato: { url: '/contacts', method: 'POST' },
   AtualizarContato: { url: '/contacts/contact/{{contact_id}}', method: 'PATCH' },

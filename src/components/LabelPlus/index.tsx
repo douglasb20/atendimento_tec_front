@@ -23,9 +23,12 @@ const LabelPlus = (props: IProps) => {
       </label>
       {textHelp && (
         <>
+          {/* `info-circle`, não `question-circle`: o texto explica o que a
+              opção faz, não responde a uma dúvida - e o ícone de informação é
+              o que o resto do mercado usa para isso. */}
           <Tooltip target=".custom-tooltip" />
           <i
-            className="custom-tooltip ml-1 pi pi-question-circle text-sm text-primary"
+            className="custom-tooltip ml-1 pi pi-info-circle text-sm text-primary cursor-help"
             data-pr-tooltip={textHelp}
             data-pr-position="right"
             data-pr-mousetrack={true}

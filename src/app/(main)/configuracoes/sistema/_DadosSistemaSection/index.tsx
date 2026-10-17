@@ -16,6 +16,8 @@ import { AjusteSistema, ResultadoTesteEmail } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import { Alerta, CatchAlerta } from '@/service/Util';
 
+import LabelPlus from '@/components/LabelPlus';
+
 type Props = { data: AjusteSistema[] };
 
 export default function DadosSistemaSection({ data }: Props) {
@@ -111,12 +113,12 @@ export default function DadosSistemaSection({ data }: Props) {
       key={a.chave}
       className="col-12 md:col-6 p-fluid"
     >
-      <label
+      <LabelPlus
         htmlFor={a.chave}
         className="block text-900 font-medium mb-2"
-      >
-        {a.rotulo}
-      </label>
+        text={a.rotulo}
+        textHelp={a.descricao}
+      />
       <InputNumber
         inputId={a.chave}
         value={Number(valorAtual(a))}
@@ -127,7 +129,6 @@ export default function DadosSistemaSection({ data }: Props) {
         useGrouping={false}
         showButtons
       />
-      <small className="text-500 block mt-1">{a.descricao}</small>
       {a.min !== undefined && a.max !== undefined && (
         <small className="text-500 block">
           Entre {a.min} e {a.max} {a.unidade}.
@@ -141,19 +142,18 @@ export default function DadosSistemaSection({ data }: Props) {
       key={a.chave}
       className="col-12 md:col-6 p-fluid"
     >
-      <label
+      <LabelPlus
         htmlFor={a.chave}
         className="block text-900 font-medium mb-2"
-      >
-        {a.rotulo}
-      </label>
+        text={a.rotulo}
+        textHelp={a.descricao}
+      />
       <InputText
         id={a.chave}
         value={String(valorAtual(a))}
         onChange={(e) => alterar(a.chave, e.target.value)}
         autoComplete="off"
       />
-      <small className="text-500 block mt-1">{a.descricao}</small>
     </div>
   );
 
@@ -162,12 +162,12 @@ export default function DadosSistemaSection({ data }: Props) {
       key={a.chave}
       className="col-12 md:col-6 p-fluid"
     >
-      <label
+      <LabelPlus
         htmlFor={a.chave}
         className="block text-900 font-medium mb-2"
-      >
-        {a.rotulo}
-      </label>
+        text={a.rotulo}
+        textHelp={a.descricao}
+      />
       <IconField iconPosition="right">
         <InputIcon
           className={classNames('cursor-pointer', senhaRevelada ? 'pi pi-eye-slash' : 'pi pi-eye')}
@@ -190,7 +190,6 @@ export default function DadosSistemaSection({ data }: Props) {
           placeholder={a.definido ? '•••••••• (definida)' : 'Não definida'}
         />
       </IconField>
-      <small className="text-500 block mt-1">{a.descricao}</small>
     </div>
   );
 

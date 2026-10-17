@@ -63,8 +63,16 @@ export type ChannelResponse = {
   /** Enviada ao cliente ao se aproximar da resolução por inatividade. Mesmas
    * variáveis de `mensagem_despedida`, sem anexo. */
   inatividade_mensagem_aviso: string | null;
-  /** Ao finalizar por inatividade, envia também `mensagem_despedida` - opt-in. */
+  /** Ao finalizar por inatividade, envia também uma mensagem de encerramento -
+   * opt-in. O texto é o de `inatividade_mensagem_finalizacao`, ou a despedida
+   * padrão quando aquele está vazio. */
   inatividade_enviar_despedida: boolean;
+  /** Liga o texto próprio no lugar da despedida padrão no encerramento por
+   * inatividade. Desligado, usa `mensagem_despedida` com o anexo dela. */
+  inatividade_usar_mensagem_propria: boolean;
+  /** Texto do encerramento por inatividade - obrigatório com
+   * `inatividade_usar_mensagem_propria` ligado. */
+  inatividade_mensagem_finalizacao: string | null;
 
   /** Rejeita toda chamada recebida (quem rejeita é o provider). */
   rejeitar_chamadas: boolean;
