@@ -16,7 +16,7 @@ import {
   RelatorioAtendimentoResponse,
 } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
-import { CatchAlerta, duracaoCompacta } from '@/service/Util';
+import { CatchAlerta, duracaoEmHoras } from '@/service/Util';
 
 import FiltrosRelatorio, { ATALHO_PADRAO, periodoDoAtalho } from './FiltrosRelatorio';
 
@@ -232,11 +232,11 @@ export default function RelatorioAtendimentosSection({ usuarios, setores, canais
                 </span>
                 <span>
                   Espera média:{' '}
-                  <strong>{duracaoCompacta(dados.totais.espera_media_segundos)}</strong>
+                  <strong>{duracaoEmHoras(dados.totais.espera_media_segundos)}</strong>
                 </span>
                 <span>
                   Duração média:{' '}
-                  <strong>{duracaoCompacta(dados.totais.duracao_media_segundos)}</strong>
+                  <strong>{duracaoEmHoras(dados.totais.duracao_media_segundos)}</strong>
                 </span>
               </div>
             ) : null
@@ -292,13 +292,13 @@ export default function RelatorioAtendimentosSection({ usuarios, setores, canais
             header="Espera"
             align="right"
             style={{ minWidth: '6rem' }}
-            body={(linha: LinhaRelatorioAtendimento) => duracaoCompacta(linha.espera_segundos)}
+            body={(linha: LinhaRelatorioAtendimento) => duracaoEmHoras(linha.espera_segundos)}
           />
           <Column
             header="Duração"
             align="right"
             style={{ minWidth: '6rem' }}
-            body={(linha: LinhaRelatorioAtendimento) => duracaoCompacta(linha.duracao_segundos)}
+            body={(linha: LinhaRelatorioAtendimento) => duracaoEmHoras(linha.duracao_segundos)}
           />
           <Column
             header="Situação"
