@@ -98,7 +98,7 @@ URI-encoded.
 
 | | `ApiClient()` / `useApi()` | `ApiService()` (ApiServer.ts) |
 |---|---|---|
-| Onde | client components | server components, actions, middleware |
+| Onde | client components | server components, actions, proxy |
 | Chamada | síncrona | **`await ApiService()`** |
 | Cookies | `nookies` | `next/headers` |
 | Refresh de token | sim, no `ValidateToken` | não |
@@ -129,7 +129,7 @@ O que isso implica em cada camada:
 |---|---|
 | `ApiClient` (browser) | `withCredentials: true`; **sem** header `Authorization` — não há token legível para montá-lo |
 | `ApiServer` (servidor) | lê o cookie via `next/headers` e monta o Bearer; `httpOnly` não afeta o servidor |
-| `middleware` | repassa ao navegador os `Set-Cookie` que a API emitiu no refresh |
+| `proxy` | repassa ao navegador os `Set-Cookie` que a API emitiu no refresh |
 | Socket.IO | `withCredentials: true`; o gateway extrai o token de `handshake.headers.cookie` |
 
 ⚠️ **O logout precisa chamar `POST /auth/logout`** — `destroyCookie` não apaga
@@ -145,10 +145,10 @@ revogável; o refresh é longo porque rotaciona a cada uso e fica em
 
 Isso resolveu o portal deslogar sozinho. A causa era o cookie `expires_at` com
 `maxAge: 20000` (5h33) cravado enquanto o refresh valia 8h: expirado o cookie, o
-middleware lia `undefined`, `Number(undefined) < now` dava `NaN < now` → `false`,
+proxy lia `undefined`, `Number(undefined) < now` dava `NaN < now` → `false`,
 e ele **pulava a renovação**, seguindo com um access morto enquanto o refresh
 ainda era válido. Havia três fórmulas de `maxAge` divergentes entre login,
-`ApiClient` e middleware; hoje quem grava é só o backend.
+`ApiClient` e proxy; hoje quem grava é só o backend.
 
 ## Estado do chat
 

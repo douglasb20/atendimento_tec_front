@@ -15,7 +15,7 @@ const isPublicRoute = (route: string) => {
   });
 };
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { nextUrl } = request;
   const { apiRefreshToken } = await ApiService();
   const cookies = await cookieStorage();
@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
   /**
    * Tenta renovar a sessão e seguir para a rota pedida.
    *
-   * Os tokens são cookies **httpOnly**, emitidos pelo backend - o middleware
+   * Os tokens são cookies **httpOnly**, emitidos pelo backend - o proxy
    * não os grava, apenas repassa ao navegador os `Set-Cookie` que a API
    * devolveu. Sem esse repasse a renovação ficaria só no servidor e o cliente
    * continuaria com os cookies velhos.
@@ -65,7 +65,7 @@ export async function middleware(request: NextRequest) {
     } catch (err) {
       // O log é o que distingue refresh recusado de API fora do ar - antes
       // este catch era vazio e a falha sumia sem rastro.
-      console.error('Falha ao renovar a sessão no middleware:', err);
+      console.error('Falha ao renovar a sessão no proxy:', err);
       return null;
     }
   };
@@ -84,7 +84,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Ausente conta como expirado: `Number(undefined)` é `NaN`, e como
-  // `NaN < now` é `false` o middleware pulava a renovação e seguia com um
+  // `NaN < now` é `false` o proxy pulava a renovação e seguia com um
   // access morto - era a causa de o portal cair mesmo com refresh válido.
   const accessExpirado =
     !expires_at || !Number.isFinite(Number(expires_at)) || Number(expires_at) < now;

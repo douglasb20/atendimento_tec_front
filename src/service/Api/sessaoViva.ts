@@ -66,7 +66,7 @@ const verifica = async () => {
     try {
       await renovaSessao();
     } catch {
-      // Sem sessão recuperável não há o que reagendar: o middleware manda para
+      // Sem sessão recuperável não há o que reagendar: o proxy manda para
       // o login na próxima navegação, e insistir aqui só geraria 401 em série.
       pararRenovacaoDeSessao();
       return;

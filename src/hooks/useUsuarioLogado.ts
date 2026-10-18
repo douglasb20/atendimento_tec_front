@@ -37,7 +37,7 @@ export const useUsuarioLogado = () => {
       info = cru ? (JSON.parse(cru) as UserInfo) : null;
     } catch {
       // Cookie corrompido equivale a não ter usuário: é o estado seguro, e a
-      // próxima navegação passa pelo middleware, que o recria.
+      // próxima navegação passa pelo proxy, que o recria.
       info = null;
     }
 

@@ -43,7 +43,7 @@ export default async function ApiService() {
    * Renova a sessão e devolve os `Set-Cookie` emitidos pela API.
    *
    * Os tokens são httpOnly e quem os emite é o backend; o chamador (o
-   * middleware) precisa repassar esses cabeçalhos ao navegador, senão a
+   * proxy) precisa repassar esses cabeçalhos ao navegador, senão a
    * renovação acontece no servidor e o cliente nunca recebe os cookies novos.
    *
    * O refresh vai no cabeçalho `Cookie` porque o axios do servidor não

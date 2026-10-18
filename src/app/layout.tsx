@@ -50,7 +50,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
   // Cookie ausente ou adulterado cai no padrão, pelo `desserializaTema`.
   //
   // O `userInfo` entra como segunda fonte: ele carrega o tema vindo do banco e
-  // é recriado pelo middleware sempre que falta. Sem ele, um navegador que
+  // é recriado pelo proxy sempre que falta. Sem ele, um navegador que
   // perdesse só o cookie de tema (ou uma aba aberta antes de a preferência
   // existir) pintaria no padrão e o sidebar apareceria com a sombra clara do
   // tema light sobre o fundo escuro.

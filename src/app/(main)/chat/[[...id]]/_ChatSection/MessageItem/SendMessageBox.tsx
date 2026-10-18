@@ -71,7 +71,7 @@ import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
  * Nome do atendente para a bolha provisória, lido do cookie `userInfo`.
  *
  * Devolve string vazia quando o cookie não existe, está expirado ou veio sem o
- * campo - casos reais, já que ele é re-hidratado pelo middleware. Quem usa não
+ * campo - casos reais, já que ele é re-hidratado pelo proxy. Quem usa não
  * pode montar o prefixo `*Nome:*` sem checar, sob pena de exibir um ":" solto.
  *
  * `nomeCompleto`: replica o ajuste `assinatura_nome_completo` (o backend é

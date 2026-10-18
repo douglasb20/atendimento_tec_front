@@ -42,7 +42,7 @@ export const createSocketSlice: StateCreator<
     socket.io.on('reconnect_attempt', () => {
       renovaSessao().catch(() => {
         // Sem sessão recuperável, deixa a tentativa seguir: o gateway recusa e
-        // o middleware manda para o login na navegação seguinte.
+        // o proxy manda para o login na navegação seguinte.
       });
     });
 

@@ -16,7 +16,7 @@ export async function getUserInfo() {
     const tokenString: string = cookieStorage.get('token')?.value;
     const tokenDecoded = jwtDecode<JWTToken>(tokenString);
 
-    // Vence junto com o access token - hoje 30 minutos -, e o middleware o
+    // Vence junto com o access token - hoje 30 minutos -, e o proxy o
     // recria na navegação seguinte por achá-lo ausente. Esse vencimento curto
     // é o que faz uma troca de papel chegar à interface sem o usuário precisar
     // sair e entrar: as permissões que ele carrega valem no máximo esse tempo.

@@ -45,7 +45,7 @@ export const usePermissoes = () => {
       info = cru ? (JSON.parse(cru) as UserInfo) : null;
     } catch {
       // Cookie corrompido equivale a não ter permissão nenhuma: é o estado
-      // seguro, e a próxima navegação passa pelo middleware, que o recria.
+      // seguro, e a próxima navegação passa pelo proxy, que o recria.
       info = null;
     }
 

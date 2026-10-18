@@ -48,7 +48,7 @@ export const serializaTema = (cor: string, modo: string) => `${cor}/${modo}`;
  * O tema a aplicar no SSR, conciliando as duas fontes que o servidor enxerga.
  *
  * O cookie próprio é o caminho rápido - escrito a cada troca, dura um ano. O
- * `userInfo` é a rede: traz o tema do banco e o middleware o recria sempre que
+ * `userInfo` é a rede: traz o tema do banco e o proxy o recria sempre que
  * falta, então cobre o navegador que perdeu o cookie de tema e a aba aberta
  * antes de a preferência existir.
  *
@@ -180,7 +180,7 @@ export const gravaCookieTema = (cor: string, modo: string) => {
  *
  * ⚠️ Preserva o `maxAge` original? Não: o navegador não o expõe. Regravar sem
  * `max-age` o torna cookie de sessão, o que aqui é aceitável - ele é recriado
- * pelo middleware na navegação seguinte. Perder a validade curta dele seria
+ * pelo proxy na navegação seguinte. Perder a validade curta dele seria
  * ruim (é o que faz troca de permissão chegar rápido), então mantemos um teto
  * de 30 minutos, igual ao da origem.
  */
@@ -202,6 +202,6 @@ export const atualizaTemaNoUserInfo = (cor: string, modo: string) => {
     document.cookie = `userInfo=${atualizado}; path=/; max-age=${30 * 60}; SameSite=Lax${seguro}`;
   } catch {
     // Cookie ausente ou ilegível: o de tema já guarda a escolha, e o
-    // `userInfo` será recriado pelo middleware com o valor do banco.
+    // `userInfo` será recriado pelo proxy com o valor do banco.
   }
 };
