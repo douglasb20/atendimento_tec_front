@@ -19,9 +19,18 @@ export type LinhaRelatorioAtendimento = {
   aberto_em: string;
   atendido_em: string | null;
   finalizado_em: string | null;
-  /** Abertura até o encerramento, **sem** o tempo pausado. Nulo em aberto. */
+  /**
+   * Resposta até o encerramento, **sem** o tempo pausado. Nulo em aberto, e
+   * também quando ninguém assumiu a conversa - sem `atendido_em` não há o
+   * que medir como duração de atendimento, só a espera abaixo.
+   */
   duracao_segundos: number | null;
-  /** Abertura até alguém assumir. Nulo quando ninguém assumiu. */
+  /**
+   * Abertura até alguém assumir - ou, se nunca foi assumido mas já foi
+   * finalizado, até o fechamento (o tempo que passou esperando antes de ser
+   * encerrado sem resposta). Nulo só enquanto a conversa segue aberta e sem
+   * dono.
+   */
   espera_segundos: number | null;
   situacao: string;
   is_final: boolean;
@@ -58,6 +67,19 @@ export type OrdenacaoRelatorioCliente =
   | 'menos_espera_media';
 
 /**
+ * As opções do dropdown de ordenação do relatório de Atendimentos/tela de
+ * Histórico - linha a linha, por isso é sobre o atendimento em si, e não
+ * agregado como `OrdenacaoRelatorioCliente`.
+ */
+export type OrdenacaoAtendimentos =
+  | 'mais_recentes'
+  | 'mais_antigos'
+  | 'maior_duracao'
+  | 'menor_duracao'
+  | 'maior_espera'
+  | 'menor_espera';
+
+/**
  * Os filtros da tela, como vão para a API.
  *
  * Ausente significa "todos" - é assim que se diz "sem recorte" em HTTP, e é o
@@ -85,6 +107,8 @@ export type FiltroRelatorio = {
   ignorar_sem_cliente?: boolean;
   /** Só no relatório por cliente. Ausente = "mais atendimentos". */
   ordenar_por?: OrdenacaoRelatorioCliente;
+  /** Relatório de Atendimentos e tela de Histórico. Ausente = "mais recentes". */
+  ordenar_atendimentos_por?: OrdenacaoAtendimentos;
 };
 
 /** Um resultado da busca do relatório analítico - cliente ou contato juntos. */

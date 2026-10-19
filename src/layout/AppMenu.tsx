@@ -60,6 +60,15 @@ const AppMenu = () => {
               visible: liberado(pode('support.chat:view')),
             },
             {
+              // Consulta, sem ação sobre a conversa - permissão própria
+              // (`support.chat:history`) para liberar sem dar acesso ao chat
+              // ao vivo.
+              label: 'Histórico',
+              icon: 'pi pi-history pi-fw',
+              to: '/atendimentos/historico',
+              visible: liberado(pode('support.chat:history')),
+            },
+            {
               label: 'Gerenciamento',
               icon: `pi pi-pen-to-square pi-fw`,
               to: '/atendimentos',
