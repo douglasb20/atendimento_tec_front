@@ -1,8 +1,8 @@
 import { Interweave as BaseInterweave } from 'interweave';
-import { UrlMatcher } from 'interweave-autolink';
 import { EmojiMatcher, useEmojiData } from 'interweave-emoji';
 // import ImgMatcher from './ImgMatcher';
 import {
+  SafeUrlMatcher,
   SimpleBoldMatcher,
   SimpleCodeMatcher,
   SimpleItalicMatcher,
@@ -11,7 +11,7 @@ import {
 
 const globalMatchers = [
   // new ImgMatcher('img', { onRender: props.onRender }),
-  new UrlMatcher('url', { validateTLD: false }),
+  new SafeUrlMatcher('url', { validateTLD: false }),
   new EmojiMatcher('emoji', {
     convertEmoticon: true,
     convertShortcode: false,

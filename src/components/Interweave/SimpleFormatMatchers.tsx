@@ -1,6 +1,40 @@
 // @ts-nocheck
 import React from 'react';
 import { Matcher } from 'interweave';
+import { UrlMatcher } from 'interweave-autolink';
+
+/**
+ * Os delimitadores de formatação do WhatsApp - nenhum deles é um caractere
+ * válido de usuário/senha numa URL de verdade.
+ */
+const DELIMITADORES_FORMATACAO = ['*', '_', '~', '`'];
+
+/**
+ * `UrlMatcher` do `interweave-autolink` corrigido para não engolir o `*` de
+ * abertura de um negrito.
+ *
+ * A regex de URL da lib aceita `*` como parte do "auth" de uma URL (sintaxe
+ * `scheme://usuario@host`), então um e-mail dentro de `*negrito*` (ex.:
+ * `*fulano@gmail.com*`) faz o match da URL incluir o `*` de abertura -
+ * `EMAIL_DISTINCT_PATTERN` não pega esse caso porque o match deixa de ser um
+ * e-mail "puro". O `UrlMatcher` roda antes do matcher de negrito (ver
+ * `globalMatchers` abaixo), então esse `*` comido nunca chega ao
+ * `SimpleBoldMatcher` - o parser do Interweave perde o par de delimitadores e
+ * quebra com "Closing token missing for interpolated element", tanto em
+ * mensagens avulsas quanto na prévia da lista de conversas.
+ */
+export class SafeUrlMatcher extends UrlMatcher {
+  match(string) {
+    const response = super.match(string);
+    if (!response) return response;
+
+    if (DELIMITADORES_FORMATACAO.some((del) => response.match.startsWith(del))) {
+      return null;
+    }
+
+    return response;
+  }
+}
 
 // Base class for several Interweave matchers used for simple formatting
 export class SimpleFormatMatcher extends Matcher {

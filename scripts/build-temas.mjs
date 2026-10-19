@@ -5,9 +5,12 @@
  * combinação, como fazem os temas oficiais do PrimeReact. São 24 arquivos de
  * ~220 KB; só um é carregado por vez, pelo `<link id="theme-link">`.
  *
- * ⚠️ **Os CSS gerados não vão para o git** (ver `.gitignore`): são derivados,
- * pesam ~5 MB somados e conflitariam a cada merge. O build os produz - daí este
- * script rodar no `prebuild`.
+ * ⚠️ **Os CSS gerados SÃO versionados** (ver `.gitignore`), de propósito:
+ * ignorá-los já custou os 27 arquivos numa limpeza do working tree, deixando
+ * quem buildasse sem rodar este script com a tela sem tema. O `prebuild`
+ * roda este script antes do build de produção/homologação, para manter os
+ * arquivos atualizados quando as cores/config dos temas mudam - rode
+ * `npm run build:temas` manualmente depois de mexer nelas.
  *
  * O mecanismo é o `!default` do Sass: todas as variáveis do tema Apollo estão
  * declaradas com ele, então basta defini-las **antes** do `@import` para

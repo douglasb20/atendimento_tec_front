@@ -13,8 +13,7 @@
     "format": "prettier --write \"**/**/*.{js,ts,tsx}\"",
     "build:temas": "node scripts/build-temas.mjs",
     "prebuild:hom": "node scripts/build-temas.mjs",
-    "prebuild:prod": "node scripts/build-temas.mjs",
-    "predev": "node scripts/build-temas.mjs"
+    "prebuild:prod": "node scripts/build-temas.mjs"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.16",
