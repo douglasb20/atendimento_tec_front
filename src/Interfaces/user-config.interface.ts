@@ -13,7 +13,8 @@ export type ChavePreferenciaNotificacao =
   | 'notif_chat_interno'
   | 'notif_mensagem_cliente'
   | 'notif_fila'
-  | 'notif_transferencia';
+  | 'notif_transferencia'
+  | 'notif_compromisso';
 
 /**
  * Governam *se* e *como* avisar, não *o quê*.

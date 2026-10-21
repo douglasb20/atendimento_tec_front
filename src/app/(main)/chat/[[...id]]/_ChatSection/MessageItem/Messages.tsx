@@ -3,6 +3,7 @@ import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState }
 import { Button } from 'primereact/button';
 import { MenuItem } from 'primereact/menuitem';
 import { Checkbox } from 'primereact/checkbox';
+import { Dialog } from 'primereact/dialog';
 import { classNames } from 'primereact/utils';
 import { v4 as uuidV4 } from 'uuid';
 
@@ -325,6 +326,30 @@ const Messages = () => {
   }
 
   const [mensagemEditando, setMensagemEditando] = useState<SupportChatMessageResponse | null>(null);
+  const [citacaoAberta, setCitacaoAberta] = useState<{
+    mensagem: SupportChatMessageResponse;
+    protocolo: string;
+  } | null>(null);
+
+  /**
+   * A lista da conversa atual resolve a citação localmente. Quando ela não
+   * está aqui, o backend confirma que pertence ao mesmo contato antes de
+   * devolver a mensagem do protocolo anterior para este modal.
+   */
+  const abrirMensagemCitata = async (messageId: string) => {
+    if (!activeChat?.id) return;
+
+    try {
+      const resposta = await FetchReq<{
+        mensagem: SupportChatMessageResponse;
+        protocolo: string;
+      }>('BuscarMensagemCitada', [String(activeChat.id), messageId]);
+
+      if (resposta?.mensagem) setCitacaoAberta(resposta);
+    } catch (erro) {
+      CatchAlerta(erro, 'Não foi possível abrir a mensagem citada');
+    }
+  };
 
   const menuModel: MenuItem[] = [
     {
@@ -589,6 +614,7 @@ const Messages = () => {
                         activeChat={activeChat}
                         isLast={false}
                         doAnimation={false}
+                        onAbrirMensagemCitata={abrirMensagemCitata}
                       />
                       <ShowReactionMessageComponent message={msg} />
                     </div>
@@ -667,6 +693,7 @@ const Messages = () => {
                       // estourava ao enviar a primeira mensagem.
                       isLast={mensagensNaTela[mensagensNaTela.length - 1]?.id === msg.id}
                       activeChat={activeChat}
+                      onAbrirMensagemCitata={abrirMensagemCitata}
                     />
                     <ShowReactionMessageComponent message={msg} />
                     {/* Dentro da bolha (`w-fit`), não do wrapper flex maior
@@ -832,6 +859,26 @@ const Messages = () => {
         mensagem={mensagemEditando}
         supportChatId={String(activeChat?.id)}
       />
+      <Dialog
+        header={citacaoAberta ? `Mensagem do protocolo ${citacaoAberta.protocolo}` : 'Mensagem citada'}
+        visible={Boolean(citacaoAberta)}
+        onHide={() => setCitacaoAberta(null)}
+        modal
+        blockScroll
+        style={{ width: 'min(34rem, 95vw)' }}
+      >
+        {citacaoAberta && (
+          <div className={citacaoAberta.mensagem.from_me ? 'flex justify-content-end' : 'flex justify-content-start'}>
+            <SingleMessageComponent
+              message={citacaoAberta.mensagem}
+              activeChat={activeChat}
+              isLast={false}
+              doAnimation={false}
+              onAbrirMensagemCitata={abrirMensagemCitata}
+            />
+          </div>
+        )}
+      </Dialog>
     </>
   );
 };

@@ -203,16 +203,22 @@ export default function HistoricoAtendimentosSection({ usuarios }: Props) {
           <Column
             header=""
             style={{ width: '4rem' }}
-            body={(linha: LinhaRelatorioAtendimento) => (
-              <Button
-                icon="pi pi-eye"
-                rounded
-                text
-                tooltip="Detalhar"
-                tooltipOptions={{ position: 'left' }}
-                onClick={() => setChatIdDetalhe(linha.id)}
-              />
-            )}
+            // Só atendimento finalizado tem o quê detalhar de forma estável -
+            // um "Em andamento" ainda está mudando (mensagens chegando,
+            // atendente trocando), e o modal é somente-leitura, sem
+            // atualização ao vivo.
+            body={(linha: LinhaRelatorioAtendimento) =>
+              linha.is_final ? (
+                <Button
+                  icon="pi pi-eye"
+                  rounded
+                  text
+                  tooltip="Detalhar"
+                  tooltipOptions={{ position: 'left' }}
+                  onClick={() => setChatIdDetalhe(linha.id)}
+                />
+              ) : null
+            }
           />
         </DataTable>
       </div>

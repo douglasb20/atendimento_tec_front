@@ -24,7 +24,18 @@ const DtUsuarios = ({ actions, ...props }) => {
           field="name"
           header="Nome"
           alignHeader="center"
-          body={(usuario: IUsuariosResponse) => nomeCompleto(usuario)}
+          body={(usuario: IUsuariosResponse) => (
+            <span className="flex align-items-center gap-2">
+              {usuario.schedule_color && (
+                <span
+                  className="border-circle border-1 surface-border flex-none"
+                  style={{ width: '0.8rem', height: '0.8rem', backgroundColor: usuario.schedule_color }}
+                  title={`Cor da agenda: ${usuario.schedule_color}`}
+                />
+              )}
+              {nomeCompleto(usuario)}
+            </span>
+          )}
         />
         <Column
           field="email"

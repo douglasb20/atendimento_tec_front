@@ -9,6 +9,7 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import { SupportChatsResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta, DateToBR, duracaoCompacta, nomeCompleto } from '@/service/Util';
+import EventoAtendimento from '@/app/(main)/chat/[[...id]]/_ChatSection/_components/EventoAtendimento';
 import BolhaMensagemHistorico from './BolhaMensagemHistorico';
 
 type Props = {
@@ -29,11 +30,14 @@ const dataHoraCompleta = (valor: string | null) =>
  * `supportChatEvents` resolvidos. Como o atendimento já terminou, o modal é
  * só leitura: sem socket, sem outbox, sem ações.
  *
- * A timeline de eventos **não mostra pausa/retomada** (pedido explícito): a
- * duração exibida já desconta o tempo pausado no cálculo do backend
- * (`paused_total_seconds`), então a pausa não falta nas contas - só não
- * aparece como evento na conversa, que é informação interna de quem atende,
- * não do histórico da conversa em si.
+ * A timeline mostra **todos** os eventos (transferência, chamada, pausa e
+ * retomada) - inclusive pausa/retomada, que antes ficavam de fora de
+ * propósito. Mudou porque um atendimento pausado confundia: a duração batia
+ * certo (já desconta `paused_total_seconds`), mas o tempo entre abrir e
+ * fechar o atendimento ficava bem maior que a duração mostrada, sem nada na
+ * tela explicando a diferença - só dava pra entender abrindo o chat de
+ * verdade. Mesmo componente do chat ao vivo (`EventoAtendimento`), para o
+ * texto e o ícone saírem idênticos dos dois lados.
  */
 const ModalDetalheAtendimento = ({ chatId, onHide }: Props) => {
   const { req } = useApi();
@@ -98,29 +102,16 @@ const ModalDetalheAtendimento = ({ chatId, onHide }: Props) => {
   const contato = atendimento?.contact;
   const mensagens = atendimento?.supportChatMessages ?? [];
 
-  // Transferência e chamada continuam relevantes na timeline; pausa/retomada
-  // saem de propósito - ver o comentário do componente.
-  const eventosRelevantes = (atendimento?.supportChatEvents ?? []).filter(
-    (evento) => evento.tipo === 'transferencia' || evento.tipo === 'chamada',
-  );
+  const eventos = atendimento?.supportChatEvents ?? [];
 
   type ItemDaLinha =
     | { tipo: 'mensagem'; data: string; mensagem: (typeof mensagens)[number] }
-    | { tipo: 'evento'; data: string; evento: (typeof eventosRelevantes)[number] };
+    | { tipo: 'evento'; data: string; evento: (typeof eventos)[number] };
 
   const linhaDoTempo: ItemDaLinha[] = [
     ...mensagens.map((mensagem) => ({ tipo: 'mensagem' as const, data: mensagem.datetime, mensagem })),
-    ...eventosRelevantes.map((evento) => ({ tipo: 'evento' as const, data: evento.created_at, evento })),
+    ...eventos.map((evento) => ({ tipo: 'evento' as const, data: evento.created_at, evento })),
   ].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-
-  const descreveEvento = (evento: (typeof eventosRelevantes)[number]): string => {
-    if (evento.tipo === 'chamada') return 'Chamada recebida';
-
-    const origem = evento.userOrigem ? nomeCompleto(evento.userOrigem) : 'Fila';
-    // Nulo é "devolvido para a espera", não ausência de dado - ver o tipo.
-    const destino = evento.userDestino ? nomeCompleto(evento.userDestino) : 'fila de espera';
-    return `Transferido de ${origem} para ${destino}`;
-  };
 
   return (
     <Modal
@@ -277,12 +268,10 @@ const ModalDetalheAtendimento = ({ chatId, onHide }: Props) => {
                     message={item.mensagem}
                   />
                 ) : (
-                  <div
+                  <EventoAtendimento
                     key={item.evento.id}
-                    className="align-self-center text-xs text-color-secondary surface-200 border-round px-2 py-1 my-1"
-                  >
-                    {descreveEvento(item.evento)}
-                  </div>
+                    evento={item.evento}
+                  />
                 ),
               )}
             </div>

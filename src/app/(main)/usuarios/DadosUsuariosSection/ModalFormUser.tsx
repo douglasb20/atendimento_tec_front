@@ -50,6 +50,7 @@ const defaultForm: UsuarioForm = {
   avatar_url: null,
   permission_group_id: null,
   department_ids: [],
+  schedule_color: '',
 };
 
 /** Opção que representa "sem grupo" - o usuário entra mas não acessa nada. */
@@ -102,6 +103,7 @@ const ModalFormUser = (props: ModalProps) => {
   const [pointerOver, setPointerOver] = useState(false);
   const [grupos, setGrupos] = useState<PermissionGroupResponse[]>([]);
   const [setores, setSetores] = useState<DepartmentResponse[]>([]);
+  const [coresAgenda, setCoresAgenda] = useState<string[]>([]);
   // Distingue "não há setores" de "a lista não carregou": no segundo caso o
   // campo não pode ir no corpo, senão salvar tiraria a pessoa de todos.
   const [setoresCarregados, setSetoresCarregados] = useState(false);
@@ -112,6 +114,10 @@ const ModalFormUser = (props: ModalProps) => {
     name: yup.string().required(msgRequired),
     last_name: yup.string().notRequired(),
     email: yup.string().required(msgRequired).email('Email incorreto'),
+    schedule_color: yup
+      .string()
+      .matches(/^#[0-9A-Fa-f]{6}$/, 'Selecione uma cor para a agenda')
+      .required('A cor da agenda é obrigatória'),
   });
 
   const { control, handleSubmit, reset } = useForm<UsuarioForm>({
@@ -207,6 +213,7 @@ const ModalFormUser = (props: ModalProps) => {
         avatar_url: avatarKey,
         changed_avatar,
         permission_group_id: fields.permission_group_id ?? null,
+        schedule_color: fields.schedule_color,
         // Só com a lista carregada. Ausente, o backend mantém os setores; vazio,
         // tira a pessoa de todos - e uma falha ao carregar viraria isso.
         ...(setoresCarregados && { department_ids: fields.department_ids ?? [] }),
@@ -230,9 +237,7 @@ const ModalFormUser = (props: ModalProps) => {
       }
 
       AlertaCallback(
-        !data?.id
-          ? 'Convite enviado!'
-          : 'Atendente salvo com sucesso!',
+        !data?.id ? 'Convite enviado!' : 'Atendente salvo com sucesso!',
         () => onConfirm && onConfirm(),
         'success',
       );
@@ -317,8 +322,25 @@ const ModalFormUser = (props: ModalProps) => {
       }
     };
 
+    const carregarCoresAgenda = async () => {
+      try {
+        const cores = await FetchReq<string[]>({
+          endpoint: 'ListarCoresAgenda',
+          variables: [data?.id ?? 0],
+        });
+        // A API preserva a cor da edição; o merge também evita uma tela vazia
+        // em caso de um cadastro antigo cuja cor não faça mais parte da paleta.
+        setCoresAgenda(
+          Array.from(new Set([...(cores ?? []), data?.schedule_color].filter(Boolean))),
+        );
+      } catch {
+        setCoresAgenda(data?.schedule_color ? [data.schedule_color] : []);
+      }
+    };
+
     carregar();
     carregarSetores();
+    carregarCoresAgenda();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
@@ -345,7 +367,7 @@ const ModalFormUser = (props: ModalProps) => {
       <Modal
         modal
         className="p-fluid"
-        style={{ width: '40rem' }}
+        style={{ width: '50rem' }}
         visible={visible}
         header={(!data?.id ? 'Adicionar' : 'Alterar') + ' atendente'}
         onHide={onHide}
@@ -525,10 +547,64 @@ const ModalFormUser = (props: ModalProps) => {
                 </div>
               )}
 
+              <div className="col-6">
+                <Controller
+                  control={control}
+                  name="schedule_color"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <LabelPlus
+                        htmlFor={field.name}
+                        text="Cor do atendente"
+                        required
+                        textHelp="Identifica os compromissos deste atendente no calendário. Cada cor só pode pertencer a uma pessoa."
+                      />
+                      <Dropdown
+                        id={field.name}
+                        value={field.value || null}
+                        onChange={(e) => field.onChange(e.value)}
+                        options={coresAgenda}
+                        placeholder="Selecione uma cor"
+                        disabled={!podeSalvar || coresAgenda.length === 0}
+                        className="w-full"
+                        valueTemplate={(cor) =>
+                          cor ? (
+                            <span className="flex align-items-center gap-2">
+                              <span
+                                className="border-circle border-1 surface-border"
+                                style={{ width: '1rem', height: '1rem', backgroundColor: cor }}
+                              />
+                              {cor}
+                            </span>
+                          ) : (
+                            'Selecione uma cor'
+                          )
+                        }
+                        itemTemplate={(cor) => (
+                          <span className="flex align-items-center gap-2">
+                            <span
+                              className="border-circle border-1 surface-border"
+                              style={{ width: '1rem', height: '1rem', backgroundColor: cor }}
+                            />
+                            {cor}
+                          </span>
+                        )}
+                      />
+                      {coresAgenda.length === 0 && (
+                        <small className="p-error block mt-2">
+                          Não há cores disponíveis na paleta.
+                        </small>
+                      )}
+                      {getFormErrorMessage(fieldState)}
+                    </>
+                  )}
+                />
+              </div>
+
               {/* Mesmo critério do grupo: sem setores cadastrados, ou sem
               permissão de listá-los, o campo não aparece. */}
               {setores.length > 0 && (
-                <div className="col-6">
+                <div className="col-12">
                   <Controller
                     control={control}
                     name="department_ids"
@@ -555,15 +631,6 @@ const ModalFormUser = (props: ModalProps) => {
                       </>
                     )}
                   />
-                </div>
-              )}
-
-              {/* Os dois campos somem sem o que escolher (sem grupos ou setores
-                  cadastrados, ou sem permissão de listá-los); a aba não pode
-                  ficar em branco sem explicação. */}
-              {grupos.length === 0 && setores.length === 0 && (
-                <div className="col-12 text-color-secondary">
-                  Nenhum grupo de acesso ou setor disponível para escolher.
                 </div>
               )}
             </div>

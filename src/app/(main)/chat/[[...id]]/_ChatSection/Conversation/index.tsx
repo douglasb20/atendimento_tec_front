@@ -17,6 +17,7 @@ import { classNames } from 'primereact/utils';
 import AcoesConversa from './AcoesConversa';
 import { resumoDoContato } from '@/service/Vcard';
 import ModalNovoAtendimento from './ModalNovoAtendimento';
+import ModalNovoCompromisso from '@/components/ModalNovoCompromisso';
 import AbasConversa from '../../_ChatInterno/AbasConversa';
 import ListaColegas from '../../_ChatInterno/ListaColegas';
 import { podeTocarSom, useAvisarEvento } from '@/hooks/useAvisarEvento';
@@ -94,6 +95,8 @@ const horaDaConversa = (iso: string) => {
 };
 
 const ConversationSection = () => {
+  const [fabAberto, setFabAberto] = useState(false);
+  const [modalCompromissoAberto, setModalCompromissoAberto] = useState(false);
   const chats = useChatStore((s) => s.chats);
   const socket = useChatStore((s) => s.socket);
   const activeChat = useChatStore((s) => s.activeChat);
@@ -461,13 +464,17 @@ const ConversationSection = () => {
       {/* Flutuante, ancorado no próprio painel (`relative` acima) e não na
           tela toda: `fixed` faria o botão seguir o scroll da página, não da
           lista de conversas. */}
+      {fabAberto && <div className="chat-fab-acoes absolute flex flex-column gap-2 align-items-start" style={{ left: '1rem', bottom: '5rem', zIndex: 1 }}>
+        <Button label="Novo atendimento" icon="pi pi-plus" rounded onClick={() => { setFabAberto(false); setModalNovoAberto(true); }} />
+        <Button label="Novo compromisso" icon="pi pi-calendar" rounded outlined onClick={() => { setFabAberto(false); setModalCompromissoAberto(true); }} />
+      </div>}
       <Button
-        icon="pi pi-plus text-xl"
+        icon={fabAberto ? "pi pi-times text-xl" : "pi pi-plus text-xl"}
         rounded
-        title="Novo atendimento"
-        aria-label="Novo atendimento"
-        onClick={() => setModalNovoAberto(true)}
-        className="absolute shadow-3 p-0"
+        title="Ações"
+        aria-label="Ações"
+        onClick={() => setFabAberto((aberto) => !aberto)}
+        className={`chat-fab-principal absolute shadow-3 p-0 ${fabAberto ? 'chat-fab-principal--aberto' : ''}`}
         style={{ left: '1rem', bottom: '1rem', width: '3.2rem', height: '3.2rem', zIndex: 1 }}
       />
 
@@ -476,6 +483,7 @@ const ConversationSection = () => {
         onHide={() => setModalNovoAberto(false)}
         onCriado={onNovoAtendimentoCriado}
       />
+      <ModalNovoCompromisso visible={modalCompromissoAberto} onHide={() => setModalCompromissoAberto(false)} />
 
       {temChatInterno && abaAtiva === 'interno' ? (
         <div className="flex-1 overflow-hidden">

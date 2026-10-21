@@ -362,7 +362,15 @@ function ModalFormSetor({ visible, onHide, data, onConfirm }: ModalProps) {
                     disabled={somenteLeitura}
                     onChange={(e) => alternarMembro(usuario.id, !!e.checked)}
                   />
-                  <label htmlFor={`membro-${usuario.id}`}>
+                  <label
+                    htmlFor={`membro-${usuario.id}`}
+                    className="flex align-items-center"
+                  >
+                    <span
+                      className="border-circle border-1 surface-border flex-none mr-2"
+                      style={{ width: '0.8rem', height: '0.8rem', backgroundColor: usuario.schedule_color }}
+                      title={`Cor da agenda: ${usuario.schedule_color}`}
+                    />
                     {usuario.name} {usuario.last_name ?? ''}
                     <span className="text-color-secondary ml-2">{usuario.email}</span>
                   </label>

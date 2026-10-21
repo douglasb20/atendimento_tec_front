@@ -59,6 +59,10 @@ export const ListUrl = {
   RelatorioCliente: { url: '/reports/client', method: 'GET' },
   BuscarClienteOuContatoRelatorio: { url: '/reports/client-detail/search', method: 'GET' },
   ResolverClienteOuContatoRelatorio: { url: '/reports/client-detail/resolve', method: 'GET' },
+  BuscarMensagemCitada: {
+    url: '/support-chats/{{support_chat_id}}/mensagem-citada/{{message_id}}',
+    method: 'GET',
+  },
   ListarContatos: { url: '/contacts', method: 'GET' },
   AdicionarContato: { url: '/contacts', method: 'POST' },
   AtualizarContato: { url: '/contacts/contact/{{contact_id}}', method: 'PATCH' },
@@ -79,6 +83,16 @@ export const ListUrl = {
   ListarModulosPermissao: { url: '/permissions/modules', method: 'GET' },
 
   ListarUsuarios: { url: '/users', method: 'GET' },
+  ListarCoresAgenda: { url: '/users/cores-agenda?user_id={{user_id}}', method: 'GET' },
+  ListarCompromissos: { url: '/schedules?inicio_em={{inicio_em}}&fim_em={{fim_em}}', method: 'GET' },
+  ListarAtendentesAgenda: { url: '/schedules/atendentes', method: 'GET' },
+  BuscarCompromisso: { url: '/schedules/{{schedule_id}}', method: 'GET' },
+  CriarCompromisso: { url: '/schedules', method: 'POST' },
+  AtualizarCompromisso: { url: '/schedules/{{schedule_id}}', method: 'PATCH' },
+  RemoverCompromisso: { url: '/schedules/{{schedule_id}}', method: 'DELETE' },
+  ListarNotificacoes: { url: '/notifications', method: 'GET' },
+  LerTodasNotificacoes: { url: '/notifications/read-all', method: 'PATCH' },
+  LerNotificacao: { url: '/notifications/{{notification_recipient_id}}/read', method: 'PATCH' },
   BuscarUsuarioPorId: { url: '/users/{{user_id}}', method: 'GET' },
   // O próprio cadastro, sob `user:profile_view`/`user:profile_update`. As
   // rotas `/users/:id` exigem `user:view`/`user:update`, que são "qualquer

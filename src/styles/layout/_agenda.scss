@@ -1,0 +1,161 @@
+// FullCalendar nasce com variáveis claras próprias. Estas regras o fazem usar
+// as superfícies do Apollo e deixam a grade parecida com o restante do portal.
+.agenda-card {
+  container-type: inline-size;
+  padding: 1.75rem;
+}
+
+.agenda-periodo {
+  color: var(--text-color-secondary);
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.agenda-calendario {
+  --fc-border-color: var(--surface-border);
+  --fc-page-bg-color: var(--surface-card);
+  --fc-neutral-bg-color: var(--surface-hover);
+  --fc-today-bg-color: color-mix(in srgb, var(--primary-color) 10%, transparent);
+  --fc-list-event-hover-bg-color: var(--surface-hover);
+  --fc-event-text-color: #fff;
+
+  .fc-scrollgrid,
+  .fc-theme-standard td,
+  .fc-theme-standard th {
+    border-color: var(--surface-border);
+  }
+
+  .fc-col-header-cell {
+    background: var(--surface-hover);
+    padding: .55rem .25rem .65rem;
+  }
+
+  .fc-col-header-cell-cushion {
+    color: var(--text-color);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .agenda-cabecalho-dia {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+
+  .agenda-dia-semana {
+    color: var(--text-color-secondary);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .agenda-dia-numero {
+    color: var(--text-color);
+    display: inline-grid;
+    font-size: 1.65rem;
+    font-weight: 400;
+    height: 2.45rem;
+    line-height: 1;
+    place-items: center;
+    text-align: center;
+    width: 2.45rem;
+  }
+
+  .agenda-dia-hoje {
+    background: var(--primary-color);
+    border-radius: 50%;
+    color: var(--primary-color-text);
+  }
+
+  .fc-timegrid-slot {
+    height: 2.1rem;
+    border-color: color-mix(in srgb, var(--surface-border) 70%, transparent);
+  }
+
+  .fc-timegrid-slot-label-cushion {
+    color: var(--text-color-secondary);
+    font-size: .78rem;
+    padding-right: .55rem;
+  }
+
+  .fc-timegrid-axis {
+    width: 4.2rem;
+  }
+
+  .fc-timegrid-col.fc-day-today {
+    background: var(--fc-today-bg-color);
+  }
+
+  .fc-event {
+    border-radius: 5px;
+    border-width: 0;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 18%);
+    cursor: pointer;
+    padding: 2px 4px;
+  }
+
+  .fc-event-title,
+  .fc-event-time {
+    font-weight: 600;
+  }
+
+  .fc-list {
+    border-color: var(--surface-border);
+  }
+
+  .fc-list-day-cushion,
+  .fc-list-event:hover td {
+    background: var(--surface-hover);
+  }
+
+  .fc-list-event-title a,
+  .fc-list-day-text,
+  .fc-list-day-side-text {
+    color: var(--text-color);
+    text-decoration: none;
+  }
+
+  .fc-daygrid-day-number {
+    color: var(--text-color);
+    text-decoration: none;
+  }
+}
+
+@container (max-width: 700px) {
+  .agenda-card {
+    padding: 1rem;
+  }
+
+  .agenda-cabecalho {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .agenda-acoes {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .agenda-acoes .p-dropdown {
+    flex: 1;
+  }
+
+  .agenda-novo-compromisso {
+    flex-basis: 100%;
+  }
+
+  // O cabeçalho respira, mas a grade precisa de cada pixel disponível: sete
+  // dias lado a lado ficam ilegíveis se herdarem também o padding do card.
+  .agenda-calendario {
+    margin-inline: -1rem;
+    width: calc(100% + 2rem);
+  }
+
+  .agenda-dia-numero {
+    font-size: 1.1rem;
+    height: 1.8rem;
+    width: 1.8rem;
+  }
+}

@@ -25,6 +25,7 @@ export type MembroSetorResponse = {
   name: string;
   last_name: string | null;
   email: string;
+  schedule_color: string;
   membro: boolean;
 };
 

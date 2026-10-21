@@ -7,35 +7,46 @@ import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
 function QuotedMessageItem({
   quoted,
   activeChat,
+  quotedMessageId,
+  quotedPreview,
+  onAbrirMensagemCitata,
 }: {
-  quoted: SupportChatMessageResponse;
+  quoted?: SupportChatMessageResponse;
   activeChat: SupportChatsResponse;
+  quotedMessageId: string;
+  quotedPreview?: string | null;
+  onAbrirMensagemCitata: (messageId: string) => void;
 }) {
-  const midia = quoted.has_media ? descreveMidia(quoted.type, quoted.file_name) : null;
+  const midia = quoted?.has_media ? descreveMidia(quoted.type, quoted.file_name) : null;
 
   const miniatura =
-    midia && !quoted.media_expired && ['image', 'video', 'sticker'].includes(quoted.type)
-      ? quoted.media_url
+    midia && !quoted?.media_expired && ['image', 'video', 'sticker'].includes(quoted?.type ?? '')
+      ? quoted?.media_url
       : null;
+
+  const abrir = () => {
+    if (quoted) {
+      document.getElementById(quoted.message_id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    onAbrirMensagemCitata(quotedMessageId);
+  };
 
   return (
     <>
       <div
-        onClick={() => {
-          document
-            .getElementById(`${quoted.message_id}`)
-            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }}
+        onClick={abrir}
         className="cursor-pointer relative bg-primary-800 border-round-lg border-left-3 border-green-600 p-2 overflow-hidden mb-1 select-none flex align-items-center gap-2"
       >
         <div className="flex-1 overflow-hidden">
-          <p className={`font-bold ${quoted.from_me ? 'text-blue-600' : 'text-green-600'}`}>
-            {quoted.from_me ? 'Você' : nomeCompleto(activeChat?.contact)}
+          <p className={`font-bold ${quoted?.from_me ? 'text-blue-600' : 'text-green-600'}`}>
+            {quoted?.from_me ? 'Você' : nomeCompleto(activeChat?.contact)}
           </p>
 
           {/* O mesmo tratamento da barra acima do input: mídia sem legenda
               tem `content` vazio e deixaria a citação em branco. */}
-          {midia ? (
+          {midia && quoted ? (
             <span className="flex align-items-center gap-2 text-clamp text-white">
               <i className={`${midia.icone} text-sm`} />
               {quoted.content ? (
@@ -44,14 +55,14 @@ function QuotedMessageItem({
                 <span>{midia.rotulo}</span>
               )}
             </span>
-          ) : resumoDoContato(quoted.type, quoted.content) ? (
+          ) : quoted && resumoDoContato(quoted.type, quoted.content) ? (
             <span className="flex align-items-center gap-2 text-clamp text-white">
               <i className="fa-regular fa-address-card text-sm" />
               {resumoDoContato(quoted.type, quoted.content)}
             </span>
           ) : (
             <span className="text-clamp text-white">
-              <Interweave content={fixHeartEmoji(quoted.content)} />
+              <Interweave content={fixHeartEmoji(quoted?.content || quotedPreview || 'Mensagem citada')} />
             </span>
           )}
         </div>

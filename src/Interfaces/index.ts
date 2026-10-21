@@ -21,6 +21,25 @@ export * from './user-config.interface';
 export * from './department.interface';
 export * from './chatbot.interface';
 
+export type CompromissoResponse = {
+  id: number;
+  titulo: string;
+  observacao: string | null;
+  inicio_em: string;
+  fim_em: string;
+  lembrete_minutos: 5 | 10 | 15 | 20 | 25 | 30 | 60;
+  user_id: number;
+  client_id: number | null;
+  contact_id: number | null;
+  created_at: string;
+  updated_at: string | null;
+  responsavel: Pick<IUsuariosResponse, 'id' | 'name' | 'last_name' | 'schedule_color'>;
+  cliente: ClientResponse | null;
+  contato: ContactResponse | null;
+};
+
+export type AtendenteAgenda = Pick<IUsuariosResponse, 'id' | 'name' | 'last_name' | 'schedule_color'>;
+
 export enum Masks {
   DATEBR = '99/99/9999',
   CPF = '999.999.999-99',
@@ -81,6 +100,8 @@ export interface IUsuariosResponse {
    */
   valor_hora?: number;
   avatar_url?: string | null;
+  /** Cor exclusiva usada para identificar este atendente na agenda. */
+  schedule_color?: string;
   is_requestpassword?: number;
   created_at?: string;
   lastlogin_at?: string;

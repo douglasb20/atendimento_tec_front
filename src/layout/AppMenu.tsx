@@ -190,6 +190,12 @@ const AppMenu = () => {
           ],
         },
         {
+          label: 'Agenda',
+          icon: `${PrimeIcons.CALENDAR} pi-fw`,
+          to: '/agenda',
+          visible: liberado(pode('schedule:view')),
+        },
+        {
           // No fim da lista: é o que se mexe ao montar o ambiente, não no dia
           // a dia do atendimento. Item direto, sem submenu: canal já é a
           // conexão inteira (nunca existem duas integrações coexistindo, o

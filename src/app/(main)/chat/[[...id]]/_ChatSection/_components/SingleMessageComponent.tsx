@@ -23,6 +23,8 @@ type SingleMessageComponentProps = {
   activeChat: SupportChatsResponse;
   /** Mensagem citada, já resolvida pela lista - evita buscá-la aqui. */
   quotedMessage?: SupportChatMessageResponse;
+  /** Abre a citação quando ela pertence a outro protocolo do mesmo contato. */
+  onAbrirMensagemCitata?: (messageId: string) => void;
 };
 
 const ArrumaData = (data: string) => {
@@ -117,6 +119,7 @@ const SingleMessageComponent = ({
   isLast,
   activeChat,
   quotedMessage,
+  onAbrirMensagemCitata,
 }: SingleMessageComponentProps) => {
   const { from_me, content } = message;
   // Só a ação, nunca a lista: assinar `messages` aqui faria cada bolha
@@ -297,10 +300,13 @@ const SingleMessageComponent = ({
               <span>Encaminhada</span>
             </div>
           )}
-          {message.has_quoted && quotedMessage && (
+          {message.has_quoted && message.quoted_msg_id && onAbrirMensagemCitata && (
             <QuotedMessageItem
               activeChat={activeChat}
               quoted={quotedMessage}
+              quotedMessageId={message.quoted_msg_id}
+              quotedPreview={message.quoted_msg}
+              onAbrirMensagemCitata={onAbrirMensagemCitata}
             />
           )}
           <div className="flex flex-column text-base ">

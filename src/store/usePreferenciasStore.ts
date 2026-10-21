@@ -16,6 +16,7 @@ export const PREFERENCIAS_PADRAO: PreferenciasUsuario = {
   notif_mensagem_cliente: true,
   notif_chat_interno: true,
   notif_transferencia: true,
+  notif_compromisso: true,
   notif_som: true,
   notif_alerta_tela: true,
   notif_navegador: true,
