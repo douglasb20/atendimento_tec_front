@@ -484,7 +484,7 @@ const ConversationSection = () => {
           lista de conversas. */}
       {fabAberto && <div className="chat-fab-acoes absolute flex flex-column gap-2 align-items-start" style={{ left: '1rem', bottom: '5rem', zIndex: 1 }}>
         <Button label="Novo atendimento" icon="pi pi-plus" rounded onClick={() => { setFabAberto(false); setModalNovoAberto(true); }} />
-        <Button label="Novo compromisso" icon="pi pi-calendar" rounded outlined onClick={() => { setFabAberto(false); setModalCompromissoAberto(true); }} />
+        <Button label="Novo compromisso" icon="pi pi-calendar" rounded onClick={() => { setFabAberto(false); setModalCompromissoAberto(true); }} />
       </div>}
       <Button
         icon={fabAberto ? "pi pi-times text-xl" : "pi pi-plus text-xl"}
