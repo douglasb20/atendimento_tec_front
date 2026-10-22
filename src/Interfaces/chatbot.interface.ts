@@ -12,8 +12,9 @@ export type ChatbotResponse = {
   name: string;
   type: ChatbotType;
   active: boolean;
-  channel_id: number | null;
-  channel?: { id: number; name: string } | null;
+  /** M:N (migration `1790020000000`) - o mesmo chatbot pode estar em vários
+   * canais. Só vem preenchido na listagem (`findAllActive`). */
+  channels?: { id: number; name: string }[];
   settings: Record<string, unknown>;
   current_published_version_id: number | null;
   created_at: string;

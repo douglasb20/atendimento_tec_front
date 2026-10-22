@@ -100,7 +100,7 @@ export default function DadosChatbotSection({ data }: DadosChatbotProps) {
       const body = {
         name: fields.name,
         type: fields.type,
-        channel_id: fields.type === 'complementar' ? null : fields.channel_id,
+        channel_ids: fields.type === 'complementar' ? [] : fields.channel_ids,
       };
 
       if (chatbotAtivo?.id) {

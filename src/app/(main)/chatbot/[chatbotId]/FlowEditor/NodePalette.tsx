@@ -14,7 +14,9 @@ export type NoDisponivel = {
 
 const NOS_DISPONIVEIS: NoDisponivel[] = [
   { type: 'message', label: 'Mensagem', icon: PrimeIcons.COMMENT, category: 'Conversação' },
+  { type: 'menu', label: 'Menu', icon: PrimeIcons.LIST, category: 'Conversação' },
   { type: 'conditional', label: 'Condicional', icon: PrimeIcons.SITEMAP, category: 'Dados e regras' },
+  { type: 'holiday', label: 'Feriados', icon: PrimeIcons.CALENDAR, category: 'Dados e regras' },
   { type: 'finish', label: 'Finalizar', icon: PrimeIcons.CHECK_CIRCLE, category: 'Atendimento' },
 ];
 
@@ -29,7 +31,7 @@ type NodePaletteProps = {
  * `.custom-drag-handle`, que o React Flow ignora ao decidir se o clique
  * arrasta o canvas ou o painel), com busca e filtro por categoria.
  *
- * Nesta fase só cobre os 3 tipos que o motor já executa (Mensagem,
+ * Nesta fase cobre os tipos que o motor já executa (Mensagem, Menu,
  * Condicional, Finalizar) - o restante entra na Fase 4 do plano.
  *
  * ⚠️ Componentes reais do PrimeReact (`Button`/`InputText`), não HTML cru com

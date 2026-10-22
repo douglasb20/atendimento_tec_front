@@ -35,8 +35,10 @@ const DtChatbots = ({ actions, ...props }) => {
         body={(chatbot: ChatbotResponse) => (
           <div className="flex flex-column">
             <span className="font-medium">{chatbot.name}</span>
-            {chatbot.channel?.name && (
-              <small className="text-color-secondary">{chatbot.channel.name}</small>
+            {!!chatbot.channels?.length && (
+              <small className="text-color-secondary">
+                {chatbot.channels.map((c) => c.name).join(', ')}
+              </small>
             )}
           </div>
         )}

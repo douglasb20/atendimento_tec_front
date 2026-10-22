@@ -241,14 +241,25 @@ const AppMenu = () => {
         },
         {
           // Gestão de negócio do administrador do cliente - separado de
-          // "Configurações do sistema" (sidebar de perfil), que é operação
-          // da API e fica restrita ao usuário master. Item direto, sem
-          // submenu: só há um destino hoje, um submenu de item único seria
-          // clique a mais sem ganho.
+          // "Configurações do sistema" (sidebar de perfil, agora em
+          // /configuracoes/admin), que é operação da API e fica restrita ao
+          // usuário master.
           label: 'Configurações',
           icon: `${PrimeIcons.COG} pi-fw`,
-          to: '/configuracoes/atendimento',
-          visible: liberado(pode('attendance_settings:manage')),
+          items: [
+            {
+              label: 'Sistema',
+              icon: `${PrimeIcons.SLIDERS_H} pi-fw`,
+              to: '/configuracoes/sistema',
+              visible: liberado(pode('attendance_settings:manage')),
+            },
+            {
+              label: 'Feriados',
+              icon: `${PrimeIcons.CALENDAR} pi-fw`,
+              to: '/configuracoes/feriados',
+              visible: liberado(pode('holiday:view')),
+            },
+          ],
         },
       ],
     },

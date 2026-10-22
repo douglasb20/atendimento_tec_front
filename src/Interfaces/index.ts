@@ -20,6 +20,7 @@ export * from './internal-chat.interface';
 export * from './user-config.interface';
 export * from './department.interface';
 export * from './chatbot.interface';
+export * from './holiday.interface';
 
 export type CompromissoResponse = {
   id: number;
