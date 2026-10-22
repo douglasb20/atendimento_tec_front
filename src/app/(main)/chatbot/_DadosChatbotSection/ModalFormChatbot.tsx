@@ -2,6 +2,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Button } from 'primereact/button';
 import { Dialog as Modal } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
+import { MultiSelect } from 'primereact/multiselect';
 import { InputText } from 'primereact/inputtext';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -13,7 +14,7 @@ import { ChatbotResponse, ChatbotType, Shape } from '@/Interfaces';
 import ApiClient from '@/service/Api/ApiClient';
 import { getFormErrorMessage, msgRequired } from '@/service/Util';
 
-export type FormChatbot = { name: string; type: ChatbotType; channel_id: number | null };
+export type FormChatbot = { name: string; type: ChatbotType; channel_ids: number[] };
 
 type Canal = { id: number; name: string };
 
@@ -24,7 +25,7 @@ type ModalProps = {
   onConfirm: (fields: FormChatbot) => void;
 };
 
-const defaultForm: FormChatbot = { name: '', type: 'entrada', channel_id: null };
+const defaultForm: FormChatbot = { name: '', type: 'entrada', channel_ids: [] };
 
 const TIPOS: { id: ChatbotType; name: string }[] = [
   { id: 'entrada', name: 'Entrada' },
@@ -38,12 +39,12 @@ const schema = yup.object<yup.AnyObject, Shape<FormChatbot>>({
     .mixed<ChatbotType>()
     .oneOf(['entrada', 'saida', 'agendamento', 'complementar'])
     .required(msgRequired),
-  channel_id: yup
-    .number()
-    .nullable()
+  channel_ids: yup
+    .array()
+    .of(yup.number().required())
     .when('type', {
       is: (type: ChatbotType) => type !== 'complementar',
-      then: (schema) => schema.required('Selecione um canal'),
+      then: (schema) => schema.min(1, 'Selecione ao menos um canal'),
       otherwise: (schema) => schema.notRequired(),
     }),
 });
@@ -81,7 +82,7 @@ function ModalFormChatbot({ visible, onHide, data, onConfirm }: ModalProps) {
     if (visible) {
       reset(
         data
-          ? { name: data.name, type: data.type, channel_id: data.channel_id }
+          ? { name: data.name, type: data.type, channel_ids: data.channels?.map((c) => c.id) ?? [] }
           : defaultForm,
       );
     }
@@ -166,23 +167,25 @@ function ModalFormChatbot({ visible, onHide, data, onConfirm }: ModalProps) {
         {tipoSelecionado !== 'complementar' && (
           <Controller
             control={control}
-            name="channel_id"
+            name="channel_ids"
             render={({ field, fieldState }) => (
               <div>
                 <LabelPlus
                   htmlFor={field.name}
-                  text="Canal"
+                  text="Canais"
                   required
-                  textHelp="Só um chatbot deste tipo pode ficar ativo por canal."
+                  textHelp="O mesmo chatbot pode ficar em vários canais, mas só um chatbot deste tipo pode ficar ativo por canal."
                 />
-                <Dropdown
+                <MultiSelect
                   id={field.name}
                   {...field}
+                  value={field.value ?? []}
                   options={canais}
                   optionLabel="name"
                   optionValue="id"
-                  placeholder="Selecione o canal"
+                  placeholder="Selecione os canais"
                   filter={canais.length > 6}
+                  display="chip"
                   disabled={somenteLeitura}
                 />
                 {getFormErrorMessage(fieldState)}

@@ -4,6 +4,7 @@ import { PrimeIcons } from 'primereact/api';
 import { ChatbotFlowNode } from '@/Interfaces';
 
 import ConditionalNodeConfig from './ConditionalNodeConfig';
+import MenuNodeConfig from './MenuNodeConfig';
 
 type NodeConfigDrawerProps = {
   node: ChatbotFlowNode | null;
@@ -14,11 +15,13 @@ type NodeConfigDrawerProps = {
 
 const TITULO_POR_TIPO: Record<string, string> = {
   conditional: 'Condicional',
+  menu: 'Menu',
   finish: 'Finalizar',
 };
 
 const ICONE_POR_TIPO: Record<string, string> = {
   conditional: PrimeIcons.SITEMAP,
+  menu: PrimeIcons.LIST,
   finish: PrimeIcons.CHECK_CIRCLE,
 };
 
@@ -52,6 +55,14 @@ function NodeConfigDrawer({ node, onHide, onChange, onRemoveOutput }: NodeConfig
     >
       {node?.type === 'conditional' && (
         <ConditionalNodeConfig
+          data={node.data}
+          onChange={(data) => onChange(node.id, data)}
+          onRemoveOutput={(handleId) => onRemoveOutput(node.id, handleId)}
+        />
+      )}
+
+      {node?.type === 'menu' && (
+        <MenuNodeConfig
           data={node.data}
           onChange={(data) => onChange(node.id, data)}
           onRemoveOutput={(handleId) => onRemoveOutput(node.id, handleId)}

@@ -67,7 +67,7 @@ const AppProfileSidebar = () => {
           {ehSuperusuario && (
             <li>
               <Link
-                href="/configuracoes/sistema"
+                href="/configuracoes/admin"
                 className={ITEM_CLASSE}
                 onClick={onProfileSidebarHide}
               >

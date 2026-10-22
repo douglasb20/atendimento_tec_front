@@ -31,6 +31,8 @@ import { AlertaCallback, CatchAlerta } from '@/service/Util';
 import NodeConfigDrawer from './NodeConfigDrawer';
 import ConditionalNode from './nodeTypes/ConditionalNode';
 import FinishNode from './nodeTypes/FinishNode';
+import HolidayNode from './nodeTypes/HolidayNode';
+import MenuNode from './nodeTypes/MenuNode';
 import MessageNode from './nodeTypes/MessageNode';
 import StartNode from './nodeTypes/StartNode';
 import NodePalette from './NodePalette';
@@ -39,6 +41,8 @@ const NODE_TYPES = {
   start: StartNode,
   message: MessageNode,
   conditional: ConditionalNode,
+  menu: MenuNode,
+  holiday: HolidayNode,
   finish: FinishNode,
 };
 
@@ -52,6 +56,8 @@ const VIEWPORT_PADRAO = { x: 400, y: 80, zoom: 1 };
 const DATA_PADRAO_POR_TIPO: Record<string, Record<string, unknown>> = {
   message: { messageType: 'text', value: '', continueOn: 'auto' },
   conditional: { compareUsing: 'last_message', conditions: [], defaultOutputHandle: 'default' },
+  menu: { title: '', body: '', options: [], invalidOptionOutputHandle: 'invalid' },
+  holiday: { holidayOutputHandle: 'holiday', notHolidayOutputHandle: 'not_holiday' },
   finish: {},
 };
 
@@ -149,7 +155,7 @@ function FlowEditor({ chatbotId, versao }: FlowEditorProps) {
   const onNodeClick = useCallback((_event: unknown, node: Node) => {
     // O nó Mensagem se configura inline, sem modal - clicar nele não abre o
     // `NodeConfigDrawer` (que só resta para Condicional).
-    if (['message', 'finish', 'start'].includes(node.type)) return;
+    if (['message', 'finish', 'start', 'holiday'].includes(node.type ?? '')) return;
 
     // Descarta `onRemove`/`onChange` injetados - `nodeSelecionado.data`
     // alimenta o `NodeConfigDrawer` e depois volta inteiro via
