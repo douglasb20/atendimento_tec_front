@@ -143,6 +143,12 @@ const ConversationSection = () => {
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
   const windowFocusedRef = useRef(true);
   const activeChatRef = useRef(activeChat);
+  // Guarda o id da conversa pedida mais recentemente: cliques rápidos entre
+  // conversas deixam mais de um GET em voo, e sem isto a resposta que chega
+  // por último vence, mesmo sendo de uma conversa que o atendente já não
+  // está mais olhando - sobrescrevendo o `activeChat` (e o `user_id` que
+  // decide "somente leitura") com dado de outra conversa.
+  const pendingChatIdRef = useRef<number | null>(null);
 
   const { avisar } = useAvisarEvento();
   const { usuarioId } = useUsuarioLogado();
@@ -220,7 +226,6 @@ const ConversationSection = () => {
       const data = await FetchReq<SupportChatsResponse>('ListarMensagensPorAtendimentoId', [
         chatId,
       ]);
-      addMessages(data.supportChatMessages);
       return data;
     } catch (error) {
       throw error;
@@ -230,14 +235,25 @@ const ConversationSection = () => {
   const loadConversationMessage = async (supportChatId: number) => {
     if (String(activeChatRef.current?.id) === String(supportChatId)) return;
 
+    pendingChatIdRef.current = supportChatId;
+
     try {
       setLoadMessages(true);
       setQuotedMessage(null, null);
       const chatData = await getChatMessages(supportChatId);
+
+      // Chegou depois de um clique em outra conversa: a tela já não quer
+      // mais este resultado, e aplicá-lo sobrescreveria o `activeChat` certo
+      // (e as mensagens) com dado de uma conversa que não é mais a aberta.
+      if (pendingChatIdRef.current !== supportChatId) return;
+
+      addMessages(chatData.supportChatMessages);
       setActiveChat(chatData);
       window.history.replaceState(null, '', `/chat/${supportChatId}`);
       onChangeBreadcrumbs(supportChatId);
     } catch (err) {
+      if (pendingChatIdRef.current !== supportChatId) return;
+
       if (err.response && err.response.status === 404) {
         setActiveChat(null);
         setChatNotFound(true);
@@ -246,7 +262,9 @@ const ConversationSection = () => {
       // lançava um TypeError dentro do próprio catch e engolia o erro real.
       console.error('Falha ao carregar a conversa:', err?.response?.status ?? err);
     } finally {
-      setLoadMessages(false);
+      if (pendingChatIdRef.current === supportChatId) {
+        setLoadMessages(false);
+      }
     }
   };
 
