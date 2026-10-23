@@ -131,6 +131,10 @@ const SingleMessageComponent = ({
   // no rodapé - mais visível numa lista longa que só o ícone pequeno sozinho.
   const apagadaComConteudo = message.is_deleted && ajustes.mostrar_conteudo_mensagem_apagada;
 
+  // Apagada sem o conteúdo (ajuste desligado): mesma borda vermelha do caso
+  // acima - é a mesma mensagem revogada, só sem mostrar o texto original.
+  const apagadaSemConteudo = message.is_deleted && !ajustes.mostrar_conteudo_mensagem_apagada;
+
   const InterpretedContent = useMemo(() => fixHeartEmoji(content), [content]);
 
   // Contato compartilhado: o conteúdo é o JSON cru dos vCards, ilegível como
@@ -263,11 +267,12 @@ const SingleMessageComponent = ({
   //
   // Na bolha própria, `text-primary-contrast` em vez de `text-white`: nos modos
   // escuros a primária é clara, e branco sobre ela não contrasta.
-  const messageClass = apagadaComConteudo
-    ? `${from_me ? 'align-self-end' : 'align-self-start'} border-red-400 ${from_me ? 'bg-primary-500 text-primary-contrast' : 'surface-200 text-color'}`
-    : from_me
-      ? 'align-self-end border-primary-300 bg-primary-500 text-primary-contrast'
-      : 'align-self-start border-300 surface-200 text-color';
+  const messageClass =
+    apagadaComConteudo || apagadaSemConteudo
+      ? `${from_me ? 'align-self-end' : 'align-self-start'} border-red-400 ${from_me ? 'bg-primary-500 text-primary-contrast' : 'surface-200 text-color'}`
+      : from_me
+        ? 'align-self-end border-primary-300 bg-primary-500 text-primary-contrast'
+        : 'align-self-start border-300 surface-200 text-color';
 
   return (
     <div
@@ -292,7 +297,15 @@ const SingleMessageComponent = ({
           <i className="fa-regular fa-eye-slash" />
           <span>Mensagem removida do sistema</span>
         </div>
-      ) : message.is_deleted && !ajustes.mostrar_conteudo_mensagem_apagada ? null : (
+      ) : message.is_deleted && !ajustes.mostrar_conteudo_mensagem_apagada ? (
+        // Revogada pelo autor, com o ajuste desligado: o conteúdo original não
+        // aparece, mas a bolha não pode ficar vazia (só a hora) - sem isto
+        // parecia um bug de mensagem sem texto, não uma exclusão.
+        <div className="flex align-items-center gap-2 font-italic opacity-80">
+          <i className="fa-regular fa-ban text-red-400" />
+          <span>Mensagem apagada</span>
+        </div>
+      ) : (
         <>
           {message.is_forwarded && (
             <div className="flex align-items-center gap-1 mb-1 text-xs font-italic opacity-70">
