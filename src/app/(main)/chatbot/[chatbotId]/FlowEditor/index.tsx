@@ -225,30 +225,55 @@ function FlowEditor({ chatbotId, versao }: FlowEditorProps) {
     [nodes],
   );
 
+  const montarGraph = () => ({
+    // `nodes` (não `nodesComCallbacks`) - o `onRemove` só existe na cópia
+    // derivada para o React Flow, nunca no state base.
+    nodes: nodes.map((n) => ({ id: n.id, type: n.type ?? '', position: n.position, data: n.data })),
+    edges: edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      sourceHandle: e.sourceHandle ?? null,
+      target: e.target,
+      targetHandle: e.targetHandle ?? null,
+    })),
+    viewport: viewportRef.current,
+  });
+
   const salvarFluxo = async () => {
     try {
       setLoading(true);
 
-      const graph = {
-        // `nodes` (não `nodesComCallbacks`) - o `onRemove` só existe na cópia
-        // derivada para o React Flow, nunca no state base.
-        nodes: nodes.map((n) => ({ id: n.id, type: n.type ?? '', position: n.position, data: n.data })),
-        edges: edges.map((e) => ({
-          id: e.id,
-          source: e.source,
-          sourceHandle: e.sourceHandle ?? null,
-          target: e.target,
-          targetHandle: e.targetHandle ?? null,
-        })),
-        viewport: viewportRef.current,
-      };
-
-      await FetchReq({ endpoint: 'SalvarFluxoChatbot', variables: [chatbotId], body: graph });
+      await FetchReq({ endpoint: 'SalvarFluxoChatbot', variables: [chatbotId], body: montarGraph() });
 
       setDirty(false);
       AlertaCallback('Fluxo salvo com sucesso!', () => {}, 'success');
     } catch (err) {
       CatchAlerta(err, 'Erro ao salvar o fluxo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Publica congela o draft numa nova versão `published` - é só a partir
+   * daqui que o motor de execução passa a enxergar o fluxo (ver
+   * `findEntradaAtivoDoCanal` no backend). Salva antes, se houver alteração
+   * pendente, para nunca publicar um estado mais velho que o que está na tela.
+   */
+  const publicarFluxo = async () => {
+    try {
+      setLoading(true);
+
+      if (dirty) {
+        await FetchReq({ endpoint: 'SalvarFluxoChatbot', variables: [chatbotId], body: montarGraph() });
+        setDirty(false);
+      }
+
+      await FetchReq({ endpoint: 'PublicarFluxoChatbot', variables: [chatbotId] });
+
+      AlertaCallback('Fluxo publicado com sucesso!', () => {}, 'success');
+    } catch (err) {
+      CatchAlerta(err, 'Erro ao publicar o fluxo');
     } finally {
       setLoading(false);
     }
@@ -264,11 +289,18 @@ function FlowEditor({ chatbotId, versao }: FlowEditorProps) {
               Crie e conecte cada etapa da jornada do cliente.
             </span>
           </div>
-          <Button
-            label="Salvar"
-            disabled={!dirty}
-            onClick={salvarFluxo}
-          />
+          <div className="flex gap-2">
+            <Button
+              label="Salvar"
+              outlined
+              disabled={!dirty}
+              onClick={salvarFluxo}
+            />
+            <Button
+              label="Publicar"
+              onClick={publicarFluxo}
+            />
+          </div>
         </div>
 
         <div
