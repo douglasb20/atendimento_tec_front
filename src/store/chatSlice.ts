@@ -19,6 +19,32 @@ import type { StateCreator } from 'zustand';
  */
 const patchLocalEm = new Map<string, number>();
 
+/**
+ * Mesma ideia de `patchLocalEm`, mas para os campos que decidem se o
+ * atendente pode responder (`user_id`, `support_chat_status_id`,
+ * `paused_at`) - ver `podeAgirNoAtendimento`/`ehDonoDoAtendimento` em
+ * `Interfaces/suport-chat.interface.ts`.
+ *
+ * Bug real relatado em produção (24/10/2026): o atendimento ficava "somente
+ * leitura" do nada, mesmo sendo dele, e às vezes persistia até trocar de
+ * conversa e voltar (o que força um GET fresco em `loadConversationMessage`,
+ * substituindo `activeChat` inteiro) ou dar F5. Como o banco estava sempre
+ * correto nesse momento, a causa não era dado errado no servidor: é
+ * `whatsappChatStateEmit` (back) não ter uma ordem garantida entre emissões
+ * concorrentes da mesma conversa (algumas rodam dentro de transação, outras
+ * depois do commit, ver `support-chats.service.ts`), e `updateChat` aplicar
+ * cegamente qualquer `chat_state` que chegue, sem checar se é mais velho que
+ * o que a tela já tem. Um evento atrasado "grudava" um `user_id`/status de um
+ * instante anterior e só saía com uma releitura forçada.
+ *
+ * A mesma janela de `contact` serve aqui: ações que mudam esses três campos
+ * só acontecem por ação explícita do próprio atendente (iniciar, pausar,
+ * retomar, finalizar, transferir), então um `chat_state` que reverteria isso
+ * logo em seguida só pode ser o evento atrasado da própria ação, nunca uma
+ * atualização legítima mais nova.
+ */
+const patchStatusLocalEm = new Map<string, number>();
+
 /** Curta o bastante para cobrir só a corrida real (evento chegando enquanto
  * o patch local ainda está "fresco"), longa o bastante para qualquer round
  * trip de rede plausível. */
@@ -37,6 +63,32 @@ const contatoRespeitandoPatchLocal = (
   return dentroDaJanela ? atual : candidato;
 };
 
+/** Dentro da janela de um patch local recente, mantém os três campos como já
+ * estão em `atual` - um `chat_state` chegando agora só pode ser o eco
+ * atrasado da própria ação que gerou o patch. */
+const statusRespeitandoPatchLocal = (
+  chatId: string | number,
+  candidato: SupportChatsResponse,
+  atual: SupportChatsResponse,
+): Pick<SupportChatsResponse, 'user_id' | 'support_chat_status_id' | 'paused_at'> => {
+  const marcadoEm = patchStatusLocalEm.get(String(chatId));
+  const dentroDaJanela = marcadoEm != null && Date.now() - marcadoEm < JANELA_PATCH_LOCAL_MS;
+
+  if (!dentroDaJanela) {
+    return {
+      user_id: candidato.user_id,
+      support_chat_status_id: candidato.support_chat_status_id,
+      paused_at: candidato.paused_at,
+    };
+  }
+
+  return {
+    user_id: atual.user_id,
+    support_chat_status_id: atual.support_chat_status_id,
+    paused_at: atual.paused_at,
+  };
+};
+
 /**
  * Chame antes de `updateChat`/`patchActiveChat` quando o contato que está
  * sendo escrito vem de uma ação local de verdade (o atendente acabou de
@@ -46,6 +98,15 @@ const contatoRespeitandoPatchLocal = (
  */
 export const marcarContatoAtualizadoLocalmente = (chatId: string | number) => {
   patchLocalEm.set(String(chatId), Date.now());
+};
+
+/**
+ * Mesmo padrão de `marcarContatoAtualizadoLocalmente`, para iniciar, pausar,
+ * retomar, finalizar ou transferir um atendimento - qualquer ação local que
+ * mude `user_id`/`support_chat_status_id`/`paused_at`.
+ */
+export const marcarStatusAtualizadoLocalmente = (chatId: string | number) => {
+  patchStatusLocalEm.set(String(chatId), Date.now());
 };
 
 export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set) => ({
@@ -89,6 +150,7 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
           ...atual,
           ...semContador,
           contact: contatoRespeitandoPatchLocal(chat.id, chat.contact, atual.contact),
+          ...statusRespeitandoPatchLocal(chat.id, chat, atual),
         };
       };
 
@@ -154,10 +216,14 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
     set(({ activeChat, chats }) => {
       if (!activeChat) return {};
 
-      // Carimbo só quando o patch mexe no contato - é o único campo que
-      // `updateChat` também escreve, e é aí que existe a corrida a evitar.
+      // Carimbo só quando o patch mexe em campos que `updateChat` também
+      // escreve - é aí que existe a corrida a evitar.
       if (patch.contact) {
         marcarContatoAtualizadoLocalmente(activeChat.id);
+      }
+
+      if ('user_id' in patch || 'support_chat_status_id' in patch || 'paused_at' in patch) {
+        marcarStatusAtualizadoLocalmente(activeChat.id);
       }
 
       return {
