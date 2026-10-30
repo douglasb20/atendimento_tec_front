@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 
-import { ChatbotFlowVersionResponse } from '@/Interfaces';
+import { ChatbotFlowVersionResponse, ChatbotResponse } from '@/Interfaces';
 import ApiService from '@/service/Api/ApiServer';
 import FlowEditor from './FlowEditor';
 
@@ -17,10 +17,10 @@ export default async function ChatbotEditorPage({ params }: ChatbotEditorPagePro
   const chatbotId = Number(chatbotIdParam);
   const { FetchReq } = await ApiService();
 
-  const versao = await FetchReq<ChatbotFlowVersionResponse>({
-    endpoint: 'BuscarFluxoChatbot',
-    variables: [chatbotId],
-  });
+  const [chatbot, versao] = await Promise.all([
+    FetchReq<ChatbotResponse>({ endpoint: 'BuscarChatbot', variables: [chatbotId] }),
+    FetchReq<ChatbotFlowVersionResponse>({ endpoint: 'BuscarFluxoChatbot', variables: [chatbotId] }),
+  ]);
 
   return (
     // Único ponto que define a altura: `.layout-content` (compartilhado por
@@ -38,6 +38,7 @@ export default async function ChatbotEditorPage({ params }: ChatbotEditorPagePro
           <FlowEditor
             chatbotId={chatbotId}
             versao={versao}
+            chatbot={chatbot}
           />
         </div>
       </div>
