@@ -44,6 +44,7 @@ export const ListUrl = {
   BuscarFluxoChatbot: { url: '/chatbots/{{chatbot_id}}/flow', method: 'GET' },
   SalvarFluxoChatbot: { url: '/chatbots/{{chatbot_id}}/flow', method: 'PUT' },
   PublicarFluxoChatbot: { url: '/chatbots/{{chatbot_id}}/publish', method: 'POST' },
+  DespublicarFluxoChatbot: { url: '/chatbots/{{chatbot_id}}/unpublish', method: 'POST' },
   AssinarMediaChatbot: { url: '/chatbots/sign-media', method: 'POST' },
 
   // Cadastro global de feriados - pré-requisito do nó "Feriados" do chatbot.
