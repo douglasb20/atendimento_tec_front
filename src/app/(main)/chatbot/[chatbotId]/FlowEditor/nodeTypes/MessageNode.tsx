@@ -4,6 +4,8 @@ import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
+import { InputNumber } from 'primereact/inputnumber';
+import { InputSwitch } from 'primereact/inputswitch';
 import { ProgressBar } from 'primereact/progressbar';
 import { useRef, useState } from 'react';
 
@@ -66,6 +68,8 @@ function MessageNode({ data, selected }: NodeProps) {
   const messageType = nodeData.messageType ?? 'text';
   const attachmentSource = nodeData.attachmentSource ?? 'upload';
   const continueOn = nodeData.continueOn ?? 'auto';
+  const simulateTyping = nodeData.simulateTyping ?? false;
+  const typingDelaySeconds = nodeData.typingDelaySeconds ?? 2;
   const ehMidia = messageType !== 'text';
 
   const atualizar = (patch: Partial<ChatbotMessageNodeData>) => {
@@ -78,6 +82,8 @@ function MessageNode({ data, selected }: NodeProps) {
       attachmentMimetype: nodeData.attachmentMimetype,
       attachmentVariable: nodeData.attachmentVariable,
       continueOn,
+      simulateTyping,
+      typingDelaySeconds,
       ...patch,
     });
   };
@@ -256,6 +262,36 @@ function MessageNode({ data, selected }: NodeProps) {
             optionLabel="name"
             optionValue="id"
           />
+        </div>
+
+        <div className="flex flex-column gap-2">
+          <div className="flex align-items-center justify-content-between gap-3">
+            <LabelPlus text="Simular digitação antes de enviar" />
+            <InputSwitch
+              className="nodrag"
+              checked={simulateTyping}
+              onChange={(e) => atualizar({ simulateTyping: e.value })}
+            />
+          </div>
+
+          {simulateTyping && (
+            <div className="flex align-items-center justify-content-between gap-3">
+              <span className="text-sm text-color-secondary">Tempo de digitação</span>
+              <InputNumber
+                className="nodrag"
+                value={typingDelaySeconds}
+                onValueChange={(e) => atualizar({ typingDelaySeconds: e.value ?? 2 })}
+                min={1}
+                max={10}
+                suffix=" s"
+                showButtons
+                buttonLayout="horizontal"
+                incrementButtonIcon="pi pi-plus"
+                decrementButtonIcon="pi pi-minus"
+                inputStyle={{ width: '4rem' }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
