@@ -69,4 +69,8 @@ export type ChatbotMessageNodeData = {
   attachmentMimetype?: string;
   attachmentVariable?: string;
   continueOn: 'auto' | 'after_reply';
+  /** Exibe a presença "digitando..." antes de enviar esta mensagem. */
+  simulateTyping?: boolean;
+  /** Duração da presença simulada, em segundos (de 1 a 10). */
+  typingDelaySeconds?: number;
 };
