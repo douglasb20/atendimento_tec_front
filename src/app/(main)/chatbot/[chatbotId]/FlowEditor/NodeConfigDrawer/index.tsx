@@ -4,7 +4,6 @@ import { PrimeIcons } from 'primereact/api';
 import { ChatbotFlowNode } from '@/Interfaces';
 
 import ConditionalNodeConfig from './ConditionalNodeConfig';
-import MenuNodeConfig from './MenuNodeConfig';
 
 type NodeConfigDrawerProps = {
   node: ChatbotFlowNode | null;
@@ -15,13 +14,11 @@ type NodeConfigDrawerProps = {
 
 const TITULO_POR_TIPO: Record<string, string> = {
   conditional: 'Condicional',
-  menu: 'Menu',
   finish: 'Finalizar',
 };
 
 const ICONE_POR_TIPO: Record<string, string> = {
   conditional: PrimeIcons.SITEMAP,
-  menu: PrimeIcons.LIST,
   finish: PrimeIcons.CHECK_CIRCLE,
 };
 
@@ -30,8 +27,7 @@ const ICONE_POR_TIPO: Record<string, string> = {
  * referência (card "CHATBOT / [Tipo]" com X para fechar), não um drawer
  * lateral. Dispatcha por `node.type`, sem switch central: adicionar um tipo
  * novo é um componente novo e uma linha aqui. Início e Finalizar não têm
- * campo algum. Mensagem não usa este modal - se configura inline no próprio
- * card (ver `nodeTypes/MessageNode.tsx`).
+ * campo algum. Mensagem e Menu se configuram inline nos próprios cards.
  */
 function NodeConfigDrawer({ node, onHide, onChange, onRemoveOutput }: NodeConfigDrawerProps) {
   return (
@@ -61,13 +57,6 @@ function NodeConfigDrawer({ node, onHide, onChange, onRemoveOutput }: NodeConfig
         />
       )}
 
-      {node?.type === 'menu' && (
-        <MenuNodeConfig
-          data={node.data}
-          onChange={(data) => onChange(node.id, data)}
-          onRemoveOutput={(handleId) => onRemoveOutput(node.id, handleId)}
-        />
-      )}
     </Modal>
   );
 }

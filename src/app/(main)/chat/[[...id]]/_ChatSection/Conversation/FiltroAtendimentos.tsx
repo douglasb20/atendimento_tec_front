@@ -5,6 +5,7 @@ import { Menu } from 'primereact/menu';
 import { classNames } from 'primereact/utils';
 
 import { SupportChatsResponse, SupportChatStatusId } from '@/Interfaces';
+import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 
 /** Grupos da lista lateral. `meus` entra quando houver filtro por atendente. */
 export type GrupoAtendimento = 'todos' | 'fila' | 'andamento' | 'chatbot';
@@ -30,12 +31,14 @@ type FiltroAtendimentosProps = {
  * some com a conversa da lista.
  */
 export const grupoDaConversa = (chat: SupportChatsResponse): Exclude<GrupoAtendimento, 'todos'> =>
-  chat.support_chat_status_id === SupportChatStatusId.EM_ANDAMENTO ? 'andamento' : 'fila';
+  chat.support_chat_status_id === SupportChatStatusId.EM_ANDAMENTO ? 'andamento'
+    : chat.support_chat_status_id === SupportChatStatusId.EM_FILA ? 'chatbot' : 'fila';
 
 export const filtraPorGrupo = (chats: SupportChatsResponse[], grupo: GrupoAtendimento) =>
   grupo === 'todos' ? chats : chats.filter((c) => grupoDaConversa(c) === grupo);
 
 const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar }: FiltroAtendimentosProps) => {
+  const { ajustes } = useAjustesAtendimento();
   const menuMaisRef = useRef<Menu>(null);
 
   const abas: { id: GrupoAtendimento; rotulo: string; total: number }[] = [
@@ -49,9 +52,7 @@ const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar }: FiltroAtendimen
       rotulo: 'Espera',
       total: chats.filter((c) => grupoDaConversa(c) === 'fila').length,
     },
-    // Atrás de `SHOW_CHATBOT_MENU`, como o resto da feature: a fila ainda não
-    // é atribuída em `grupoDaConversa`, e a aba ficaria sempre zerada.
-    ...(process.env.SHOW_CHATBOT_MENU === 'true'
+    ...(ajustes.chatbot_habilitado
       ? [
           {
             id: 'chatbot' as GrupoAtendimento,

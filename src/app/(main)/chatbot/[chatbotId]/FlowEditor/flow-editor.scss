@@ -25,3 +25,48 @@
 .react-flow__edge.selectable:focus-visible .react-flow__edge-path {
     stroke: var(--blue-700);
 }
+
+.chatbot-node-palette {
+    .chatbot-node-palette-divider {
+        margin: 0.75rem 0 0.5rem;
+
+        .p-divider-content {
+            background: var(--surface-card);
+            padding: 0 0.5rem 0 0;
+        }
+    }
+
+    .chatbot-node-palette-item {
+        min-height: 2.75rem;
+        padding: 0.4rem 0.6rem;
+        color: var(--text-color);
+        background: var(--surface-ground);
+        border: 1px solid var(--surface-border);
+        border-radius: 0.3rem;
+
+        &:enabled:hover {
+            color: var(--text-color);
+            background: var(--surface-hover);
+            border-color: var(--primary-color);
+        }
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    .chatbot-node-palette-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 1.65rem;
+        height: 1.65rem;
+        border-radius: 50%;
+        background: color-mix(in srgb, currentColor 16%, transparent);
+
+        i {
+            font-size: 0.85rem;
+        }
+    }
+}

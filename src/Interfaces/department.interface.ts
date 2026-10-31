@@ -37,6 +37,17 @@ export type DepartmentScheduleResponse = {
   /** Switch mestre: desligado, o setor é sempre disponível, ignorando os
    * intervalos abaixo. */
   schedule_enabled: boolean;
+  respect_holidays: boolean;
   intervals: ScheduleInterval[];
   absence_message: string | null;
+};
+
+export type DepartmentScheduleExceptionResponse = {
+  id: number;
+  department_id: number;
+  date: string;
+  description: string;
+  mode: 'fechado' | 'normal' | 'especial';
+  intervals: { start_time: string; end_time: string }[];
+  holiday_id: number | null;
 };

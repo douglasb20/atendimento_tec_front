@@ -33,7 +33,7 @@ export default async function ChatbotEditorPage({ params }: ChatbotEditorPagePro
       <div className="col-12 h-full">
         <div
           className="card h-full flex flex-column"
-          style={{ marginBottom: 0 }}
+          style={{ marginBottom: 0, paddingTop: '0.75rem' }}
         >
           <FlowEditor
             chatbotId={chatbotId}

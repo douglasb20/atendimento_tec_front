@@ -36,10 +36,11 @@ type Aviso = {
  * hora, não por assinatura: os dois estão dentro de handlers de socket, que
  * capturariam o valor da montagem.
  */
-export const podeTocarSom = (): boolean => {
+export const podeTocarSom = (evento?: ChavePreferenciaNotificacao): boolean => {
   const { preferencias } = usePreferenciasStore.getState();
 
-  return preferencias.notif_habilitadas === true && preferencias.notif_som === true;
+  return preferencias.notif_habilitadas === true && preferencias.notif_som === true
+    && (!evento || preferencias[evento] === true);
 };
 
 /**

@@ -22,6 +22,7 @@ function FinishNode({ data, selected }: NodeProps) {
       />
       <Handle
         type="target"
+        id="entrada-esquerda"
         position={Position.Left}
         style={{ padding: "0.450rem", zIndex: 1 }}
         className='border-2 border-700'

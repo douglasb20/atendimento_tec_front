@@ -1,5 +1,6 @@
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
+import { Divider } from 'primereact/divider';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
@@ -18,21 +19,25 @@ const NOS_DISPONIVEIS: NoDisponivel[] = [
   { type: 'conditional', label: 'Condicional', icon: PrimeIcons.SITEMAP, category: 'Dados e regras' },
   { type: 'holiday', label: 'Feriados', icon: PrimeIcons.CALENDAR, category: 'Dados e regras' },
   { type: 'finish', label: 'Finalizar', icon: PrimeIcons.CHECK_CIRCLE, category: 'Atendimento' },
+  { type: 'close_support_chat', label: 'Encerrar atendimento', icon: PrimeIcons.POWER_OFF, category: 'Atendimento' },
+  { type: 'set_department', label: 'Definir setor', icon: PrimeIcons.USERS, category: 'Atendimento' },
+  { type: 'business_hours', label: 'Verificar horário do setor', icon: PrimeIcons.CLOCK, category: 'Atendimento' },
 ];
 
-const CATEGORIAS = ['Todos', ...Array.from(new Set(NOS_DISPONIVEIS.map((no) => no.category)))];
+const CATEGORIAS = Array.from(new Set(NOS_DISPONIVEIS.map((no) => no.category)));
+const CORES_CATEGORIAS: Record<string, string> = {
+  Conversação: 'var(--green-500)',
+  'Dados e regras': 'var(--blue-500)',
+  Atendimento: 'var(--orange-500)',
+};
 
 type NodePaletteProps = {
   onAddNode: (type: string) => void;
 };
 
 /**
- * O painel flutuante "Adicionar Nós" - arrastável pelo canvas (via
- * `.custom-drag-handle`, que o React Flow ignora ao decidir se o clique
- * arrasta o canvas ou o painel), com busca e filtro por categoria.
- *
- * Nesta fase cobre os tipos que o motor já executa (Mensagem, Menu,
- * Condicional, Finalizar) - o restante entra na Fase 4 do plano.
+ * Barra lateral do editor, fora do canvas, com busca e categorias separadas
+ * por divisores. Somente os itens são arrastáveis para criar nós no fluxo.
  *
  * ⚠️ Componentes reais do PrimeReact (`Button`/`InputText`), não HTML cru com
  * classes `p-*` soltas - só assim o tema (claro/escuro) e o `Ripple` aplicam
@@ -40,33 +45,17 @@ type NodePaletteProps = {
  */
 function NodePalette({ onAddNode }: NodePaletteProps) {
   const [busca, setBusca] = useState('');
-  const [categoria, setCategoria] = useState('Todos');
-  const [minimizado, setMinimizado] = useState(false);
 
-  const filtrados = NOS_DISPONIVEIS.filter((no) => {
-    const bateCategoria = categoria === 'Todos' || no.category === categoria;
-    const bateBusca = no.label.toLowerCase().includes(busca.toLowerCase());
-    return bateCategoria && bateBusca;
-  });
-
-  if (minimizado) {
-    return (
-      <Button
-        label="Restaurar"
-        icon={PrimeIcons.PLUS}
-        size="small"
-        style={{ position: 'absolute', top: 16, left: 16, zIndex: 10 }}
-        onClick={() => setMinimizado(false)}
-      />
-    );
-  }
+  const normalizar = (texto: string) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const termo = normalizar(busca.trim());
+  const filtrados = NOS_DISPONIVEIS.filter((no) => normalizar(`${no.label} ${no.category}`).includes(termo));
 
   return (
     <div
-      className="surface-card border-round-lg shadow-3 border-1 border-300"
-      style={{ position: 'absolute', top: 16, left: 16, width: '20rem', zIndex: 10 }}
+      className="chatbot-node-palette surface-card border-right-1 border-300 flex flex-column flex-shrink-0 overflow-hidden"
+      style={{ width: '18rem', maxWidth: '45%', minHeight: 0 }}
     >
-      <div className="custom-drag-handle flex align-items-center justify-content-between p-2 border-bottom-1 border-300 cursor-move">
+      <div className="flex-shrink-0 flex align-items-center p-3 border-bottom-1 border-300">
         <div className="flex align-items-center gap-2">
           <i className={`${PrimeIcons.BOLT} text-primary`} />
           <div>
@@ -74,15 +63,9 @@ function NodePalette({ onAddNode }: NodePaletteProps) {
             <div className="text-xs text-color-secondary">Clique ou arraste um bloco para o fluxo</div>
           </div>
         </div>
-        <Button
-          icon={PrimeIcons.MINUS}
-          text
-          size="small"
-          onClick={() => setMinimizado(true)}
-        />
       </div>
 
-      <div className="p-2">
+      <div className="p-2 flex-shrink-0">
         <IconField iconPosition="left">
           <InputIcon className="pi pi-search" />
           <InputText
@@ -94,38 +77,41 @@ function NodePalette({ onAddNode }: NodePaletteProps) {
         </IconField>
       </div>
 
-      <div className="flex flex-wrap gap-1 px-2 pb-2">
-        {CATEGORIAS.map((cat) => (
-          <Button
-            key={cat}
-            label={cat}
-            size="small"
-            rounded
-            outlined={categoria !== cat}
-            onClick={() => setCategoria(cat)}
-          />
-        ))}
-      </div>
+      <div className="px-2 pb-2 overflow-y-auto" style={{ minHeight: 0 }}>
+        {CATEGORIAS.map((categoria) => {
+          const nosDaCategoria = filtrados.filter((no) => no.category === categoria);
+          if (!nosDaCategoria.length) return null;
 
-      <div className="grid m-0 p-2 pt-0 gap-2">
-        {filtrados.map((no) => (
-          <Button
-            key={no.type}
-            label={no.label}
-            icon={no.icon}
-            outlined
-            className="col-12 justify-content-start cursor-grab"
-            draggable
-            onDragStart={(e) => {
-              e.dataTransfer.setData('application/chatbot-node-type', no.type);
-              e.dataTransfer.effectAllowed = 'move';
-            }}
-            onClick={() => onAddNode(no.type)}
-          />
-        ))}
-
+          return (
+            <section key={categoria} aria-label={categoria}>
+              <Divider align="left" className="chatbot-node-palette-divider">
+                <span className="text-xs text-color-secondary">{categoria}</span>
+              </Divider>
+              <div className="flex flex-column gap-1">
+                {nosDaCategoria.map((no) => (
+                  <Button
+                    key={no.type}
+                    type="button"
+                    className="chatbot-node-palette-item w-full justify-content-start cursor-grab gap-2"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('application/chatbot-node-type', no.type);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onClick={() => onAddNode(no.type)}
+                  >
+                    <span className="chatbot-node-palette-icon" style={{ color: CORES_CATEGORIAS[categoria] }}>
+                      <i className={no.icon} aria-hidden="true" />
+                    </span>
+                    <span className="text-sm text-left font-normal">{no.label}</span>
+                  </Button>
+                ))}
+              </div>
+            </section>
+          );
+        })}
         {filtrados.length === 0 && (
-          <div className="col-12 text-color-secondary text-sm p-2">Nenhum bloco encontrado</div>
+          <div className="text-color-secondary text-sm p-2">Nenhum bloco encontrado</div>
         )}
       </div>
     </div>

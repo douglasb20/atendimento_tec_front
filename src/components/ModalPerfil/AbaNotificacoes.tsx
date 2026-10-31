@@ -13,6 +13,7 @@ import { Alerta, CatchAlerta } from '@/service/Util';
 import { usePreferenciasStore } from '@/store/usePreferenciasStore';
 
 import LabelPlus from '@/components/LabelPlus';
+import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 
 type Props = {
   itens: PreferenciaParaTela[];
@@ -33,6 +34,7 @@ const SECOES: { chave: Exclude<Secao, 'geral'>; titulo: string }[] = [
 const ICONES: Record<string, string> = {
   notif_habilitadas: 'fa-regular fa-bell',
   notif_fila: 'fa-regular fa-clock',
+  notif_chatbot: 'fa-regular fa-comments',
   notif_mensagem_cliente: 'fa-regular fa-user-check',
   notif_chat_interno: 'fa-regular fa-users',
   notif_transferencia: 'fa-regular fa-arrow-right-arrow-left',
@@ -52,13 +54,14 @@ const ICONES: Record<string, string> = {
  * ter para onde voltar.
  */
 const AbaNotificacoes = ({ itens, carregando, onSalvo }: Props) => {
+  const { ajustes } = useAjustesAtendimento();
   const { FetchReq } = useApi();
   const { permissao, bloqueada, indisponivel, pedirPermissao } = useNotificacaoDispositivo();
   const definir = usePreferenciasStore((s) => s.definir);
 
   const notificacoes = useMemo(
-    () => itens.filter((item) => item.grupo === 'notificacoes'),
-    [itens],
+    () => itens.filter((item) => item.grupo === 'notificacoes' && (item.chave !== 'notif_chatbot' || ajustes.chatbot_habilitado)),
+    [itens, ajustes.chatbot_habilitado],
   );
 
   // O que está gravado, e o rascunho que a tela edita.

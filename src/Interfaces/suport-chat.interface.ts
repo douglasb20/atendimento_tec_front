@@ -1,14 +1,16 @@
 import { ContactResponse } from './contact.interface';
 import { UserResponse } from './user.interface';
 
-/** Espelha `support_chat_status` no banco; os três últimos são finais. */
+/** Espelha `support_chat_status` no banco; os quatro últimos são finais. */
 export enum SupportChatStatusId {
   AGUARDANDO = 1,
   EM_ANDAMENTO = 2,
+  /** Fila do chatbot; a espera por atendimento humano usa AGUARDANDO. */
   EM_FILA = 3,
   FINALIZADO_SEM_RESPOSTA = 4,
   FINALIZADO = 5,
   FINALIZADO_POR_INATIVIDADE = 6,
+  FINALIZADO_PELO_CHATBOT = 7,
 }
 
 /**
@@ -22,7 +24,8 @@ export enum SupportChatStatusId {
 export const ehAtendimentoFinalizado = (statusId?: number): boolean =>
   statusId === SupportChatStatusId.FINALIZADO ||
   statusId === SupportChatStatusId.FINALIZADO_SEM_RESPOSTA ||
-  statusId === SupportChatStatusId.FINALIZADO_POR_INATIVIDADE;
+  statusId === SupportChatStatusId.FINALIZADO_POR_INATIVIDADE ||
+  statusId === SupportChatStatusId.FINALIZADO_PELO_CHATBOT;
 
 /**
  * Se a conversa aceita ação do atendente - responder, reagir, citar, apagar.
@@ -76,6 +79,7 @@ export interface SupportChatsResponse {
   /** Atendente que assumiu; nulo enquanto a conversa aguarda. */
   user_id: number | null;
   channel_id: number;
+  department_id?: number | null;
   contact_id: number;
   support_chat_status_id: number;
   protocol: string;
@@ -116,6 +120,8 @@ export interface SupportChatsResponse {
  * porque aquela espelha o WhatsApp e um evento interno não tem remetente.
  */
 export interface SupportChatEventResponse {
+  departmentOrigem?: { id: number; name: string } | null;
+  departmentDestino?: { id: number; name: string } | null;
   id: string;
   support_chat_id: string;
   tipo: 'transferencia' | 'pausa' | 'retomada' | 'chamada';

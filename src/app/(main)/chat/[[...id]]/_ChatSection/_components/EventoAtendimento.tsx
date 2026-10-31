@@ -56,6 +56,9 @@ const EventoAtendimento = ({ evento }: EventoAtendimentoProps) => {
           <i className={`fa-regular ${icone} mr-1`} />
           {texto} · {DateToBR(evento.created_at, 'Pp')}
         </span>
+        {evento.tipo === 'transferencia' && evento.departmentDestino && (
+          <span>{evento.departmentOrigem?.name ?? 'Sem setor'} → {evento.departmentDestino.name}</span>
+        )}
         {/* O motivo quebra a linha em vez de alongar a faixa: é texto livre e
             pode ser longo. */}
         {evento.motivo && evento.tipo !== 'chamada' && (

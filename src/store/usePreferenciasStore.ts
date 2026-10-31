@@ -13,6 +13,7 @@ export const PREFERENCIAS_PADRAO: PreferenciasUsuario = {
   modo_tema: 'claro',
   notif_habilitadas: true,
   notif_fila: false,
+  notif_chatbot: false,
   notif_mensagem_cliente: true,
   notif_chat_interno: true,
   notif_transferencia: true,

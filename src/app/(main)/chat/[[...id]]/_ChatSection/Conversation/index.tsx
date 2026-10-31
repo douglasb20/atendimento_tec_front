@@ -154,6 +154,10 @@ const ConversationSection = () => {
   const { usuarioId } = useUsuarioLogado();
   const { ajustes } = useAjustesAtendimento();
 
+  useEffect(() => {
+    if (!ajustes.chatbot_habilitado && grupoAtivo === 'chatbot') setGrupoAtivo('fila');
+  }, [ajustes.chatbot_habilitado, grupoAtivo]);
+
   /**
    * Espelha a lista para o handler do socket.
    *
@@ -304,6 +308,9 @@ const ConversationSection = () => {
       Number(anterior.user_id) !== Number(usuarioId);
 
     if (virouMinha) {
+      if (!windowFocusedRef.current && podeTocarSom('notif_transferencia')) {
+        notificationSound?.play().catch(() => undefined);
+      }
       avisar({
         preferencia: 'notif_transferencia',
         titulo: 'Atendimento transferido para você',
@@ -357,10 +364,15 @@ const ConversationSection = () => {
           (chat as SupportChatsResponse)?.support_chat_status_id != null
             ? (chat as SupportChatsResponse)
             : conversa;
-        const naFila = estado != null && grupoDaConversa(estado) === 'fila';
+        const grupo = estado ? grupoDaConversa(estado) : 'fila';
+        const preferencia = grupo === 'chatbot' ? 'notif_chatbot' : grupo === 'fila' ? 'notif_fila' : 'notif_mensagem_cliente';
+
+        if (!windowFocusedRef.current && podeTocarSom(preferencia)) {
+          notificationSound?.play().catch(() => undefined);
+        }
 
         avisar({
-          preferencia: naFila ? 'notif_fila' : 'notif_mensagem_cliente',
+          preferencia,
           titulo: nome,
           corpo: previaDoWhatsapp(msg),
           icone: conversa?.contact?.avatar_url ?? chat?.contact?.avatar_url,
@@ -383,10 +395,6 @@ const ConversationSection = () => {
       const anterior = chatsRef.current.find((c) => String(c.id) === String(payload.id));
 
       updateChat(payload);
-
-      if (!windowFocusedRef.current && podeTocarSom()) {
-        await notificationSound?.play();
-      }
 
       notificarEstado(payload, anterior);
     });
@@ -607,12 +615,14 @@ const ConversationSection = () => {
                 />
                 {/* Sobre o avatar, o estado deixa de disputar espaço com o nome
                     e fica onde o olho já está. */}
-                {/* Verde: em atendimento; laranja: pausado; vermelho: sem dono
-                    (aguardando ou em fila). */}
+                {/* Azul: chatbot; vermelho: espera humana; verde: atendimento;
+                    laranja: atendimento pausado. */}
                 <span
                   className={classNames(
                     grupoDaConversa(conversation) === 'fila'
                       ? 'bg-red-500'
+                      : grupoDaConversa(conversation) === 'chatbot'
+                        ? 'bg-blue-500'
                       : conversation.paused_at
                         ? 'bg-orange-400'
                         : 'bg-green-500',
@@ -628,6 +638,8 @@ const ConversationSection = () => {
                   title={
                     grupoDaConversa(conversation) === 'fila'
                       ? 'Aguardando'
+                      : grupoDaConversa(conversation) === 'chatbot'
+                        ? 'Em chatbot'
                       : conversation.paused_at
                         ? 'Pausado'
                         : 'Em atendimento'

@@ -13,6 +13,7 @@ export type ChavePreferenciaNotificacao =
   | 'notif_chat_interno'
   | 'notif_mensagem_cliente'
   | 'notif_fila'
+  | 'notif_chatbot'
   | 'notif_transferencia'
   | 'notif_compromisso';
 
