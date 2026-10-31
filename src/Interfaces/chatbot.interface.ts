@@ -73,4 +73,6 @@ export type ChatbotMessageNodeData = {
   simulateTyping?: boolean;
   /** Duração da presença simulada, em segundos (de 1 a 10). */
   typingDelaySeconds?: number;
+  replyTimeoutEnabled?: boolean;
+  replyTimeoutMinutes?: number;
 };

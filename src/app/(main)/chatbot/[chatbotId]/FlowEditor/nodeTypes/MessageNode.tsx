@@ -8,6 +8,7 @@ import { InputNumber } from 'primereact/inputnumber';
 import { InputSwitch } from 'primereact/inputswitch';
 import { ProgressBar } from 'primereact/progressbar';
 import { useRef, useState } from 'react';
+import TempoResposta, { SAIDA_SEM_RESPOSTA } from './TempoResposta';
 
 import { ChatbotMessageNodeData, ChatbotMessageType, SignatureResponse } from '@/Interfaces';
 import LabelPlus from '@/components/LabelPlus';
@@ -45,6 +46,7 @@ const ACCEPT_POR_TIPO: Record<string, string> = {
 type MessageNodeData = Partial<ChatbotMessageNodeData> & {
   onChange?: (data: ChatbotMessageNodeData) => void;
   onRemove?: () => void;
+  onRemoveOutput?: (handleId: string) => void;
 };
 
 /**
@@ -59,7 +61,7 @@ type MessageNodeData = Partial<ChatbotMessageNodeData> & {
  * classe que o próprio React Flow reconhece e ignora ao decidir se o clique
  * arrasta o nó ou vai para o elemento).
  */
-function MessageNode({ data, selected }: NodeProps) {
+function MessageNode({ id, data, selected }: NodeProps) {
   const nodeData = data as MessageNodeData;
   const { FetchReq } = useApi();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +86,8 @@ function MessageNode({ data, selected }: NodeProps) {
       continueOn,
       simulateTyping,
       typingDelaySeconds,
+      replyTimeoutEnabled: nodeData.replyTimeoutEnabled ?? false,
+      replyTimeoutMinutes: nodeData.replyTimeoutMinutes ?? 5,
       ...patch,
     });
   };
@@ -271,12 +275,18 @@ function MessageNode({ data, selected }: NodeProps) {
           <Dropdown
             className="nodrag w-full"
             value={continueOn}
-            onChange={(e) => atualizar({ continueOn: e.value })}
+            onChange={(e) => {
+              atualizar({ continueOn: e.value, ...(e.value === 'auto' && { replyTimeoutEnabled: false }) });
+              if (e.value === 'auto') nodeData.onRemoveOutput?.(SAIDA_SEM_RESPOSTA);
+            }}
             options={CONTINUAR}
             optionLabel="name"
             optionValue="id"
           />
         </div>
+
+        {continueOn === 'after_reply' && <TempoResposta nodeId={id} replyTimeoutEnabled={nodeData.replyTimeoutEnabled}
+          replyTimeoutMinutes={nodeData.replyTimeoutMinutes} onChange={atualizar} onRemoveOutput={nodeData.onRemoveOutput} />}
 
         <div className="flex flex-column gap-2">
           <div className="flex align-items-center justify-content-between gap-3">

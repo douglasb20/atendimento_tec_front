@@ -77,24 +77,6 @@ const AppMenu = () => {
               visible: false,
               // visible: liberado(pode('support:view')),
             },
-            {
-              // Junto do chat, e não em Conexões: é configuração do
-              // atendimento, e quem cadastra é quem atende.
-              label: 'Respostas rápidas',
-              icon: `${PrimeIcons.COMMENT} pi-fw`,
-              to: '/atendimentos/respostas-rapidas',
-              visible: liberado(pode('quick.reply:view')),
-            },
-            {
-              // Também no atendimento: o aviso entra na conversa, logo após a
-              // saudação, e quem o liga é quem está atendendo o incidente.
-              label: 'Avisos',
-              // String direta: `PrimeIcons.MEGAPHONE` existe no runtime mas não na
-              // tipagem instalada (o `.d.ts` está defasado em relação ao `api.js`).
-              icon: 'pi pi-megaphone pi-fw',
-              to: '/atendimentos/avisos',
-              visible: liberado(pode('service.alert:view')),
-            },
           ],
         },
         {
@@ -113,21 +95,6 @@ const AppMenu = () => {
               icon: `${PrimeIcons.ID_CARD} pi-fw`,
               to: '/clientes/contatos',
               visible: liberado(pode('contact:view')),
-            },
-            {
-              label: 'Etiquetas',
-              icon: `${PrimeIcons.TAGS} pi-fw`,
-              to: '/clientes/tags',
-              visible: liberado(pode('tag:view')),
-            },
-            {
-              // O catálogo serve a contatos e clientes, mas é daqui que se
-              // chega a ele: quem cadastra o campo é quem preenche os dois.
-              label: 'Campos personalizados',
-              // @ts-ignore
-              icon: `fa fa-list-check text-2xl font-light text-center`,
-              to: '/clientes/campos-personalizados',
-              visible: liberado(pode('custom.field:view')),
             },
           ],
         },
@@ -193,6 +160,36 @@ const AppMenu = () => {
           icon: `${PrimeIcons.CALENDAR} pi-fw`,
           to: '/agenda',
           visible: liberado(pode('schedule:view')),
+        },
+        {
+          label: 'Utilidades',
+          icon: 'pi pi-wrench pi-fw',
+          items: [
+            {
+              label: 'Respostas rápidas',
+              icon: `${PrimeIcons.COMMENT} pi-fw`,
+              to: '/atendimentos/respostas-rapidas',
+              visible: liberado(pode('quick.reply:view')),
+            },
+            {
+              label: 'Avisos',
+              icon: 'pi pi-megaphone pi-fw',
+              to: '/atendimentos/avisos',
+              visible: liberado(pode('service.alert:view')),
+            },
+            {
+              label: 'Etiquetas',
+              icon: `${PrimeIcons.TAGS} pi-fw`,
+              to: '/clientes/tags',
+              visible: liberado(pode('tag:view')),
+            },
+            {
+              label: 'Campos personalizados',
+              icon: 'fa fa-list-check text-2xl font-light text-center',
+              to: '/clientes/campos-personalizados',
+              visible: liberado(pode('custom.field:view')),
+            },
+          ],
         },
         {
           // No fim da lista: é o que se mexe ao montar o ambiente, não no dia
