@@ -143,14 +143,28 @@ function MessageNode({ data, selected }: NodeProps) {
 
       <Handle
         type="target"
+        position={Position.Left}
+        style={{ padding: "0.450rem", zIndex: 1 }}
+        className='border-2 border-700'
+      />
+      <Handle
+        type="target"
+        id="entrada-superior"
         position={Position.Top}
         style={{ padding: "0.450rem", zIndex: 1 }}
         className='border-2 border-700'
       />
+
       
       <Handle
         type="source"
         position={Position.Bottom}
+        style={{ padding: "0.450rem", zIndex: 1 }}
+        className='border-2 border-700'
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
         style={{ padding: "0.450rem", zIndex: 1 }}
         className='border-2 border-700'
       />

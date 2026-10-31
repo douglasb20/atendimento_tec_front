@@ -4,6 +4,7 @@ import type { MenuModel } from '@/types';
 import AppSubMenu from './AppSubMenu';
 import { PrimeIcons } from 'primereact/api';
 import { usePermissoes } from '@/hooks/usePermissoes';
+import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 
 /**
  * Esconde o grupo cujos filhos sumiram todos.
@@ -26,6 +27,7 @@ const podaVazios = (itens: MenuModel[]): MenuModel[] =>
 
 const AppMenu = () => {
   const { pode, podeAlguma, carregado } = usePermissoes();
+  const { ajustes } = useAjustesAtendimento();
 
   // Antes de o cookie ser lido, nada é escondido.
   //
@@ -174,12 +176,9 @@ const AppMenu = () => {
           // Perto de Conexões, de propósito: o chatbot roda em cima de um
           // canal, e trocar de fluxo é a mesma esfera de quem mexe em canal.
           //
-          // ⚠️ Atrás de `SHOW_CHATBOT_MENU` (`next.config.js`): a feature
-          // ainda não fechou, e vai para produção escondida até lá - ligar
-          // só em desenvolvimento, enquanto se trabalha nela.
           label: 'Chatbot',
           icon: `${PrimeIcons.COMMENTS} pi-fw`,
-          visible: process.env.SHOW_CHATBOT_MENU === 'true',
+          visible: ajustes.chatbot_habilitado && carregado && pode('chatbot:view'),
           items: [
             {
               label: 'Fluxos',

@@ -11,7 +11,7 @@ export const AJUSTES_ATENDIMENTO_PADRAO = {
   assinatura_nome_completo: false,
   atalho_mensagem_automatico: true,
   ordenar_atendimento_por_ultima_mensagem: false,
-  notificar_mensagem_chatbot: true,
+  chatbot_habilitado: false,
   carregar_mensagens_anteriores: false,
   mostrar_conteudo_mensagem_apagada: false,
 };

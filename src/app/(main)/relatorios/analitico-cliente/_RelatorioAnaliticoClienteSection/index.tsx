@@ -37,6 +37,7 @@ const SITUACOES = [
   { label: 'Finalizado sem resposta', value: 4, cor: 'danger' as const },
   { label: 'Finalizado', value: 5, cor: 'success' as const },
   { label: 'Finalizado por inatividade', value: 6, cor: 'warning' as const },
+  { label: 'Finalizado pelo chatbot', value: 7, cor: 'info' as const },
 ];
 
 const dataHora = (valor: string | null): string => {

@@ -72,6 +72,7 @@ function HorarioSetorTab(
 
   const [carregando, setCarregando] = useState(false);
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [respeitarFeriados, setRespeitarFeriados] = useState(false);
   const [intervalosPorDia, setIntervalosPorDia] = useState<Record<number, ScheduleInterval[]>>({});
   const [atendeDia, setAtendeDia] = useState<Record<number, boolean>>({});
   const [mensagemAusencia, setMensagemAusencia] = useState('');
@@ -101,6 +102,7 @@ function HorarioSetorTab(
         setAtendeDia(atende);
         setMensagemAusencia(dados?.absence_message ?? '');
         setScheduleEnabled(dados?.schedule_enabled ?? false);
+        setRespeitarFeriados(dados?.respect_holidays ?? false);
       } catch (err) {
         CatchAlerta(err, 'Erro ao carregar o horário do setor');
       } finally {
@@ -194,6 +196,7 @@ function HorarioSetorTab(
         variables: [departmentId],
         body: {
           schedule_enabled: scheduleEnabled,
+          respect_holidays: respeitarFeriados,
           intervals,
           absence_message: mensagemAusencia.trim() || null,
         },
@@ -230,6 +233,12 @@ function HorarioSetorTab(
           disabled={somenteLeitura}
           onChange={(e) => setScheduleEnabled(!!e.value)}
         />
+      </div>
+
+      <div className="flex align-items-center justify-content-between gap-2 border-1 border-300 border-round-lg p-3">
+        <LabelPlus text="Respeitar feriados cadastrados" textHelp="Nos feriados do calendário central, o setor fica fechado. A aba Exceções por data permite abrir em horário normal ou especial." />
+        <InputSwitch checked={respeitarFeriados} disabled={somenteLeitura || !scheduleEnabled}
+          onChange={(e) => setRespeitarFeriados(!!e.value)} />
       </div>
 
       <div>

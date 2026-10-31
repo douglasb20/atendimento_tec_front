@@ -8,6 +8,7 @@ import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { useService } from '@/contexts/ServicesContext';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
+import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import { ChatbotResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import { AlertaCallback, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
@@ -20,6 +21,7 @@ type DadosChatbotProps = {
 };
 
 export default function DadosChatbotSection({ data }: DadosChatbotProps) {
+  const { ajustes } = useAjustesAtendimento();
   const [chatbots, setChatbots] = useState(data || []);
   const [chatbotAtivo, setChatbotAtivo] = useState<ChatbotResponse | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -41,8 +43,8 @@ export default function DadosChatbotSection({ data }: DadosChatbotProps) {
 
   const acoesTable: IActionTable<ChatbotResponse>[] = [
     {
-      label: 'Editar fluxo',
-      tooltip: 'Abrir o editor de fluxo',
+      label: podeEditar ? 'Editar fluxo' : 'Visualizar fluxo',
+      tooltip: podeEditar ? 'Abrir o editor de fluxo' : 'Consultar o fluxo sem alterar',
       icon: PrimeIcons.SITEMAP,
       // O fluxo tem tela própria - o modal aqui só edita nome/tipo/canal.
       command: (chatbot) => router.push(`/chatbot/${chatbot.id}`),
@@ -135,6 +137,8 @@ export default function DadosChatbotSection({ data }: DadosChatbotProps) {
   useEffect(() => {
     setRendered(true);
   }, []);
+
+  if (rendered && !ajustes.chatbot_habilitado) return <div>O módulo Chatbot está desabilitado nas configurações do sistema.</div>;
 
   return (
     rendered && (

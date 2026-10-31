@@ -85,6 +85,7 @@ export type ChannelResponse = {
   departments?: { id: number; name: string }[];
   /** Enviado ao salvar - substitui todos os vínculos do canal com setores. */
   department_ids?: number[];
+  default_department_id?: number | null;
 };
 
 type ChannelStatus = {

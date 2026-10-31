@@ -2,6 +2,7 @@ import { io } from 'socket.io-client';
 import type { StateCreator } from 'zustand';
 import { SocketSlice, MessageSlice, ChatSlice } from '@/Interfaces';
 import { renovaSessao } from '@/service/Api/sessaoViva';
+import { useAjustesAtendimentoStore } from './useAjustesAtendimentoStore';
 
 export const createSocketSlice: StateCreator<
   SocketSlice & MessageSlice & ChatSlice,
@@ -46,6 +47,7 @@ export const createSocketSlice: StateCreator<
       });
     });
 
+    socket.on('attendance_settings:updated', (ajustes) => useAjustesAtendimentoStore.getState().definir(ajustes));
     socket.connect();
     set({ socket });
   },

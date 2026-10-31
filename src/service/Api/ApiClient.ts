@@ -25,6 +25,7 @@ export const ListUrl = {
   // Setores de atendimento. `ListarSetores` também serve ao cadastro de
   // usuário, que escolhe os setores de cada pessoa.
   ListarSetores: { url: '/departments', method: 'GET' },
+  DestinosTransferenciaChat: { url: '/support-chats/{{id}}/destinos-transferencia', method: 'GET' },
   AdicionarSetor: { url: '/departments', method: 'POST' },
   AtualizarSetor: { url: '/departments/{{department_id}}', method: 'PATCH' },
   RemoverSetor: { url: '/departments/{{department_id}}', method: 'DELETE' },
@@ -32,6 +33,10 @@ export const ListUrl = {
   AtualizarMembrosSetor: { url: '/departments/{{department_id}}/users', method: 'PATCH' },
   BuscarHorarioSetor: { url: '/departments/{{department_id}}/schedule', method: 'GET' },
   AtualizarHorarioSetor: { url: '/departments/{{department_id}}/schedule', method: 'PATCH' },
+  ListarExcecoesSetor: { url: '/departments/{{department_id}}/schedule-exceptions', method: 'GET' },
+  AdicionarExcecaoSetor: { url: '/departments/{{department_id}}/schedule-exceptions', method: 'POST' },
+  AtualizarExcecaoSetor: { url: '/departments/{{department_id}}/schedule-exceptions/{{exception_id}}', method: 'PATCH' },
+  RemoverExcecaoSetor: { url: '/departments/{{department_id}}/schedule-exceptions/{{exception_id}}', method: 'DELETE' },
 
   // Chatbot por fluxo visual. `type=complementar` na query lista os fluxos
   // complementares (subfluxos), separado da listagem principal.

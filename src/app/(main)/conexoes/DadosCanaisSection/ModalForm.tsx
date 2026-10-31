@@ -4,6 +4,7 @@ import { InputNumber } from 'primereact/inputnumber';
 import { InputSwitch } from 'primereact/inputswitch';
 import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
+import { Dropdown } from 'primereact/dropdown';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { Button } from 'primereact/button';
 import { useForm, Controller } from 'react-hook-form';
@@ -66,6 +67,7 @@ const defaultValues = {
   rejeitar_chamadas_enviar_mensagem: false,
   rejeitar_chamadas_mensagem: '',
   department_ids: [],
+  default_department_id: null,
 };
 
 const ModalForm = (props: IProps<ChannelResponse>) => {
@@ -106,6 +108,13 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
   const [abaAtiva, setAbaAtiva] = useState(0);
 
   const inatividadeAtiva = watch('inatividade_ativa');
+  const setoresSelecionados = watch('department_ids') ?? [];
+  const setorPadrao = watch('default_department_id');
+
+  useEffect(() => {
+    if (setoresSelecionados.length === 1) setValue('default_department_id', setoresSelecionados[0]);
+    else if (setorPadrao != null && !setoresSelecionados.includes(setorPadrao)) setValue('default_department_id', null);
+  }, [setoresSelecionados, setorPadrao, setValue]);
   const inatividadeResolverEm = watch('inatividade_resolver_em_minutos');
   const inatividadeAvisarEm = watch('inatividade_avisar_em_minutos');
   const inatividadeEnviarDespedida = watch('inatividade_enviar_despedida');
@@ -246,6 +255,7 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
       // individualmente (`GET /channels/:id`, `findChannelComSetores`) - a
       // listagem não traz essa relação.
       department_ids: value?.departments?.map((setor) => setor.id) ?? [],
+      default_department_id: value?.default_department_id ?? null,
     });
     setAnexoSaudacao(anexoVazio);
     setAnexoDespedida(anexoVazio);
@@ -354,6 +364,22 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
                   </div>
                 )}
               </div>
+
+              {setoresSelecionados.length > 0 && (
+                <div className="col-12 md:col-6 p-fluid">
+                  <LabelPlus text="Setor padrão" textHelp="Novos atendimentos entram neste setor. A transferência ou o chatbot podem alterá-lo depois." />
+                  <Controller
+                    name="default_department_id"
+                    control={control}
+                    rules={{ required: 'Escolha o setor padrão' }}
+                    render={({ field, fieldState }) => <>
+                      <Dropdown {...field} value={field.value ?? null} options={setores.filter((setor) => setoresSelecionados.includes(setor.id))}
+                        optionLabel="name" optionValue="id" placeholder="Escolha o setor padrão" disabled={somenteLeitura || setoresSelecionados.length === 1} />
+                      {getFormErrorMessage(fieldState)}
+                    </>}
+                  />
+                </div>
+              )}
 
               <div className="col-12">
                 <LabelPlus

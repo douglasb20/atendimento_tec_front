@@ -9,7 +9,7 @@ import TitleCards from '@/components/TitleCards';
 import { useService } from '@/contexts/ServicesContext';
 import { AjusteAtendimento } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
-import { Alerta, CatchAlerta } from '@/service/Util';
+import { Alerta, CatchAlerta, ConfirmaAcao } from '@/service/Util';
 import { useAjustesAtendimentoStore } from '@/store/useAjustesAtendimentoStore';
 
 import LabelPlus from '@/components/LabelPlus';
@@ -27,17 +27,15 @@ export default function DadosAtendimentoSection({ data }: Props) {
 
   const valorAtual = (a: AjusteAtendimento): boolean => alterados[a.chave] ?? a.valor;
 
-  const alterar = (chave: string, valor: boolean) =>
-    setAlterados((atual) => ({ ...atual, [chave]: valor }));
+  const alterar = (chave: string, valor: boolean) => {
+    const aplicar = () => setAlterados((atual) => ({ ...atual, [chave]: valor }));
+    if (chave === 'chatbot_habilitado' && !valor) {
+      ConfirmaAcao('Ao salvar, os fluxos em andamento serão interrompidos e as conversas irão para Espera. Os fluxos cadastrados serão preservados.',
+        aplicar, undefined, 'Desabilitar chatbot?', 'Desabilitar', 'Cancelar');
+    } else aplicar();
+  };
 
   const temAlteracao = Object.keys(alterados).length > 0;
-
-  // Mesma flag do item de menu "Chatbot" (`AppMenu.tsx`): a feature ainda não
-  // foi para produção, e mostrar aqui uma configuração de algo que não existe
-  // pro cliente confundiria mais do que ajudaria.
-  const ajustesVisiveis = ajustes.filter(
-    (a) => a.chave !== 'notificar_mensagem_chatbot' || process.env.SHOW_CHATBOT_MENU === 'true',
-  );
 
   const Salvar = async () => {
     try {
@@ -67,7 +65,7 @@ export default function DadosAtendimentoSection({ data }: Props) {
 
       <div className="p-card-content">
         <div className="grid mb-4">
-          {ajustesVisiveis.map((a) => (
+          {ajustes.map((a) => (
             <div
               key={a.chave}
               className="col-12 md:col-6 p-fluid"

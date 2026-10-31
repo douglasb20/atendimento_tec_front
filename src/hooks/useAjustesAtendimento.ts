@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react';
 
 import useApi from '@/service/Api/ApiClient';
 import { AjustesAtendimento, useAjustesAtendimentoStore } from '@/store/useAjustesAtendimentoStore';
+import { useChatStore } from '@/store/useChatStore';
 
 /**
  * Os ajustes de atendimento em vigor, para quem só precisa lê-los.
@@ -26,6 +27,7 @@ export const useAjustesAtendimento = () => {
  * de página, sem nada a ganhar.
  */
 export const useCarregarAjustesAtendimento = () => {
+  const socket = useChatStore((s) => s.socket);
   const { FetchReq } = useApi();
   const definir = useAjustesAtendimentoStore((s) => s.definir);
 
@@ -44,6 +46,18 @@ export const useCarregarAjustesAtendimento = () => {
     // Uma vez por montagem.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // Recupera atualizações perdidas enquanto a conexão/aba estava suspensa.
+    const recarregar = () => { void carregar(); };
+    socket?.on('connect', recarregar);
+    window.addEventListener('focus', recarregar);
+    return () => {
+      socket?.off('connect', recarregar);
+      window.removeEventListener('focus', recarregar);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]);
 
   return { recarregar: carregar };
 };

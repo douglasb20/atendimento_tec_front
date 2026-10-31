@@ -18,6 +18,7 @@ import ApiClient from '@/service/Api/ApiClient';
 import { AlertaCallback, CatchAlerta, getFormErrorMessage, msgRequired } from '@/service/Util';
 
 import HorarioSetorTab, { HorarioSetorTabHandle } from './HorarioSetorTab';
+import ExcecoesSetorTab from './ExcecoesSetorTab';
 
 export type FormSetor = { name: string; description: string; color: string };
 
@@ -127,6 +128,7 @@ function ModalFormSetor({ visible, onHide, data, onConfirm }: ModalProps) {
   };
 
   const modalFooter = () => {
+    if (abaAtiva === 3) return <Button label="Fechar" severity="danger" outlined onClick={onHide} />;
     // Rodapé próprio por aba: "Dados do setor" salva pelo formulário e fecha o
     // modal; "Equipe" e "Horário" gravam só o próprio recurso, sem fechar -
     // são gravações independentes, como o cadastro de canal faz com conexão e
@@ -193,7 +195,7 @@ function ModalFormSetor({ visible, onHide, data, onConfirm }: ModalProps) {
     <Modal
       modal
       className="p-fluid"
-      style={{ width: '48rem' }}
+      style={{ width: '54rem' }}
       breakpoints={{ '640px': '95vw' }}
       visible={visible}
       header={!data?.id ? 'Novo setor' : 'Alterar setor'}
@@ -394,6 +396,9 @@ function ModalFormSetor({ visible, onHide, data, onConfirm }: ModalProps) {
               onSalvandoChange={setHorarioSalvando}
             />
           )}
+        </TabPanel>
+        <TabPanel header="Exceções por data" leftIcon="pi pi-calendar mr-2" disabled={!data?.id}>
+          {data?.id && <ExcecoesSetorTab departmentId={data.id} ativa={visible && abaAtiva === 3} somenteLeitura={somenteLeitura} />}
         </TabPanel>
       </TabView>
     </Modal>

@@ -106,6 +106,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       | 'mensagem_saudacao'
       | 'mensagem_despedida'
       | 'department_ids'
+      | 'default_department_id'
       | 'inatividade_ativa'
       | 'inatividade_resolver_em_minutos'
       | 'inatividade_avisar_em_minutos'
@@ -135,6 +136,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
         mensagem_saudacao: data.mensagem_saudacao?.trim() || null,
         mensagem_despedida: data.mensagem_despedida?.trim() || null,
         department_ids: data.department_ids ?? [],
+        default_department_id: data.default_department_id ?? null,
         inatividade_ativa: Boolean(data.inatividade_ativa),
         inatividade_resolver_em_minutos: data.inatividade_resolver_em_minutos ?? null,
         inatividade_avisar_em_minutos: data.inatividade_avisar_em_minutos ?? null,

@@ -22,6 +22,10 @@ const LIMITE_MOTIVO = 1000;
 
 /** Valor do seletor que representa "devolver para a espera". */
 const PARA_ESPERA = -1;
+type DestinosTransferencia = {
+  setores: { id: number; name: string }[];
+  atendentes: (UserResponse & { department_id: number })[];
+};
 
 /**
  * Passa o atendimento adiante.
@@ -38,7 +42,9 @@ const ModalTransferirAtendimento = ({
   onTransferido,
 }: ModalTransferirAtendimentoProps) => {
   const { FetchReq } = useApi();
-  const [atendentes, setAtendentes] = useState<UserResponse[]>([]);
+  const [atendentes, setAtendentes] = useState<DestinosTransferencia['atendentes']>([]);
+  const [setores, setSetores] = useState<DestinosTransferencia['setores']>([]);
+  const [setorId, setSetorId] = useState<number | null>(null);
   const [destino, setDestino] = useState<number | null>(null);
   const [motivo, setMotivo] = useState('');
   const [transferindo, setTransferindo] = useState(false);
@@ -48,16 +54,19 @@ const ModalTransferirAtendimento = ({
     if (!visible) return;
 
     setDestino(null);
+    setSetorId(chat?.department_id ?? null);
     setMotivo('');
 
     const carregar = async () => {
       try {
         setCarregandoAtendentes(true);
-        const lista = await FetchReq<UserResponse[]>('ListarUsuarios');
+        const destinos = await FetchReq<DestinosTransferencia>('DestinosTransferenciaChat', [chat.id]);
+        setSetores(destinos.setores);
+        if (destinos.setores.length === 1) setSetorId(destinos.setores[0].id);
 
         // Transferir para si mesmo é recusado pela API; tirar da lista evita
         // oferecer a opção só para negá-la depois.
-        setAtendentes((lista ?? []).filter((u) => Number(u.id) !== Number(chat?.user_id)));
+        setAtendentes(destinos.atendentes.filter((u) => Number(u.id) !== Number(chat?.user_id)));
       } catch (erro) {
         CatchAlerta(erro, 'Não foi possível carregar os atendentes');
       } finally {
@@ -72,11 +81,11 @@ const ModalTransferirAtendimento = ({
 
   const opcoes = [
     {
-      label: 'Devolver para a espera',
+      label: 'Fila de espera do setor',
       value: PARA_ESPERA,
-      descricao: 'A conversa fica sem dono, e qualquer atendente pode assumi-la',
+      descricao: 'A equipe do setor poderá assumir este atendimento',
     },
-    ...atendentes.map((atendente) => ({
+    ...atendentes.filter((atendente) => Number(atendente.department_id) === Number(setorId)).map((atendente) => ({
       label: nomeCompleto(atendente),
       value: Number(atendente.id),
       descricao: atendente.email,
@@ -93,6 +102,7 @@ const ModalTransferirAtendimento = ({
         body: {
           // A API trata a ausência do campo como "devolver para a espera".
           user_destino_id: destino === PARA_ESPERA ? undefined : destino,
+          department_id: setorId,
           motivo: motivo.trim() || undefined,
         },
       });
@@ -136,7 +146,7 @@ const ModalTransferirAtendimento = ({
         label="Transferir"
         icon="fa-regular fa-right-left"
         loading={transferindo}
-        disabled={destino === null}
+        disabled={destino === null || setorId === null || carregandoAtendentes}
         tooltip={destino === null ? 'Escolha para quem transferir' : undefined}
         tooltipOptions={{ position: 'top', showOnDisabled: true }}
         onClick={transferir}
@@ -158,6 +168,12 @@ const ModalTransferirAtendimento = ({
     >
       <div className="flex flex-column gap-3">
         <div>
+          <label htmlFor="setor-destino" className="block mb-2 font-medium">Setor de destino</label>
+          <Dropdown inputId="setor-destino" value={setorId} options={setores} optionLabel="name" optionValue="id"
+            placeholder="Escolha o setor" loading={carregandoAtendentes}
+            onChange={(e) => { setSetorId(e.value); setDestino(null); }} />
+        </div>
+        <div>
           <label
             htmlFor="destino"
             className="block mb-2 font-medium"
@@ -174,6 +190,7 @@ const ModalTransferirAtendimento = ({
             filter
             filterBy="label"
             loading={carregandoAtendentes}
+            disabled={!setorId || carregandoAtendentes}
             placeholder="Escolha um atendente"
             emptyMessage="Nenhum outro atendente cadastrado"
             emptyFilterMessage="Nenhum atendente encontrado"
