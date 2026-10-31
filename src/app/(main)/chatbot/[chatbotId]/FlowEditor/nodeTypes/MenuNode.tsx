@@ -7,10 +7,11 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import LabelPlus from '@/components/LabelPlus';
 
 import RemoverNoButton from './RemoverNoButton';
+import TempoResposta, { ConfigTempoResposta } from './TempoResposta';
 
 type MenuOption = { id: string; emoji?: string; text: string };
 
-type MenuData = {
+type MenuData = ConfigTempoResposta & {
   title?: string;
   body?: string;
   options?: MenuOption[];
@@ -37,7 +38,7 @@ const handleNaLinha = {
  * "Opção inválida" sempre por último. Cada saída é endereçada pelo `id` da
  * opção, exatamente como o `MenuHandler` do motor resolve.
  */
-function MenuNode({ data, selected }: NodeProps) {
+function MenuNode({ id, data, selected }: NodeProps) {
   const menuData = data as MenuData;
   const opcoes = menuData.options ?? [];
 
@@ -47,6 +48,8 @@ function MenuNode({ data, selected }: NodeProps) {
       body: menuData.body ?? '',
       options: opcoes,
       invalidOptionOutputHandle: menuData.invalidOptionOutputHandle ?? 'invalid',
+      replyTimeoutEnabled: menuData.replyTimeoutEnabled ?? false,
+      replyTimeoutMinutes: menuData.replyTimeoutMinutes ?? 5,
       ...patch,
     });
   };
@@ -179,12 +182,14 @@ function MenuNode({ data, selected }: NodeProps) {
           <span>Opção inválida</span>
           <Handle
             type="source"
-            id={menuData.invalidOptionOutputHandle}
+            id={menuData.invalidOptionOutputHandle ?? 'invalid'}
             position={Position.Right}
             style={handleNaLinha}
             className="border-2 border-700"
           />
         </div>
+        <TempoResposta nodeId={id} replyTimeoutEnabled={menuData.replyTimeoutEnabled}
+          replyTimeoutMinutes={menuData.replyTimeoutMinutes} onChange={atualizar} onRemoveOutput={menuData.onRemoveOutput} />
       </div>
     </div>
   );

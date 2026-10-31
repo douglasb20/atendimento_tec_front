@@ -285,7 +285,7 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
                 ...(['message', 'menu', 'close_support_chat', 'set_department', 'business_hours'].includes(n.type ?? '') && {
                   onChange: (data: Record<string, unknown>) => atualizarDadosDoNo(n.id, data),
                 }),
-                ...(n.type === 'menu' && {
+                ...(['menu', 'message'].includes(n.type ?? '') && {
                   onRemoveOutput: (handleId: string) => removerSaida(n.id, handleId),
                 }),
               },
