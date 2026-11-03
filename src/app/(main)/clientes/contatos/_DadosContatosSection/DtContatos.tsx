@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Column, ColumnBodyOptions } from 'primereact/column';
 
 import AcoesDataTable from '@/components/AcoesDataTable';
+import Avatar from '@/components/Avatar';
 import DataTableCustom from '@/components/DataTableCustom';
 import { ContactResponse } from '@/Interfaces';
 import { FormataTelefoneExibicao, nomeCompleto } from '@/service/Util';
@@ -18,14 +19,28 @@ const DtContatos = ({ actions, ...props }) => {
       <DataTableCustom
         value={props.value}
         emptyMessage="Nenhum contato encontrado"
+        globalFilterFields={['name', 'last_name', 'phone']}
       >
+        <Column
+          header="Avatar"
+          align="center"
+          style={{ width: '5rem' }}
+          body={(contato: ContactResponse) => (
+            <Avatar src={contato.avatar_url} alt={nomeCompleto(contato) || 'Contato'}
+              width={36} height={36} className="border-circle vertical-align-middle"
+              style={{ objectFit: 'cover' }} />
+          )}
+        />
         <Column
           field="name"
           header="Nome"
           align="center"
           headerClassName=""
-          // As colunas são separadas no banco; a tabela mostra o nome inteiro.
-          body={(contato: ContactResponse) => nomeCompleto(contato)}
+        />
+        <Column
+          field="last_name"
+          header="Sobrenome"
+          align="center"
         />
         <Column
           field="phone"

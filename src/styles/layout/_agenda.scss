@@ -19,6 +19,27 @@
   --fc-list-event-hover-bg-color: var(--surface-hover);
   --fc-event-text-color: #fff;
 
+  .agenda-dia-feriado,
+  .fc-col-header-cell.agenda-dia-feriado {
+    background: color-mix(in srgb, var(--green-500) 9%, var(--surface-card));
+  }
+
+  .agenda-dia-feriado .agenda-dia-numero:not(.agenda-dia-hoje),
+  .agenda-dia-feriado .fc-daygrid-day-number {
+    color: var(--green-500);
+    font-weight: 600;
+  }
+
+  .agenda-evento-feriado,
+  .fc-event.agenda-evento-feriado {
+    cursor: default;
+  }
+
+  .fc-list-event.agenda-evento-feriado .fc-list-event-title {
+    color: var(--text-color);
+    font-weight: 600;
+  }
+
   .fc-scrollgrid,
   .fc-theme-standard td,
   .fc-theme-standard th {
@@ -121,6 +142,105 @@
     color: var(--text-color);
     text-decoration: none;
   }
+
+  // O cabeçalho da data compartilha a primeira linha com o evento. As linhas
+  // seguintes deixam a coluna da data vazia, mantendo os eventos agrupados.
+  .fc-listProgramacao-view {
+    border: 0;
+
+    .fc-list-table {
+      display: block;
+    }
+
+    .fc-list-table tbody {
+      display: grid;
+      grid-template-columns: 11rem 9rem 2rem minmax(0, 1fr);
+      width: 100%;
+    }
+
+    .fc-list-table tr {
+      display: contents;
+    }
+
+    .fc-list-table .fc-list-day > th {
+      grid-column: 1;
+      position: static;
+      background: transparent;
+      border: 0;
+      border-top: 1px solid var(--surface-border);
+      padding: .65rem .5rem;
+      text-align: left;
+    }
+
+    .fc-list-day-cushion {
+      background: transparent;
+      padding: 0;
+    }
+
+    .fc-list-day-text {
+      float: none;
+    }
+
+    .fc-list-table .fc-list-event > td {
+      min-width: 0;
+      width: auto;
+      border: 0;
+      padding: .65rem .5rem;
+      align-content: center;
+      background: transparent;
+    }
+
+    .fc-list-table .fc-list-day + .fc-list-event > td {
+      border-top: 1px solid var(--surface-border);
+    }
+
+    .fc-list-event-time {
+      grid-column: 2;
+      color: var(--text-color-secondary);
+    }
+
+    .fc-list-event-graphic {
+      grid-column: 3;
+    }
+
+    .fc-list-event-title {
+      grid-column: 4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fc-list-table .fc-list-event:hover > td {
+      background: var(--surface-hover);
+    }
+
+    .agenda-programacao-data {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .agenda-programacao-numero {
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 2rem;
+      height: 2rem;
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+
+    .agenda-programacao-numero.agenda-dia-hoje {
+      color: var(--primary-color-text);
+    }
+
+    .agenda-programacao-mes {
+      font-size: .7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      color: var(--text-color-secondary);
+    }
+  }
 }
 
 @container (max-width: 700px) {
@@ -157,5 +277,24 @@
     font-size: 1.1rem;
     height: 1.8rem;
     width: 1.8rem;
+  }
+
+  .agenda-calendario .fc-listProgramacao-view {
+    .fc-list-table tbody {
+      grid-template-columns: 7.5rem 7.5rem 1.5rem minmax(0, 1fr);
+    }
+
+    .fc-list-table .fc-list-event > td {
+      padding-inline: .25rem;
+      font-size: .85rem;
+    }
+
+    .agenda-programacao-data {
+      gap: .15rem;
+    }
+
+    .agenda-programacao-mes {
+      font-size: .65rem;
+    }
   }
 }

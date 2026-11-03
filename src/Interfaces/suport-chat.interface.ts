@@ -110,6 +110,8 @@ export interface SupportChatsResponse {
   contact?: ContactResponse;
   supportChatMessages?: SupportChatMessageResponse[];
   user?: UserResponse;
+  channel?: { id: number; name: string };
+  department?: { id: number; name: string; color?: string | null } | null;
   /** Só na rota que abre a conversa; os payloads de socket não os trazem. */
   supportChatEvents?: SupportChatEventResponse[];
 }

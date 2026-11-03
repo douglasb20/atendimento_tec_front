@@ -157,7 +157,7 @@ const InputTelefone = ({
         'p-invalid': invalido,
       }),
     }}
-    className="input-telefone"
+    className={classNames('input-telefone p-inputtext p-component', { 'p-invalid': invalido })}
   />
 );
 

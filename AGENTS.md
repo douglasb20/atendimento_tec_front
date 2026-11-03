@@ -3,6 +3,10 @@
 Guia do frontend. O `AGENTS.md` da raiz do workspace cobre a visão geral e os
 outros subprojetos; aqui está o que é específico desta interface.
 
+## Política de atendimento por contato
+
+`AtendimentoContato` é compartilhado pelo cadastro e pela edição no chat. `PoliticaAtendimentoContato.ts` converte Normal, Somente humano e Ignorar mensagens recebidas em `ignore_support`/`automation_disabled`. Ignorar entradas tem precedência ao carregar dados antigos. Nenhum modo bloqueia envios manuais; Somente humano também impede encerramento automático por inatividade. Evite duplicar o mapeamento nos formulários.
+
 Next.js 15 (App Router) · React 19 · TypeScript · PrimeReact 10 · Zustand 5.
 
 ## Comandos

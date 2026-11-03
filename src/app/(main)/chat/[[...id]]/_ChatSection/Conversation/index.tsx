@@ -15,6 +15,7 @@ import { Button } from 'primereact/button';
 import { classNames } from 'primereact/utils';
 
 import AcoesConversa from './AcoesConversa';
+import { CabecalhoConversa, ResponsavelConversa } from './IdentificacaoConversa';
 import { resumoDoContato } from '@/service/Vcard';
 import ModalNovoAtendimento from './ModalNovoAtendimento';
 import ModalNovoCompromisso from '@/components/ModalNovoCompromisso';
@@ -582,23 +583,16 @@ const ConversationSection = () => {
                 // Cada conversa é um cartão: borda e fundo próprio dão a
                 // separação que só o espaçamento não dava - sem eles os itens
                 // liam como texto corrido numa coluna.
-                // `relative` ancora o overlay das ações; `acoes-hover` é o
-                // grupo que o revela ao passar o mouse (a regra está em
-                // `styles/layout/_chat.scss`).
-                'acoes-hover relative flex cursor-pointer align-items-center gap-3 border-1 border-round-lg p-2 mb-2 overflow-hidden transition-colors transition-duration-150',
+                // O corpo relativo ancora as ações sem cobrir cabeçalho e
+                // rodapé; `acoes-hover` revela o menu ao passar o mouse.
+                'acoes-hover relative flex flex-column cursor-pointer border-1 border-round-lg mb-3 overflow-hidden transition-colors transition-duration-150',
               )}
-              style={{
-                // A faixa à esquerda reforça a seleção sem trocar a espessura
-                // da borda, o que faria o cartão "pular" ao ser escolhido.
-                boxShadow:
-                  activeChat?.id === String(conversation?.id)
-                    ? 'inset 3px 0 0 0 var(--primary-color)'
-                    : undefined,
-              }}
               onClick={() => {
                 loadConversationMessage(Number(conversation?.id));
               }}
             >
+              <CabecalhoConversa conversa={conversation} />
+              <div className="relative flex align-items-center gap-3 p-2 min-w-0">
               <div className="relative flex flex-none">
                 {/* `Avatar`, e não um `<img>` cru: a foto vem do
                     `pps.whatsapp.net`, com assinatura que vence. Quando a URL
@@ -750,6 +744,8 @@ const ConversationSection = () => {
                   Aqui aparece só no item sob o mouse, e o degradê à esquerda
                   impede que ele caia sobre o texto da prévia. */}
               <AcoesConversa conversa={conversation} />
+              </div>
+              <ResponsavelConversa conversa={conversation} />
             </li>
           ))
         )}

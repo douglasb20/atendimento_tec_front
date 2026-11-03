@@ -18,6 +18,8 @@ import EditorAvatarContato from '@/components/EditorAvatarContato';
 import InputTelefone, { paraE164 } from '@/components/InputTelefone';
 import LabelPlus from '@/components/LabelPlus';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
+import AtendimentoContato from '@/components/AtendimentoContato';
+import { MODOS_ATENDIMENTO_CONTATO, ModoAtendimentoContato, modoAtendimentoDoContato } from '@/service/PoliticaAtendimentoContato';
 
 /**
  * O que o formulário edita - subconjunto do contato.
@@ -27,8 +29,9 @@ import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
  */
 export type ContactFormFields = Pick<
   ContactResponse,
-  'id' | 'name' | 'last_name' | 'phone' | 'ignore_support' | 'client_id' | 'has_no_client'
+  'id' | 'name' | 'last_name' | 'phone' | 'client_id' | 'has_no_client'
 > & {
+  modo_atendimento: ModoAtendimentoContato;
   /** Campos personalizados escolhidos para este contato. */
   campos?: ValorCampoForm[];
   /** Presente só quando um upload novo acabou de subir para o storage -
@@ -53,7 +56,7 @@ const defaultForm: ContactFormFields = {
   name: '',
   last_name: '',
   phone: '',
-  ignore_support: false,
+  modo_atendimento: 'normal',
   client_id: null,
   has_no_client: false,
   campos: [],
@@ -64,7 +67,7 @@ const schema = yup.object({
   // Opcional: muito contato é empresa ou chega do WhatsApp com uma palavra só.
   last_name: yup.string().notRequired(),
   phone: yup.string().notRequired(),
-  ignore_support: yup.boolean().notRequired(),
+  modo_atendimento: yup.mixed<ModoAtendimentoContato>().oneOf(MODOS_ATENDIMENTO_CONTATO).required(msgRequired),
   client_id: yup.number().nullable().notRequired(),
   has_no_client: yup.boolean().notRequired(),
   // Adicionou a linha, tem que preencher: uma linha pela metade não significa
@@ -148,6 +151,7 @@ function ModalFormulario(props: ModalProps) {
       reset({
         ...defaultForm,
         ...data,
+        modo_atendimento: modoAtendimentoDoContato(data),
         // A API devolve `camposPersonalizados` com a relação carregada; o
         // formulário só precisa do id e do valor.
         campos: (data?.camposPersonalizados ?? []).map((v) => ({
@@ -351,22 +355,9 @@ function ModalFormulario(props: ModalProps) {
             <div className="col-12">
               <Controller
                 control={control}
-                name="ignore_support"
+                name="modo_atendimento"
                 render={({ field }) => (
-                  <div className="flex align-items-center gap-2">
-                    <Checkbox
-                      inputId={field.name}
-                      checked={Boolean(field.value)}
-                      disabled={somenteLeitura}
-                      onChange={(e) => field.onChange(e.checked)}
-                    />
-                    <LabelPlus
-                      htmlFor={field.name}
-                      className="cursor-pointer"
-                      text="Ignorar atendimento"
-                      textHelp="Mensagens deste contato são descartadas - não geram conversa nem protocolo."
-                    />
-                  </div>
+                  <AtendimentoContato inputId={field.name} value={field.value} onChange={field.onChange} disabled={somenteLeitura} />
                 )}
               />
             </div>

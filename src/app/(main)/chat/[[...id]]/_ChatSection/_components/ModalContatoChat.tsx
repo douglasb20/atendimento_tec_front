@@ -18,6 +18,8 @@ import useApi from '@/service/Api/ApiClient';
 import { ClientResponse, ContactResponse, Masks } from '@/Interfaces';
 import { CatchAlerta, getFormErrorMessage, msgRequired } from '@/service/Util';
 import ModalClienteChat from './ModalClienteChat';
+import AtendimentoContato from '@/components/AtendimentoContato';
+import { MODOS_ATENDIMENTO_CONTATO, ModoAtendimentoContato, modoAtendimentoDoContato, configuracaoAtendimentoContato } from '@/service/PoliticaAtendimentoContato';
 
 type ModalContatoChatProps = {
   visible: boolean;
@@ -37,7 +39,7 @@ type FormContato = {
   phone?: string;
   client_id?: number | null;
   has_no_client?: boolean;
-  ignore_support?: boolean;
+  modo_atendimento: ModoAtendimentoContato;
 };
 
 const schema = yup.object({
@@ -46,7 +48,7 @@ const schema = yup.object({
   phone: yup.string().notRequired(),
   client_id: yup.number().nullable().notRequired(),
   has_no_client: yup.boolean().notRequired(),
-  ignore_support: yup.boolean().notRequired(),
+  modo_atendimento: yup.mixed<ModoAtendimentoContato>().oneOf(MODOS_ATENDIMENTO_CONTATO).required(msgRequired),
 });
 
 /**
@@ -96,7 +98,7 @@ const ModalContatoChat = ({
       phone: contato?.phone ?? '',
       client_id: contato?.client_id ?? null,
       has_no_client: contato?.has_no_client ?? false,
-      ignore_support: contato?.ignore_support ?? false,
+      modo_atendimento: modoAtendimentoDoContato(contato),
     });
 
     FetchReq<ClientResponse[]>('ListarClientes')
@@ -121,9 +123,9 @@ const ModalContatoChat = ({
           name: campos.name.trim(),
           last_name: campos.last_name?.trim() || null,
           phone: campos.phone?.replace(/\D/g, '') || null,
-          ...(campos.client_id && { client_id: campos.client_id }),
+          client_id: campos.has_no_client ? null : campos.client_id ?? null,
           has_no_client: Boolean(campos.has_no_client),
-          ignore_support: Boolean(campos.ignore_support),
+          ...configuracaoAtendimentoContato(campos.modo_atendimento),
           ...(avatarPendente?.changedAvatar && {
             avatar_url: avatarPendente.avatarKey,
             changed_avatar: true,
@@ -338,21 +340,9 @@ const ModalContatoChat = ({
               <div className="col-12">
                 <Controller
                   control={control}
-                  name="ignore_support"
+                  name="modo_atendimento"
                   render={({ field }) => (
-                    <div className="flex align-items-center gap-2">
-                      <Checkbox
-                        inputId={field.name}
-                        checked={Boolean(field.value)}
-                        onChange={(e) => field.onChange(e.checked)}
-                      />
-                      <LabelPlus
-                        htmlFor={field.name}
-                        className="cursor-pointer"
-                        text="Ignorar atendimento"
-                        textHelp="Mensagens deste contato são descartadas - não geram conversa nem protocolo."
-                      />
-                    </div>
+                    <AtendimentoContato inputId={field.name} value={field.value} onChange={field.onChange} />
                   )}
                 />
               </div>
