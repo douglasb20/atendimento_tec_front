@@ -8,12 +8,13 @@ import RemoverNoButton from './RemoverNoButton';
 
 type CloseSupportChatData = {
   enviarDespedida?: boolean;
+  executarFluxoSaida?: boolean;
   fluxoSaida?: boolean;
   onRemove?: () => void;
   onChange?: (data: CloseSupportChatData) => void;
 };
 
-/** Encerra o ticket aberto pelo bot, opcionalmente enviando a despedida do canal. */
+/** Encerra o ticket, com despedida e pós-atendimento opcionais. */
 function CloseSupportChatNode({ data, selected }: NodeProps) {
   const nodeData = data as CloseSupportChatData;
   const enviarDespedida = nodeData.enviarDespedida ?? true;
@@ -50,18 +51,30 @@ function CloseSupportChatNode({ data, selected }: NodeProps) {
         <RemoverNoButton onRemove={nodeData.onRemove} />
       </div>
 
-      <div className="p-2 flex flex-column gap-2">
-        {!nodeData.fluxoSaida && <div className="flex align-items-center justify-content-between gap-3">
-          <LabelPlus text="Enviar despedida" textHelp="Usa a mensagem de despedida configurada no canal." />
-          <InputSwitch
-            className="nodrag"
-            checked={enviarDespedida}
-            onChange={(e) => nodeData.onChange?.({ enviarDespedida: e.value })}
-          />
-        </div>}
+      <div className="py-2 flex flex-column gap-2 px-3">
+        {!nodeData.fluxoSaida && (
+          <>
+            <div className="flex align-items-center gap-2">
+              <InputSwitch
+                className="nodrag"
+                checked={enviarDespedida}
+                onChange={(e) => nodeData.onChange?.({ enviarDespedida: e.value })}
+              />
+              <LabelPlus text="Enviar despedida" textHelp="Usa a mensagem de despedida configurada no canal, independentemente do fluxo de saída." />
+            </div>
+            <div className="flex align-items-center gap-2">
+              <InputSwitch
+                className="nodrag"
+                checked={nodeData.executarFluxoSaida === true}
+                onChange={(e) => nodeData.onChange?.({ executarFluxoSaida: e.value })}
+              />
+              <LabelPlus text="Executar fluxo de saída" textHelp="Após encerrar, executa o fluxo de saída do canal no mesmo protocolo, se o chatbot estiver habilitado e a saída ativa e publicada. Sem saída disponível, apenas encerra. Não dispara outra saída quando usado no pós-atendimento." />
+            </div>
+          </>
+        )}
         <small className="text-color-secondary">
           {nodeData.fluxoSaida ? 'Conclui o pós-atendimento no mesmo protocolo, sem enviar outra despedida.'
-            : 'A próxima mensagem do contato abrirá um novo atendimento.'}
+            : 'Mantém o mesmo protocolo durante o pós-atendimento, quando houver.'}
         </small>
       </div>
     </div>

@@ -26,7 +26,11 @@ const EventoAtendimento = ({ evento }: EventoAtendimentoProps) => {
   const [situacao, midia] = evento.tipo === 'chamada' ? (evento.motivo ?? '').split(':') : [];
 
   const texto =
-    evento.tipo === 'chamada'
+    evento.tipo === 'encaminhamento'
+      ? evento.userDestino
+        ? `Chatbot encaminhou para ${nomeCompleto(evento.userDestino)}`
+        : 'Chatbot encaminhou para a fila de espera'
+      : evento.tipo === 'chamada'
       ? situacao === 'rejeitada'
         ? `O cliente tentou uma chamada de ${midia === 'video' ? 'vídeo' : 'voz'} e ela foi recusada automaticamente`
         : `O cliente está chamando por ${midia === 'video' ? 'vídeo' : 'voz'} - atenda pelo seu aparelho`
@@ -56,7 +60,7 @@ const EventoAtendimento = ({ evento }: EventoAtendimentoProps) => {
           <i className={`fa-regular ${icone} mr-1`} />
           {texto} · {DateToBR(evento.created_at, 'Pp')}
         </span>
-        {evento.tipo === 'transferencia' && evento.departmentDestino && (
+        {['transferencia', 'encaminhamento'].includes(evento.tipo) && evento.departmentDestino && (
           <span>{evento.departmentOrigem?.name ?? 'Sem setor'} → {evento.departmentDestino.name}</span>
         )}
         {/* O motivo quebra a linha em vez de alongar a faixa: é texto livre e

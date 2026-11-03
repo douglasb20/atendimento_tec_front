@@ -263,6 +263,14 @@ Limite de 512 MB — o teto do protocolo Baileys, não os 16 MB do WhatsApp Web.
 
 ## UI
 
+No editor de chatbot, a tela mostra o rascunho mesmo com versão publicada.
+Salvar rascunho não altera o atendimento em uso; Publicar alterações salva o
+que estiver pendente e publica para novas conversas. A permissão de publicação
+continua independente da edição. Despublicar exige confirmação e não é requisito
+para editar. `has_unpublished_changes` identifica diferenças salvas; alterações
+locais ainda não salvas usam `dirty`. Seleção e medição visual de nós não devem
+marcar o grafo como alterado. A tabela oferece publicação das alterações salvas.
+
 PrimeReact + PrimeFlex, com o CSS praticamente todo em classes utilitárias
 inline. Tema Apollo servido de `public/theme/theme.css`; estilos próprios em
 `src/styles/layout/`.

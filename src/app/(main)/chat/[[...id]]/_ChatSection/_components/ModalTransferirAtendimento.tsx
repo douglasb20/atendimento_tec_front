@@ -10,6 +10,7 @@ import useApi from '@/service/Api/ApiClient';
 import { SupportChatsResponse } from '@/Interfaces';
 import { UserResponse } from '@/Interfaces/user.interface';
 import { Alerta, CatchAlerta, nomeCompleto } from '@/service/Util';
+import LabelPlus from '@/components/LabelPlus';
 
 type ModalTransferirAtendimentoProps = {
   visible: boolean;
@@ -51,33 +52,50 @@ const ModalTransferirAtendimento = ({
   const [carregandoAtendentes, setCarregandoAtendentes] = useState(false);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !chat) return;
+    let ativo = true;
 
     setDestino(null);
-    setSetorId(chat?.department_id ?? null);
+    setSetorId(null);
+    setAtendentes([]);
+    setSetores([]);
     setMotivo('');
 
     const carregar = async () => {
       try {
         setCarregandoAtendentes(true);
         const destinos = await FetchReq<DestinosTransferencia>('DestinosTransferenciaChat', [chat.id]);
+        if (!ativo) return;
         setSetores(destinos.setores);
-        if (destinos.setores.length === 1) setSetorId(destinos.setores[0].id);
 
         // Transferir para si mesmo é recusado pela API; tirar da lista evita
         // oferecer a opção só para negá-la depois.
         setAtendentes(destinos.atendentes.filter((u) => Number(u.id) !== Number(chat?.user_id)));
       } catch (erro) {
-        CatchAlerta(erro, 'Não foi possível carregar os atendentes');
+        if (ativo) CatchAlerta(erro, 'Não foi possível carregar os atendentes');
       } finally {
-        setCarregandoAtendentes(false);
+        if (ativo) setCarregandoAtendentes(false);
       }
     };
 
     carregar();
+    return () => { ativo = false; };
     // `FetchReq` nasce a cada render do hook e entraria em laço aqui.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, chat?.user_id]);
+  }, [visible, chat?.id, chat?.user_id]);
+
+  const setoresParaDestino = (destinatario: number | null) => destinatario === PARA_ESPERA ? setores
+    : setores.filter(setor => atendentes.some(atendente => Number(atendente.id) === Number(destinatario)
+      && Number(atendente.department_id) === Number(setor.id)));
+  const setoresDisponiveis = setoresParaDestino(destino);
+  const setorValido = setoresDisponiveis.some(setor => Number(setor.id) === Number(setorId));
+  const escolherDestino = (destinatario: number | null) => {
+    setDestino(destinatario);
+    const disponiveis = setoresParaDestino(destinatario);
+    // Não herda o setor da conversa ou do destinatário anterior: com vários,
+    // a pessoa que transfere precisa decidir o contexto deste atendimento.
+    setSetorId(disponiveis.length === 1 ? Number(disponiveis[0].id) : null);
+  };
 
   const opcoes = [
     {
@@ -85,7 +103,7 @@ const ModalTransferirAtendimento = ({
       value: PARA_ESPERA,
       descricao: 'A equipe do setor poderá assumir este atendimento',
     },
-    ...atendentes.filter((atendente) => Number(atendente.department_id) === Number(setorId)).map((atendente) => ({
+    ...Array.from(new Map(atendentes.map(atendente => [Number(atendente.id), atendente])).values()).map((atendente) => ({
       label: nomeCompleto(atendente),
       value: Number(atendente.id),
       descricao: atendente.email,
@@ -93,6 +111,7 @@ const ModalTransferirAtendimento = ({
   ];
 
   const transferir = async () => {
+    if (destino === null || !setorValido || carregandoAtendentes || transferindo) return;
     try {
       setTransferindo(true);
 
@@ -146,8 +165,8 @@ const ModalTransferirAtendimento = ({
         label="Transferir"
         icon="fa-regular fa-right-left"
         loading={transferindo}
-        disabled={destino === null || setorId === null || carregandoAtendentes}
-        tooltip={destino === null ? 'Escolha para quem transferir' : undefined}
+        disabled={destino === null || !setorValido || carregandoAtendentes || transferindo}
+        tooltip={destino === null ? 'Escolha para quem transferir' : !setorValido ? 'Escolha o setor de destino' : undefined}
         tooltipOptions={{ position: 'top', showOnDisabled: true }}
         onClick={transferir}
         style={{ width: 'auto' }}
@@ -168,33 +187,35 @@ const ModalTransferirAtendimento = ({
     >
       <div className="flex flex-column gap-3">
         <div>
-          <label htmlFor="setor-destino" className="block mb-2 font-medium">Setor de destino</label>
-          <Dropdown inputId="setor-destino" value={setorId} options={setores} optionLabel="name" optionValue="id"
-            placeholder="Escolha o setor" loading={carregandoAtendentes}
-            onChange={(e) => { setSetorId(e.value); setDestino(null); }} />
-        </div>
-        <div>
-          <label
-            htmlFor="destino"
-            className="block mb-2 font-medium"
-          >
-            Transferir para
-          </label>
+          <div className="mb-2">
+            <LabelPlus htmlFor="destino" text="Transferir para" required className="font-medium" />
+          </div>
           <Dropdown
             inputId="destino"
             value={destino}
             options={opcoes}
-            onChange={(e) => setDestino(e.value)}
+            onChange={(e) => escolherDestino(e.value)}
             optionLabel="label"
             itemTemplate={itemTemplate}
             filter
             filterBy="label"
             loading={carregandoAtendentes}
-            disabled={!setorId || carregandoAtendentes}
-            placeholder="Escolha um atendente"
+            disabled={carregandoAtendentes || transferindo}
+            placeholder="Escolha um atendente ou a fila"
             emptyMessage="Nenhum outro atendente cadastrado"
             emptyFilterMessage="Nenhum atendente encontrado"
           />
+        </div>
+
+        <div>
+          <div className="mb-2">
+            <LabelPlus htmlFor="setor-destino" text="Setor de destino" required className="font-medium"
+              textHelp="Ao escolher um atendente com um setor disponível neste canal, o setor é preenchido automaticamente. Se houver vários, escolha o setor deste atendimento. Para a fila, escolha o setor que vai receber a conversa." />
+          </div>
+          <Dropdown inputId="setor-destino" value={setorId} options={setoresDisponiveis} optionLabel="name" optionValue="id"
+            placeholder={destino === null ? 'Escolha o destino primeiro' : 'Escolha o setor'} loading={carregandoAtendentes}
+            disabled={destino === null || carregandoAtendentes || transferindo || setoresDisponiveis.length === 1}
+            onChange={(e) => setSetorId(e.value)} />
         </div>
 
         <div>

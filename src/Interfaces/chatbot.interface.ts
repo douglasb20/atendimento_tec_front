@@ -17,6 +17,7 @@ export type ChatbotResponse = {
   channels?: { id: number; name: string }[];
   settings: Record<string, unknown>;
   current_published_version_id: number | null;
+  has_unpublished_changes?: boolean;
   created_at: string;
   updated_at: string | null;
   deleted_at: string | null;
@@ -49,6 +50,7 @@ export type ChatbotFlowVersionResponse = {
   graph: { nodes: ChatbotFlowNode[]; edges: ChatbotFlowEdge[]; viewport?: ChatbotFlowViewport };
   version_number: number;
   published_at: string | null;
+  has_unpublished_changes?: boolean;
   created_at: string;
 };
 

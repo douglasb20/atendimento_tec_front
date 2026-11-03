@@ -41,6 +41,7 @@ export const ListUrl = {
   // Chatbot por fluxo visual. `type=complementar` na query lista os fluxos
   // complementares (subfluxos), separado da listagem principal.
   ListarChatbots: { url: '/chatbots', method: 'GET' },
+  DestinosAtendimentoChatbot: { url: '/chatbots/destinos-atendimento', method: 'GET' },
   ListarFluxosComplementares: { url: '/chatbots?type=complementar', method: 'GET' },
   BuscarChatbot: { url: '/chatbots/{{chatbot_id}}', method: 'GET' },
   AdicionarChatbot: { url: '/chatbots', method: 'POST' },

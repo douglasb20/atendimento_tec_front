@@ -20,6 +20,7 @@ const NOS_DISPONIVEIS: NoDisponivel[] = [
   { type: 'holiday', label: 'Feriados', icon: PrimeIcons.CALENDAR, category: 'Dados e regras' },
   { type: 'finish', label: 'Finalizar', icon: PrimeIcons.CHECK_CIRCLE, category: 'Atendimento' },
   { type: 'close_support_chat', label: 'Encerrar atendimento', icon: PrimeIcons.POWER_OFF, category: 'Atendimento' },
+  { type: 'handoff', label: 'Encaminhar para atendimento', icon: PrimeIcons.DIRECTIONS, category: 'Atendimento' },
   { type: 'set_department', label: 'Definir setor', icon: PrimeIcons.USERS, category: 'Atendimento' },
   { type: 'business_hours', label: 'Verificar horário do setor', icon: PrimeIcons.CLOCK, category: 'Atendimento' },
 ];
