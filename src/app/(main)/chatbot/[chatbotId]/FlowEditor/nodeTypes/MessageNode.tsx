@@ -162,12 +162,14 @@ function MessageNode({ id, data, selected }: NodeProps) {
       
       <Handle
         type="source"
+        id="saida-inferior"
         position={Position.Bottom}
         style={{ padding: "0.450rem", zIndex: 1 }}
         className='border-2 border-700'
       />
       <Handle
         type="source"
+        id="saida-direita"
         position={Position.Right}
         style={{ padding: "0.450rem", zIndex: 1 }}
         className='border-2 border-700'
@@ -185,7 +187,7 @@ function MessageNode({ id, data, selected }: NodeProps) {
         <RemoverNoButton onRemove={nodeData.onRemove} />
       </div>
 
-      <div className="flex flex-column gap-3 p-2">
+      <div className="flex flex-column gap-3 py-2 px-3">
         <div>
           <LabelPlus text="Tipo de Mensagem" />
           <Dropdown

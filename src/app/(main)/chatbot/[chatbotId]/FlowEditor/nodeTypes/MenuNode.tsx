@@ -35,7 +35,7 @@ const SAIDA_LIMITE_TENTATIVAS = 'limite-tentativas';
 // O padding é o mesmo dos conectores de entrada/saída deste card.
 const handleNaLinha = {
   position: 'absolute',
-  right: '-8px',
+  right: '-13px',
   top: '50%',
   padding: '0.550rem',
   zIndex: 5,
@@ -92,6 +92,7 @@ function MenuNode({ id, data, selected }: NodeProps) {
     >
       <Handle
         type="target"
+        id="entrada-superior"
         position={Position.Top}
         style={{ padding: '0.550rem', zIndex: 1 }}
         className="border-2 border-700"

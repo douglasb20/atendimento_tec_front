@@ -125,7 +125,7 @@ export interface SupportChatEventResponse {
   departmentDestino?: { id: number; name: string } | null;
   id: string;
   support_chat_id: string;
-  tipo: 'transferencia' | 'pausa' | 'retomada' | 'chamada';
+  tipo: 'transferencia' | 'encaminhamento' | 'pausa' | 'retomada' | 'chamada';
   motivo: string | null;
   created_at: string;
   userOrigem: UserResponse | null;

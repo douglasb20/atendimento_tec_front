@@ -10,6 +10,7 @@ import {
   Controls,
   Edge,
   EdgeChange,
+  MarkerType,
   Node,
   NodeProps,
   NodeChange,
@@ -35,7 +36,9 @@ import { useTema } from '@/hooks/useTema';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import useApi from '@/service/Api/ApiClient';
-import { AlertaCallback, CatchAlerta } from '@/service/Util';
+import { CatchAlerta, ConfirmaAcao } from '@/service/Util';
+import { mostrarToast } from '@/components/ToastGlobal';
+import LabelPlus from '@/components/LabelPlus';
 
 import NodeConfigDrawer from './NodeConfigDrawer';
 import ConditionalNode from './nodeTypes/ConditionalNode';
@@ -46,6 +49,7 @@ import MenuNode from './nodeTypes/MenuNode';
 import MessageNode from './nodeTypes/MessageNode';
 import StartNode from './nodeTypes/StartNode';
 import SetDepartmentNode from './nodeTypes/SetDepartmentNode';
+import HandoffNode from './nodeTypes/HandoffNode';
 import BusinessHoursNode from './nodeTypes/BusinessHoursNode';
 import NodePalette from './NodePalette';
 
@@ -60,6 +64,7 @@ function comControleDeEdicao(Componente: React.ComponentType<NodeProps>) {
 const NODE_TYPES = {
   start: StartNode,
   set_department: comControleDeEdicao(SetDepartmentNode),
+  handoff: comControleDeEdicao(HandoffNode),
   business_hours: comControleDeEdicao(BusinessHoursNode),
   message: comControleDeEdicao(MessageNode),
   conditional: comControleDeEdicao(ConditionalNode),
@@ -75,14 +80,19 @@ const NODE_TYPES = {
  */
 const VIEWPORT_PADRAO = { x: 80, y: 80, zoom: 1 };
 
+const OPCOES_LIGACAO = {
+  markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--blue-500)', width: 20, height: 20 },
+};
+
 const DATA_PADRAO_POR_TIPO: Record<string, Record<string, unknown>> = {
   message: { messageType: 'text', value: '', continueOn: 'auto' },
   conditional: { compareUsing: 'last_message', conditions: [], defaultOutputHandle: 'default' },
   menu: { title: '', body: '', options: [], invalidOptionOutputHandle: 'invalid', invalidOptionAction: 'repeat_menu', invalidAttemptLimitEnabled: false, maxInvalidAttempts: 3 },
   holiday: { holidayOutputHandle: 'holiday', notHolidayOutputHandle: 'not_holiday' },
   finish: {},
-  close_support_chat: { enviarDespedida: true },
+  close_support_chat: { enviarDespedida: true, executarFluxoSaida: false },
   set_department: {},
+  handoff: { destination: 'department' },
   business_hours: {},
 };
 
@@ -100,10 +110,16 @@ type FlowEditorProps = {
  * inteira ao tentar ler `position.x` de um nó inexistente.
  */
 function paraReactFlow(nodes: ChatbotFlowNode[], edges: ChatbotFlowEdge[]) {
+  const nosValidos = nodes.filter((n) => n && n.id && n.position && Number.isFinite(n.position.x) && Number.isFinite(n.position.y));
+  if (!nosValidos.some((no) => no.type === 'start')) {
+    let idInicio = 'start';
+    while (nosValidos.some(no => no.id === idInicio)) idInicio += '_fixo';
+    nosValidos.unshift({ id: idInicio, type: 'start', position: { x: 0, y: 0 }, data: {} });
+  }
   return {
-    nodes: nodes
-      .filter((n) => n && n.id && n.position)
-      .map((n) => ({ id: n.id, type: n.type, position: n.position, data: n.data }) as Node),
+    nodes: nosValidos.map((n) => ({ id: n.id, type: n.type, position: n.position, data: n.data,
+      ...(n.type === 'start' && { draggable: false, deletable: false, selectable: false }),
+    }) as Node),
     edges: edges
       .filter((e) => e && e.id && e.source && e.target)
       .map(
@@ -127,17 +143,18 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
   const inicial = useMemo(() => paraReactFlow(versao.graph.nodes, versao.graph.edges), [versao]);
   const viewportInicial = versao.graph.viewport ?? VIEWPORT_PADRAO;
 
-  // A publicação, e não o status ativo/inativo, trava o editor. `active`
-  // somente decide se o motor atende novas conversas. Esta cópia local é
-  // atualizada após publicar/despublicar, sem obrigar a recarregar a página.
+  // O editor sempre trabalha no rascunho. O ponteiro publicado só muda
+  // explicitamente ao publicar ou retirar o fluxo de operação.
   const [versaoPublicadaId, setVersaoPublicadaId] = useState(chatbot.current_published_version_id);
+  const [alteracoesSalvasPendentes, setAlteracoesSalvasPendentes] = useState(versao.has_unpublished_changes ?? chatbot.has_unpublished_changes ?? false);
   const emProducao = versaoPublicadaId != null;
-  const somenteLeitura = emProducao || !podeEditar || !ajustes.chatbot_habilitado;
+  const somenteLeitura = !podeEditar || !ajustes.chatbot_habilitado;
 
   const [nodes, setNodes] = useState<Node[]>(inicial.nodes);
   const [edges, setEdges] = useState<Edge[]>(inicial.edges);
   const [nodeSelecionado, setNodeSelecionado] = useState<ChatbotFlowNode | null>(null);
-  const [dirty, setDirty] = useState(false);
+  const [dirty, setDirty] = useState(!versao.graph.nodes.some(no => no.id && no.type === 'start'
+    && no.position && Number.isFinite(no.position.x) && Number.isFinite(no.position.y)));
   const [rendered, setRendered] = useState(false);
   const { setLoading } = useService();
   const { FetchReq } = useApi();
@@ -177,17 +194,21 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       if (somenteLeitura) return;
-      setNodes((nds) => applyNodeChanges(changes, nds));
-      setDirty(true);
+      const idsFixos = new Set(nodes.filter(no => no.type === 'start').map(no => no.id));
+      const permitidas = changes.filter(mudanca => !('id' in mudanca && idsFixos.has(mudanca.id)
+        && ['position', 'remove', 'replace', 'select'].includes(mudanca.type)));
+      if (!permitidas.length) return;
+      setNodes((nds) => applyNodeChanges(permitidas, nds));
+      if (permitidas.some(mudanca => !['dimensions', 'select'].includes(mudanca.type))) setDirty(true);
     },
-    [somenteLeitura],
+    [somenteLeitura, nodes],
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
       if (somenteLeitura) return;
       setEdges((eds) => applyEdgeChanges(changes, eds));
-      setDirty(true);
+      if (changes.some(mudanca => mudanca.type !== 'select')) setDirty(true);
     },
     [somenteLeitura],
   );
@@ -203,13 +224,13 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
 
   const onNodeClick = useCallback(
     (_event: unknown, node: Node) => {
-      // Em produção o fluxo é só consulta - nenhum nó abre configuração,
+      // Sem permissão de edição o fluxo é só consulta - nenhum nó abre configuração,
       // para não sugerir uma edição que o backend vai recusar ao salvar.
       if (somenteLeitura) return;
 
       // Mensagem e Menu se configuram inline, sem modal - clicar neles não
       // abre o `NodeConfigDrawer` (que só resta para Condicional).
-      if (['message', 'menu', 'close_support_chat', 'set_department', 'business_hours', 'finish', 'start', 'holiday'].includes(node.type ?? '')) return;
+      if (['message', 'menu', 'close_support_chat', 'set_department', 'handoff', 'business_hours', 'finish', 'start', 'holiday'].includes(node.type ?? '')) return;
 
       // Descarta `onRemove`/`onChange` injetados - `nodeSelecionado.data`
       // alimenta o `NodeConfigDrawer` e depois volta inteiro via
@@ -229,7 +250,7 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
   );
 
   const adicionarNo = (type: string, position?: { x: number; y: number }) => {
-      if (somenteLeitura) return;
+    if (somenteLeitura || type === 'start' || !(type in DATA_PADRAO_POR_TIPO)) return;
 
     const id = `${type}_${Date.now()}`;
     const novoNode: Node = {
@@ -243,9 +264,11 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
   };
 
   const atualizarDadosDoNo = (nodeId: string, data: Record<string, unknown>) => {
-      if (somenteLeitura) return;
-    setNodes((nds) => nds.map((n) => (n.id === nodeId ? { ...n, data } : n)));
-    setNodeSelecionado((atual) => (atual?.id === nodeId ? { ...atual, data } : atual));
+    if (somenteLeitura) return;
+    // Nós inline enviam só os campos alterados. Substituir o objeto inteiro
+    // apagava o destino ao escolher um atendente e as opções dos outros nós.
+    setNodes((nds) => nds.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n)));
+    setNodeSelecionado((atual) => (atual?.id === nodeId ? { ...atual, data: { ...atual.data, ...data } } : atual));
     setDirty(true);
   };
 
@@ -258,7 +281,7 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
   /** Remove o nó e qualquer edge ligada a ele (senão ficaria apontando para
    * um id inexistente). O nó Início não usa este callback - é fixo. */
   const removerNo = (nodeId: string) => {
-      if (somenteLeitura) return;
+    if (somenteLeitura || nodes.some(no => no.id === nodeId && no.type === 'start')) return;
     setNodes((nds) => nds.filter((n) => n.id !== nodeId));
     setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
     setNodeSelecionado((atual) => (atual?.id === nodeId ? null : atual));
@@ -275,7 +298,7 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
     () =>
       nodes.map((n) =>
         n.type === 'start'
-          ? n
+          ? { ...n, draggable: false, deletable: false, selectable: false }
           : {
               ...n,
               data: {
@@ -283,7 +306,7 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
                 somenteLeitura,
                 fluxoSaida: chatbot.type === 'saida',
                 onRemove: () => removerNo(n.id),
-                ...(['message', 'menu', 'close_support_chat', 'set_department', 'business_hours'].includes(n.type ?? '') && {
+                ...(['message', 'menu', 'close_support_chat', 'set_department', 'handoff', 'business_hours'].includes(n.type ?? '') && {
                   onChange: (data: Record<string, unknown>) => atualizarDadosDoNo(n.id, data),
                 }),
                 ...(['menu', 'message'].includes(n.type ?? '') && {
@@ -315,10 +338,11 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
     try {
       setLoading(true);
 
-      await FetchReq({ endpoint: 'SalvarFluxoChatbot', variables: [chatbotId], body: montarGraph() });
+      const salvo = await FetchReq<ChatbotFlowVersionResponse>({ endpoint: 'SalvarFluxoChatbot', variables: [chatbotId], body: montarGraph() });
 
       setDirty(false);
-      AlertaCallback('Fluxo salvo com sucesso!', () => {}, 'success');
+      setAlteracoesSalvasPendentes(salvo.has_unpublished_changes ?? emProducao);
+      mostrarToast('Rascunho salvo com sucesso!');
     } catch (err) {
       CatchAlerta(err, 'Erro ao salvar o fluxo');
     } finally {
@@ -338,7 +362,8 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
       setLoading(true);
 
       if (dirty) {
-        await FetchReq({ endpoint: 'SalvarFluxoChatbot', variables: [chatbotId], body: montarGraph() });
+        const salvo = await FetchReq<ChatbotFlowVersionResponse>({ endpoint: 'SalvarFluxoChatbot', variables: [chatbotId], body: montarGraph() });
+        setAlteracoesSalvasPendentes(salvo.has_unpublished_changes ?? emProducao);
         setDirty(false);
       }
 
@@ -347,8 +372,9 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
         variables: [chatbotId],
       });
       setVersaoPublicadaId(chatbotPublicado.current_published_version_id);
+      setAlteracoesSalvasPendentes(false);
 
-      AlertaCallback('Fluxo publicado com sucesso!', () => {}, 'success');
+      mostrarToast('Fluxo publicado com sucesso!');
     } catch (err) {
       CatchAlerta(err, 'Erro ao publicar o fluxo');
     } finally {
@@ -357,11 +383,10 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
   };
 
   /**
-   * Despublicar libera a edição do rascunho sem tocar no status do chatbot.
-   * A versão antiga continua no histórico; o motor só deixa de iniciar novas
-   * execuções até que uma versão seja publicada novamente.
+   * Retira o fluxo de operação por escolha explícita, preservando o rascunho
+   * e as execuções que já começaram na versão publicada.
    */
-  const despublicarParaEditar = async () => {
+  const despublicarFluxo = async () => {
     if (!podePublicar || !ajustes.chatbot_habilitado) return;
     try {
       setLoading(true);
@@ -370,7 +395,8 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
         variables: [chatbotId],
       });
       setVersaoPublicadaId(chatbotDespublicado.current_published_version_id);
-      AlertaCallback('Fluxo despublicado - o rascunho já pode ser editado.', () => {}, 'success');
+      setAlteracoesSalvasPendentes(false);
+      mostrarToast('Fluxo despublicado. Novas conversas não iniciarão este fluxo.');
     } catch (err) {
       CatchAlerta(err, 'Erro ao despublicar o fluxo');
     } finally {
@@ -390,35 +416,28 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
               Crie e conecte cada etapa da jornada do cliente.
             </span>
           </div>
-          <div className="flex align-items-center gap-2">
+          <div className="flex align-items-center justify-content-end flex-wrap gap-2">
+            <div className="text-sm text-color-secondary mr-2">
+              <LabelPlus text={emProducao ? 'Versão publicada em uso' : 'Sem versão publicada'}
+                textHelp="Você edita o rascunho. Salvar não altera a versão em uso. Publicar alterações aplica a nova versão às próximas conversas; as já iniciadas continuam na versão anterior." />
+              {dirty ? <span className="text-orange-500">Alterações não salvas</span>
+                : emProducao && alteracoesSalvasPendentes && <span className="text-orange-500">Rascunho com alterações para publicar</span>}
+            </div>
+            <Button label="Salvar rascunho" outlined disabled={!dirty || somenteLeitura} onClick={salvarFluxo} />
+            <Button label={emProducao ? 'Publicar alterações' : podeEditar ? 'Salvar e Publicar' : 'Publicar'}
+              disabled={!podePublicar || !ajustes.chatbot_habilitado || emProducao && !dirty && !alteracoesSalvasPendentes}
+              onClick={publicarFluxo} />
             {emProducao && (
-              <span className="flex align-items-center gap-2 text-sm text-color-secondary mr-2">
-                <i className="pi pi-lock" />
-                Em produção - despublique para editar
-              </span>
-            )}
-            {emProducao ? (
               <Button
-                label="Despublicar para editar"
+                label="Despublicar"
                 disabled={!podePublicar || !ajustes.chatbot_habilitado}
                 severity="danger"
                 outlined
-                onClick={despublicarParaEditar}
+                onClick={() => ConfirmaAcao(
+                  'O fluxo deixará de iniciar novas conversas. O rascunho e as conversas já em andamento serão preservados.',
+                  despublicarFluxo, undefined, 'Despublicar fluxo?', 'Despublicar', 'Cancelar',
+                )}
               />
-            ) : (
-              <>
-                <Button
-                  label="Salvar"
-                  outlined
-                  disabled={!dirty || somenteLeitura}
-                  onClick={salvarFluxo}
-                />
-                <Button
-                  label={podeEditar ? 'Salvar e Publicar' : 'Publicar'}
-                  disabled={!podePublicar || !ajustes.chatbot_habilitado}
-                  onClick={publicarFluxo}
-                />
-              </>
             )}
           </div>
         </div>
@@ -434,6 +453,7 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
           <ReactFlow
             nodes={nodesComCallbacks}
             edges={edges}
+            defaultEdgeOptions={OPCOES_LIGACAO}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
@@ -442,7 +462,7 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
             colorMode={colorMode}
             nodesDraggable={!somenteLeitura}
             nodesConnectable={!somenteLeitura}
-            elementsSelectable={!emProducao}
+            elementsSelectable={!somenteLeitura}
             // Não `fitView`: o auto-ajuste recentraliza os nós a cada
             // abertura, ignorando onde o usuário deixou o canvas. Usa a
             // posição salva junto do fluxo (`viewportInicial`), ou o padrão
@@ -571,8 +591,7 @@ function SoltarNoNoCanvas({
       el.removeEventListener('dragover', onDragOver);
       el.removeEventListener('drop', onDrop);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wrapperRef, screenToFlowPosition]);
+  }, [wrapperRef, screenToFlowPosition, onDropNode]);
 
   return null;
 }

@@ -34,7 +34,7 @@ export default function SetDepartmentNode({ data, selected }: NodeProps) {
       <div className="p-2 flex flex-column gap-2">
         <Dropdown className="nodrag nowheel w-full" value={dados.department_id} options={setores} optionLabel="name" optionValue="id"
           placeholder="Escolha o setor" onChange={(e) => dados.onChange?.({ department_id: e.value })} />
-        <small className="text-color-secondary">O setor deve estar vinculado aos canais deste fluxo. O atendimento passa para a fila desse setor.</small>
+        <small className="text-color-secondary">Define o setor e continua no chatbot. Para entregar à equipe, use Encaminhar para atendimento.</small>
       </div>
       <Handle type="source" position={Position.Bottom} className="border-2 border-700" style={{ padding: '0.450rem' }} />
     </div>

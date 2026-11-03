@@ -35,7 +35,12 @@ const DtChatbots = ({ actions, podePublicar, publicandoId, onPublicacao, ...prop
         sortable
         body={(chatbot: ChatbotResponse) => (
           <div className="flex flex-column">
-            <span className="font-medium">{chatbot.name}</span>
+            <div className="flex align-items-center flex-wrap gap-2">
+              <span className="font-medium">{chatbot.name}</span>
+              {chatbot.has_unpublished_changes && (
+                <Tag value="Alterações pendentes" severity="warning" className="white-space-nowrap" />
+              )}
+            </div>
             {!!chatbot.channels?.length && (
               <small className="text-color-secondary">
                 {chatbot.channels.map((c) => c.name).join(', ')}
@@ -74,10 +79,7 @@ const DtChatbots = ({ actions, podePublicar, publicandoId, onPublicacao, ...prop
         align="center"
         body={(chatbot: ChatbotResponse) =>
           chatbot.current_published_version_id ? (
-            <Tag
-              value="Sim"
-              severity="info"
-            />
+            <Tag value="Sim" severity="info" />
           ) : (
             <Tag
               value="Rascunho"
@@ -101,6 +103,10 @@ const DtChatbots = ({ actions, podePublicar, publicandoId, onPublicacao, ...prop
         align="center"
         headerClassName="w-14rem"
         body={(rowData: ChatbotResponse) => <div className="flex align-items-center justify-content-center gap-1">
+          {podePublicar && rowData.current_published_version_id != null && rowData.has_unpublished_changes && <Button
+            icon="pi pi-upload" severity="success" aria-label="Publicar alterações" tooltip="Publicar alterações salvas"
+            tooltipOptions={{ position: 'bottom' }} loading={publicandoId === rowData.id}
+            disabled={publicandoId != null} onClick={() => onPublicacao(rowData, true)} />}
           {podePublicar && <Button
             icon={rowData.current_published_version_id != null ? 'pi pi-undo' : 'pi pi-upload'}
             severity={rowData.current_published_version_id != null ? 'warning' : 'success'}
