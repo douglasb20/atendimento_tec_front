@@ -6,6 +6,7 @@ import { useService } from '@/contexts/ServicesContext';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import useApi from '@/service/Api/ApiClient';
 import { somenteDigitos } from '@/components/InputTelefone';
+import { configuracaoAtendimentoContato } from '@/service/PoliticaAtendimentoContato';
 import { AlertaCallback, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 
 import { IActionTable } from '@/components/AcoesDataTable';
@@ -108,7 +109,7 @@ export default function DadosContatosSection({ data }: DadosContatosProps) {
         campos: (fields.campos ?? [])
           .filter((c) => c.custom_field_id && c.valor?.trim())
           .map((c) => ({ custom_field_id: c.custom_field_id, valor: c.valor.trim() })),
-        ignore_support: Boolean(fields.ignore_support),
+        ...configuracaoAtendimentoContato(fields.modo_atendimento),
         // `null` desfaz o vínculo; o backend aplica o corpo por cima do cadastro.
         client_id: fields.client_id ?? null,
         has_no_client: Boolean(fields.has_no_client),

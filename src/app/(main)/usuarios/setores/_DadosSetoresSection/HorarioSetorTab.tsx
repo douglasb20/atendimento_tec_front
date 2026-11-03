@@ -221,7 +221,7 @@ function HorarioSetorTab(
   }
 
   return (
-    <div className="flex flex-column gap-4">
+    <div className="flex flex-column gap-2">
       <div className="flex align-items-center justify-content-between gap-2 border-1 border-300 border-round-lg p-3">
         <LabelPlus
           className="font-semibold"
@@ -236,12 +236,12 @@ function HorarioSetorTab(
       </div>
 
       <div className="flex align-items-center justify-content-between gap-2 border-1 border-300 border-round-lg p-3">
-        <LabelPlus text="Respeitar feriados cadastrados" textHelp="Nos feriados do calendário central, o setor fica fechado. A aba Exceções por data permite abrir em horário normal ou especial." />
+        <LabelPlus text="Não atende aos feriados" textHelp="Ligado, o setor não atende nos feriados do calendário cadastrado. Desligado, segue o horário semanal, mesmo nos feriados. As regras da aba Exceções por data têm prioridade e permitem atender em horário normal ou especial." />
         <InputSwitch checked={respeitarFeriados} disabled={somenteLeitura || !scheduleEnabled}
           onChange={(e) => setRespeitarFeriados(!!e.value)} />
       </div>
 
-      <div>
+      <div className="mt-3">
         <LabelPlus
           text="Mensagem de ausência"
           textHelp="Exibida ao contato quando ele escreve fora do horário configurado abaixo."

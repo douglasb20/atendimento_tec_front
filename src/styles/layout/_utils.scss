@@ -234,20 +234,22 @@
 /* Campo de telefone com seletor de país (react-phone-number-input).
    O CSS da biblioteca não é importado: o seletor foi trocado pelo `Dropdown` do
    PrimeReact. As regras abaixo fundem os dois numa caixa só - a borda é do
-   contêiner, e seletor e input ficam transparentes dentro dele. Sem isso eram
-   dois campos separados, com o seletor parecendo um filtro solto ao lado. */
+   contêiner, que usa o estilo p-inputtext do tema. Os controles ficam transparentes
+   dentro dele, formando um único campo com seletor de país e número. */
 .input-telefone {
   display: flex;
   align-items: stretch;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--border-radius);
-  background: var(--surface-overlay);
+  padding: 0;
   transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:hover:not(:has(input:disabled)):not(.p-invalid) {
+    border-color: var(--primary-color);
+  }
 
   /* O foco pinta o contêiner, não o input de dentro: é ele que tem a borda. */
   &:focus-within {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem var(--primary-100);
+    box-shadow: var(--focus-ring);
   }
 
   .p-dropdown {
@@ -298,6 +300,145 @@
 // pastel da cor primária no claro, a mesma cor rebaixada no escuro.
 .conversa-ativa {
   background-color: var(--highlight-bg);
+}
+
+// Sobre os fundos do cabeçalho e rodapé, sem interceptar cliques no cartão.
+.conversa-ativa::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background-color: var(--primary-color);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.conversa-identificacao {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--surface-border);
+  min-width: 0;
+}
+
+.conversa-identificacao__canal,
+.conversa-identificacao__setor {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  max-width: 60%;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  background: var(--surface-200);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+
+  i {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+  }
+}
+
+.conversa-identificacao__canal {
+  color: var(--primary-color);
+}
+
+.conversa-identificacao__setor {
+  color: var(--text-color-secondary);
+}
+
+.conversa-identificacao__texto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversa-responsavel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+  border-top: 1px solid var(--surface-border);
+  background: var(--surface-200);
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+  line-height: 1.35;
+
+  i {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+  }
+}
+
+.p-button.filtro-atendimento {
+  position: relative;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-color-secondary);
+  transition: background-color 0.15s, color 0.15s;
+
+  > i {
+    font-size: 1.2rem;
+  }
+
+  &:hover {
+    background: var(--surface-200);
+    color: var(--primary-color);
+  }
+
+  &.filtro-atendimento--ativo {
+    background: var(--primary-color);
+    color: var(--primary-color-text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+  }
+}
+
+.filtro-atendimento__contador {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  border-radius: 1rem;
+  background: var(--surface-200);
+  color: var(--text-color);
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.filtro-atendimento--ativo .filtro-atendimento__contador {
+  background: var(--green-500);
+  color: var(--surface-0);
 }
 
 // Chip de filtro com valor escolhido (`components/ChipFiltro`).

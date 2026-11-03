@@ -12,14 +12,16 @@ import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import LabelPlus from '@/components/LabelPlus';
 import ModalNovoCompromisso from '@/components/ModalNovoCompromisso';
-import { AtendenteAgenda, ClientResponse, CompromissoResponse, ContactResponse } from '@/Interfaces';
+import { AtendenteAgenda, ClientResponse, CompromissoResponse, ContactResponse, HolidayResponse } from '@/Interfaces';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import useApi from '@/service/Api/ApiClient';
 import { Alerta, CatchAlerta, corDoTextoSobre } from '@/service/Util';
+import { dataLocalAgenda, eventosFeriadosAgenda } from '@/service/FeriadosAgenda';
+import { tituloProgramacaoAgenda, VISOES_PROGRAMACAO } from '@/service/ProgramacaoAgenda';
 
 type Formulario = {
   id?: number;
@@ -37,7 +39,7 @@ const VISOES = [
   { label: 'Dia', value: 'timeGridDay' },
   { label: 'Semana', value: 'timeGridWeek' },
   { label: 'Mês', value: 'dayGridMonth' },
-  { label: 'Programação', value: 'listWeek' },
+  { label: 'Programação', value: 'listProgramacao' },
 ];
 const LEMBRETES = [
   { label: '5 minutos antes', value: 5 },
@@ -85,6 +87,8 @@ export default function AgendaSection() {
   const { FetchReq } = useApi();
   const { pode, carregado } = usePermissoes();
   const [compromissos, setCompromissos] = useState<CompromissoResponse[]>([]);
+  const [feriados, setFeriados] = useState<HolidayResponse[]>([]);
+  const [periodoVisivel, setPeriodoVisivel] = useState<{ inicio: Date; fim: Date } | null>(null);
   const [atendentes, setAtendentes] = useState<AtendenteAgenda[]>([]);
   const [clientes, setClientes] = useState<ClientResponse[]>([]);
   const [contatos, setContatos] = useState<ContactResponse[]>([]);
@@ -99,6 +103,9 @@ export default function AgendaSection() {
   const podeEditar = pode('schedule:edit');
   const podeExcluir = pode('schedule:delete');
   const modoConjunto = atendentes.length > 1;
+  const eventosFeriados = useMemo(() => periodoVisivel
+    ? eventosFeriadosAgenda(feriados, periodoVisivel.inicio, periodoVisivel.fim) : [], [feriados, periodoVisivel]);
+  const diasFeriados = useMemo(() => new Set(eventosFeriados.map(evento => evento.start as string)), [eventosFeriados]);
 
   const carregar = async (inicio: string, fim: string) => {
     try {
@@ -109,6 +116,8 @@ export default function AgendaSection() {
 
   useEffect(() => {
     if (!carregado) return;
+    FetchReq<HolidayResponse[]>('ListarFeriados').then(dados => setFeriados(dados ?? []))
+      .catch(erro => CatchAlerta(erro, 'Não foi possível carregar os feriados da agenda'));
     Promise.all([
       FetchReq<AtendenteAgenda[]>('ListarAtendentesAgenda'),
       FetchReq<ClientResponse[]>('ListarClientes').catch(() => []),
@@ -130,7 +139,7 @@ export default function AgendaSection() {
       // escolha manual do usuário, voltando sempre para Programação.
       if (modoCompacto.current === compacto) return;
       modoCompacto.current = compacto;
-      const novaVisao = compacto ? 'listWeek' : 'timeGridWeek';
+      const novaVisao = compacto ? 'listProgramacao' : 'timeGridWeek';
       setVisao(novaVisao);
       calendario.current?.getApi().changeView(novaVisao);
     };
@@ -201,7 +210,71 @@ export default function AgendaSection() {
         {podeCriar && <Button className="agenda-novo-compromisso" label="Novo compromisso" icon="pi pi-plus" onClick={() => abrirNovo()} />}
       </div>
     </div>
-    <div className="agenda-calendario"><FullCalendar ref={calendario} plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]} locales={[ptBr]} initialView="timeGridWeek" headerToolbar={false} height={visao === 'dayGridMonth' ? undefined : 'auto'} aspectRatio={visao === 'dayGridMonth' ? 1.65 : undefined} locale="pt-br" firstDay={1} allDaySlot={false} slotMinTime="00:00:00" slotMaxTime="24:00:00" scrollTime="00:00:00" slotDuration="00:30:00" slotLabelContent={(arg) => { const hora = arg.date.getHours(); return hora === 0 ? '' : `${String(hora).padStart(2, '0')}:00`; }} dayHeaderContent={(arg) => ({ html: cabecalhoDia(arg.date, arg.view.type) })} displayEventTime={visao !== 'timeGridWeek'} selectable={podeCriar} selectMirror events={compromissos.map((c) => ({ id: String(c.id), title: c.titulo, start: c.inicio_em, end: c.fim_em, backgroundColor: c.responsavel?.schedule_color, borderColor: c.responsavel?.schedule_color, textColor: corDoTextoSobre(c.responsavel?.schedule_color), extendedProps: { compromisso: c } }))} select={(info) => abrirNovo(info.start, info.end)} eventClick={(info) => abrirExistente(info.event.extendedProps.compromisso)} datesSet={(info) => { const novo = { inicio: info.start.toISOString(), fim: info.end.toISOString() }; setTituloAtual((atual) => { const titulo = tituloDoPeriodo(info.start, info.end); return atual === titulo ? atual : titulo; }); if (periodoAtual.current?.inicio === novo.inicio && periodoAtual.current.fim === novo.fim) return; periodoAtual.current = novo; carregar(novo.inicio, novo.fim); }} /></div>
+    <div className="agenda-calendario">
+      <FullCalendar
+        ref={calendario}
+        plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+        locales={[ptBr]}
+        initialView="timeGridWeek"
+        views={VISOES_PROGRAMACAO}
+        headerToolbar={false}
+        height={visao === 'dayGridMonth' ? undefined : 'auto'}
+        aspectRatio={visao === 'dayGridMonth' ? 1.65 : undefined}
+        locale="pt-br"
+        firstDay={1}
+        allDaySlot
+        allDayText="Dia inteiro"
+        slotMinTime="00:00:00"
+        slotMaxTime="24:00:00"
+        scrollTime="00:00:00"
+        slotDuration="00:30:00"
+        slotLabelContent={(arg) => {
+          const hora = arg.date.getHours();
+          return hora === 0 ? '' : `${String(hora).padStart(2, '0')}:00`;
+        }}
+        dayHeaderContent={(arg) => arg.view.type === 'listProgramacao' ? (
+          <span className="agenda-programacao-data">
+            <span className={`agenda-programacao-numero${arg.isToday ? ' agenda-dia-hoje' : ''}`}>{arg.date.getDate()}</span>
+            <span className="agenda-programacao-mes">{new Intl.DateTimeFormat('pt-BR', { month: 'short', weekday: 'short' }).format(arg.date)}</span>
+          </span>
+        ) : ({ html: cabecalhoDia(arg.date, arg.view.type) })}
+        dayHeaderClassNames={(arg) => arg.view.type !== 'dayGridMonth' && diasFeriados.has(dataLocalAgenda(arg.date)) ? ['agenda-dia-feriado'] : []}
+        dayCellClassNames={(arg) => diasFeriados.has(dataLocalAgenda(arg.date)) ? ['agenda-dia-feriado'] : []}
+        displayEventTime={visao !== 'timeGridWeek'}
+        selectable={podeCriar}
+        selectMirror
+        events={[
+          ...compromissos.map((c) => ({
+            id: String(c.id), title: c.titulo, start: c.inicio_em, end: c.fim_em,
+            backgroundColor: c.responsavel?.schedule_color,
+            borderColor: c.responsavel?.schedule_color,
+            textColor: corDoTextoSobre(c.responsavel?.schedule_color),
+            extendedProps: { compromisso: c },
+          })),
+          ...eventosFeriados,
+        ]}
+        select={(info) => abrirNovo(info.start, info.end)}
+        eventClick={(info) => {
+          const compromisso = info.event.extendedProps.compromisso as CompromissoResponse | undefined;
+          if (compromisso) abrirExistente(compromisso);
+        }}
+        eventDidMount={(info) => {
+          info.el.title = info.event.extendedProps.feriado ? `Feriado: ${info.event.title}` : info.event.title;
+        }}
+        datesSet={(info) => {
+          const novo = { inicio: info.start.toISOString(), fim: info.end.toISOString() };
+          setTituloAtual((atual) => {
+            const titulo = info.view.type === 'listProgramacao'
+              ? tituloProgramacaoAgenda(info.start, info.end) : tituloDoPeriodo(info.start, info.end);
+            return atual === titulo ? atual : titulo;
+          });
+          if (periodoAtual.current?.inicio === novo.inicio && periodoAtual.current.fim === novo.fim) return;
+          periodoAtual.current = novo;
+          setPeriodoVisivel({ inicio: info.start, fim: info.end });
+          carregar(novo.inicio, novo.fim);
+        }}
+      />
+    </div>
     <ModalNovoCompromisso visible={novoCompromisso !== null} inicio={novoCompromisso?.inicio} fim={novoCompromisso?.fim} onHide={() => setNovoCompromisso(null)} onSalvo={() => periodoAtual.current && carregar(periodoAtual.current.inicio, periodoAtual.current.fim)} />
     <Dialog  blockScroll header="Compromisso" visible={modalAberto} onHide={() => { setModalAberto(false); setConflitoPendente(false); }} style={{ width: 'min(95vw, 44rem)' }} footer={<div className="flex justify-content-between"><span>{formulario.id && podeExcluir && <Button label="Excluir" severity="danger" text onClick={remover} />}</span><span className="flex gap-2"><Button label="Cancelar" text onClick={() => setModalAberto(false)} /><Button label="Salvar" disabled={!podeEditar} onClick={() => salvar()} /></span></div>}>
       <div className="grid p-fluid">

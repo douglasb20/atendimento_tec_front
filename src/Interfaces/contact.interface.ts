@@ -24,6 +24,8 @@ export type ContactResponse = {
   /** Marcado, a mensagem deste contato é descartada já no webhook - nunca
    * vira atendimento, protocolo ou histórico. */
   ignore_support?: boolean;
+  /** Atendimento manual permitido, sem chatbot ou mensagens automáticas. */
+  automation_disabled?: boolean;
 
   /** Campos personalizados preenchidos, com a definição carregada. */
   camposPersonalizados?: ValorCampoResponse[];
