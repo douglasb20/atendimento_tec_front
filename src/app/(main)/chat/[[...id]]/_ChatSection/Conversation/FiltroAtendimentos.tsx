@@ -31,7 +31,7 @@ type FiltroAtendimentosProps = {
  * some com a conversa da lista.
  */
 export const grupoDaConversa = (chat: SupportChatsResponse): Exclude<GrupoAtendimento, 'todos'> =>
-  chat.support_chat_status_id === SupportChatStatusId.EM_ANDAMENTO ? 'andamento'
+  chat.pos_atendimento_ativo ? 'chatbot' : chat.support_chat_status_id === SupportChatStatusId.EM_ANDAMENTO ? 'andamento'
     : chat.support_chat_status_id === SupportChatStatusId.EM_FILA ? 'chatbot' : 'fila';
 
 export const filtraPorGrupo = (chats: SupportChatsResponse[], grupo: GrupoAtendimento) =>

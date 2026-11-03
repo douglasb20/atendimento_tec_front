@@ -1,8 +1,12 @@
-import { Handle, NodeProps, Position } from '@xyflow/react';
+import { Handle, NodeProps, Position, useUpdateNodeInternals } from '@xyflow/react';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
+import { InputNumber } from 'primereact/inputnumber';
+import { InputSwitch } from 'primereact/inputswitch';
+import { Dropdown } from 'primereact/dropdown';
+import { useEffect } from 'react';
 
 import LabelPlus from '@/components/LabelPlus';
 
@@ -16,10 +20,15 @@ type MenuData = ConfigTempoResposta & {
   body?: string;
   options?: MenuOption[];
   invalidOptionOutputHandle?: string;
+  invalidAttemptLimitEnabled?: boolean;
+  maxInvalidAttempts?: number;
+  invalidOptionAction?: 'repeat_menu' | 'wait_reply' | 'follow_output';
   onRemove?: () => void;
   onChange?: (data: MenuData) => void;
   onRemoveOutput?: (handleId: string) => void;
 };
+
+const SAIDA_LIMITE_TENTATIVAS = 'limite-tentativas';
 
 // Fica deliberadamente além da borda do card: dentro da linha de inputs o
 // conector disputa espaço com o botão de remover e se torna difícil de pegar.
@@ -35,12 +44,16 @@ const handleNaLinha = {
 
 /**
  * O nó Menu - uma saída por opção (na ordem em que aparecem) mais a saída
- * "Opção inválida" sempre por último. Cada saída é endereçada pelo `id` da
+ * saídas de erro conforme a configuração. Cada opção é endereçada pelo `id` da
  * opção, exatamente como o `MenuHandler` do motor resolve.
  */
 function MenuNode({ id, data, selected }: NodeProps) {
   const menuData = data as MenuData;
   const opcoes = menuData.options ?? [];
+  const atualizarConectores = useUpdateNodeInternals();
+  const limitarTentativas = menuData.invalidAttemptLimitEnabled ?? false;
+  const acaoInvalida = menuData.invalidOptionAction ?? 'follow_output';
+  useEffect(() => { atualizarConectores(id); }, [id, limitarTentativas, acaoInvalida, opcoes.length, atualizarConectores]);
 
   const atualizar = (patch: Partial<MenuData>) => {
     menuData.onChange?.({
@@ -50,6 +63,9 @@ function MenuNode({ id, data, selected }: NodeProps) {
       invalidOptionOutputHandle: menuData.invalidOptionOutputHandle ?? 'invalid',
       replyTimeoutEnabled: menuData.replyTimeoutEnabled ?? false,
       replyTimeoutMinutes: menuData.replyTimeoutMinutes ?? 5,
+      invalidAttemptLimitEnabled: limitarTentativas,
+      maxInvalidAttempts: menuData.maxInvalidAttempts ?? 3,
+      invalidOptionAction: menuData.invalidOptionAction,
       ...patch,
     });
   };
@@ -127,7 +143,7 @@ function MenuNode({ id, data, selected }: NodeProps) {
         </div>
 
         <div className="flex flex-column gap-2">
-          <LabelPlus text="Opções" />
+          <LabelPlus text="Opções" textHelp="O contato responde pelo número ou pelo texto da opção." />
 
           {opcoes.map((opcao, indice) => (
             <div key={opcao.id} className="flex align-items-center gap-2" style={{ position: 'relative' }}>
@@ -171,15 +187,24 @@ function MenuNode({ id, data, selected }: NodeProps) {
           />
         </div>
 
-        <small className="text-color-secondary">
-          O contato responde pelo número ou pelo texto da opção. Caso não corresponda, o fluxo segue pela saída abaixo.
-        </small>
-
-        <div
+        <div className="border-top-1 border-300 pt-2">
+          <LabelPlus htmlFor={`acao-invalida-${id}`} text="Quando a opção for inválida"
+            textHelp="Reenvie o menu automaticamente, aguarde outra resposta sem enviar mensagem ou siga um caminho próprio pela saída Opção inválida. Ao esgotar o limite, a saída Excesso de tentativas tem prioridade." />
+          <Dropdown inputId={`acao-invalida-${id}`} className="nodrag nowheel w-full" value={acaoInvalida}
+            options={[
+              { label: 'Reenviar o menu', value: 'repeat_menu' },
+              { label: 'Aguardar outra resposta', value: 'wait_reply' },
+              { label: 'Seguir saída Opção inválida', value: 'follow_output' },
+            ]} onChange={(e) => {
+              atualizar({ invalidOptionAction: e.value });
+              if (acaoInvalida === 'follow_output' && e.value !== 'follow_output') menuData.onRemoveOutput?.(menuData.invalidOptionOutputHandle ?? 'invalid');
+            }} />
+        </div>
+        {acaoInvalida === 'follow_output' && <div
           style={{ position: 'relative' }}
           className="flex align-items-center justify-content-between gap-2 pt-2 border-top-1 border-300 text-sm text-color-secondary"
         >
-          <span>Opção inválida</span>
+          <LabelPlus text="Opção inválida" textHelp="Segue este caminho a cada erro, antes de esgotar o limite. Para repetir sem desenhar uma ligação de retorno, escolha Reenviar o menu no campo acima." />
           <Handle
             type="source"
             id={menuData.invalidOptionOutputHandle ?? 'invalid'}
@@ -187,6 +212,29 @@ function MenuNode({ id, data, selected }: NodeProps) {
             style={handleNaLinha}
             className="border-2 border-700"
           />
+        </div>}
+        <div className="flex flex-column gap-2 border-top-1 border-300 pt-2">
+          <div className="flex align-items-center gap-2">
+            <InputSwitch inputId={`limitar-tentativas-${id}`} className="nodrag" checked={limitarTentativas} onChange={(e) => {
+              atualizar({ invalidAttemptLimitEnabled: e.value });
+              if (!e.value) menuData.onRemoveOutput?.(SAIDA_LIMITE_TENTATIVAS);
+            }} />
+            <LabelPlus htmlFor={`limitar-tentativas-${id}`} text="Limitar tentativas inválidas"
+              textHelp="Conta respostas inválidas deste Menu. Antes do máximo, aplica a ação escolhida acima; ao atingir o máximo, segue Excesso de tentativas. Uma escolha válida ou o excesso atingido zera a contagem. Não conta ausência de resposta." />
+          </div>
+          {limitarTentativas && <>
+            <div className="flex align-items-center justify-content-between gap-3">
+              <LabelPlus htmlFor={`maximo-tentativas-${id}`} text="Máximo de tentativas" textHelp="De 1 a 10. Com limite 3, a terceira resposta inválida segue a saída Excesso de tentativas." />
+              <InputNumber inputId={`maximo-tentativas-${id}`} className="nodrag nowheel" value={menuData.maxInvalidAttempts ?? 3}
+                min={1} max={10} useGrouping={false} maxFractionDigits={0} inputStyle={{ width: '5rem' }}
+                onValueChange={(e) => atualizar({ maxInvalidAttempts: e.value ?? 3 })} />
+            </div>
+            <div className="text-sm text-color-secondary py-2" style={{ position: 'relative' }}>
+              <LabelPlus text="Excesso de tentativas" textHelp="Conecte ao caminho desejado após esgotar as tentativas, como orientar o cliente, encaminhar ao atendimento ou encerrar." />
+              <Handle type="source" id={SAIDA_LIMITE_TENTATIVAS} position={Position.Right}
+                style={handleNaLinha} className="border-2 border-700" />
+            </div>
+          </>}
         </div>
         <TempoResposta nodeId={id} replyTimeoutEnabled={menuData.replyTimeoutEnabled}
           replyTimeoutMinutes={menuData.replyTimeoutMinutes} onChange={atualizar} onRemoveOutput={menuData.onRemoveOutput} />

@@ -17,6 +17,10 @@ export enum ChannelStatusId {
 export type ChannelResponse = {
   id: number;
   name: string;
+  chatbot_habilitado?: boolean;
+  chatbot_saida_por_padrao?: boolean;
+  chatbot_entrada_id?: number | null;
+  chatbot_saida_id?: number | null;
   phone_number: string;
   session_id: string;
   channel_status_id: number;

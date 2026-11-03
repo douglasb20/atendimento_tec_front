@@ -2,21 +2,17 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Button } from 'primereact/button';
 import { Dialog as Modal } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
-import { MultiSelect } from 'primereact/multiselect';
 import { InputText } from 'primereact/inputtext';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 
 import LabelPlus from '@/components/LabelPlus';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 import { ChatbotResponse, ChatbotType, Shape } from '@/Interfaces';
-import ApiClient from '@/service/Api/ApiClient';
 import { getFormErrorMessage, msgRequired } from '@/service/Util';
 
-export type FormChatbot = { name: string; type: ChatbotType; channel_ids: number[] };
-
-type Canal = { id: number; name: string };
+export type FormChatbot = { name: string; type: ChatbotType };
 
 type ModalProps = {
   visible: boolean;
@@ -25,7 +21,7 @@ type ModalProps = {
   onConfirm: (fields: FormChatbot) => void;
 };
 
-const defaultForm: FormChatbot = { name: '', type: 'entrada', channel_ids: [] };
+const defaultForm: FormChatbot = { name: '', type: 'entrada' };
 
 const TIPOS: { id: ChatbotType; name: string }[] = [
   { id: 'entrada', name: 'Entrada' },
@@ -39,50 +35,23 @@ const schema = yup.object<yup.AnyObject, Shape<FormChatbot>>({
     .mixed<ChatbotType>()
     .oneOf(['entrada', 'saida', 'agendamento', 'complementar'])
     .required(msgRequired),
-  channel_ids: yup
-    .array()
-    .of(yup.number().required())
-    .when('type', {
-      is: (type: ChatbotType) => type !== 'complementar',
-      then: (schema) => schema.min(1, 'Selecione ao menos um canal'),
-      otherwise: (schema) => schema.notRequired(),
-    }),
 });
 
 function ModalFormChatbot({ visible, onHide, data, onConfirm }: ModalProps) {
   const { podeAdicionar, podeEditar, semPermissao } = usePermissoesModulo('chatbot');
-  const { FetchReq } = ApiClient();
-  const [canais, setCanais] = useState<Canal[]>([]);
 
   const somenteLeitura = data?.id ? !podeEditar : !podeAdicionar;
 
-  const { control, handleSubmit, reset, watch } = useForm<FormChatbot>({
+  const { control, handleSubmit, reset } = useForm<FormChatbot>({
     reValidateMode: 'onBlur',
     resolver: yupResolver<any>(schema),
   });
-
-  const tipoSelecionado = watch('type');
-
-  useEffect(() => {
-    if (!visible) return;
-
-    const carregarCanais = async () => {
-      try {
-        setCanais((await FetchReq<Canal[]>('ListarCanais')) ?? []);
-      } catch {
-        setCanais([]);
-      }
-    };
-
-    carregarCanais();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
 
   useEffect(() => {
     if (visible) {
       reset(
         data
-          ? { name: data.name, type: data.type, channel_ids: data.channels?.map((c) => c.id) ?? [] }
+          ? { name: data.name, type: data.type }
           : defaultForm,
       );
     }
@@ -164,35 +133,11 @@ function ModalFormChatbot({ visible, onHide, data, onConfirm }: ModalProps) {
           )}
         />
 
-        {tipoSelecionado !== 'complementar' && (
-          <Controller
-            control={control}
-            name="channel_ids"
-            render={({ field, fieldState }) => (
-              <div>
-                <LabelPlus
-                  htmlFor={field.name}
-                  text="Canais"
-                  required
-                  textHelp="O mesmo chatbot pode ficar em vários canais, mas só um chatbot deste tipo pode ficar ativo por canal."
-                />
-                <MultiSelect
-                  id={field.name}
-                  {...field}
-                  value={field.value ?? []}
-                  options={canais}
-                  optionLabel="name"
-                  optionValue="id"
-                  placeholder="Selecione os canais"
-                  filter={canais.length > 6}
-                  display="chip"
-                  disabled={somenteLeitura}
-                />
-                {getFormErrorMessage(fieldState)}
-              </div>
-            )}
-          />
-        )}
+        {data?.channels?.length ? <div>
+          <LabelPlus text="Canais vinculados" />
+          <span>{data.channels.map((canal) => canal.name).join(', ')}</span>
+        </div> : null}
+        <small className="text-color-secondary">Escolha os fluxos de entrada e saída em Conexões → Editar conexão → Chatbot.</small>
       </div>
     </Modal>
   );

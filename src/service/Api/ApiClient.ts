@@ -65,6 +65,7 @@ export const ListUrl = {
   ResumoDashboard: { url: '/dashboard/resumo', method: 'GET' },
   SerieFinalizadosDashboard: { url: '/dashboard/serie-finalizados', method: 'GET' },
   MovimentoPorHoraDashboard: { url: '/dashboard/movimento-por-hora', method: 'GET' },
+  MovimentoPorSemanaDashboard: { url: '/dashboard/movimento-por-semana?periodo={{periodo}}', method: 'GET' },
 
   // Relatórios. Os filtros vão por query string, montada por quem chama - o
   // `AjeitaUrl` troca placeholders de path, não monta query.
@@ -133,6 +134,7 @@ export const ListUrl = {
   RemoverAtendimento: { url: '/supports/{{support_id}}', method: 'DELETE' },
 
   ListarCanais: { url: '/channels', method: 'GET' },
+  ListarChatbotsDoCanal: { url: '/channels/chatbots/opcoes', method: 'GET' },
   BuscarCanal: { url: '/channels/{{channel_id}}', method: 'GET' },
   SincronizarStatusCanal: {
     url: '/channels/{{channel_id}}/sincronizar-status',
@@ -181,6 +183,7 @@ export const ListUrl = {
     url: '/support-chats/{{support_chat_id}}/finalizar',
     method: 'POST',
   },
+  ConsultarFluxoSaidaAtendimento: { url: '/support-chats/{{support_chat_id}}/fluxo-saida', method: 'GET' },
   // Encerra sem que tenha havido atendimento: spam, engano, contato que não
   // será atendido. Regras opostas às do `finalizar` - por isso rota própria.
   FinalizarSemAtendimento: {

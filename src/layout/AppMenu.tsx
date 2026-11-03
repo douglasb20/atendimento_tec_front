@@ -99,6 +99,12 @@ const AppMenu = () => {
           ],
         },
         {
+          label: 'Agendamentos',
+          icon: `${PrimeIcons.CALENDAR} pi-fw`,
+          to: '/agenda',
+          visible: liberado(pode('schedule:view')),
+        },
+        {
           label: 'Atendentes',
           // @ts-ignore
           icon: `${PrimeIcons.ADDRESS_BOOK} pi-fw`,
@@ -156,12 +162,6 @@ const AppMenu = () => {
           ],
         },
         {
-          label: 'Agenda',
-          icon: `${PrimeIcons.CALENDAR} pi-fw`,
-          to: '/agenda',
-          visible: liberado(pode('schedule:view')),
-        },
-        {
           label: 'Utilidades',
           icon: 'pi pi-wrench pi-fw',
           items: [
@@ -203,6 +203,28 @@ const AppMenu = () => {
           visible: liberado(pode('channel:view')),
         },
         {
+          // Gestão de negócio do administrador do cliente - separado de
+          // "Configurações do sistema" (sidebar de perfil, agora em
+          // /configuracoes/admin), que é operação da API e fica restrita ao
+          // usuário master.
+          label: 'Configurações',
+          icon: `${PrimeIcons.COG} pi-fw`,
+          items: [
+            {
+              label: 'Sistema',
+              icon: `${PrimeIcons.SLIDERS_H} pi-fw`,
+              to: '/configuracoes/sistema',
+              visible: liberado(pode('attendance_settings:manage')),
+            },
+            {
+              label: 'Feriados',
+              icon: `${PrimeIcons.CALENDAR} pi-fw`,
+              to: '/configuracoes/feriados',
+              visible: liberado(pode('holiday:view')),
+            },
+          ],
+        },
+        {
           // Submenu, e não item único: cada relatório tem **permissão
           // própria** - produtividade por atendente é dado de supervisão, e
           // pode caber a um grupo que não vê o resto.
@@ -232,28 +254,6 @@ const AppMenu = () => {
               icon: 'pi pi-search pi-fw',
               to: '/relatorios/analitico-cliente',
               visible: liberado(pode('report.client_detail:view')),
-            },
-          ],
-        },
-        {
-          // Gestão de negócio do administrador do cliente - separado de
-          // "Configurações do sistema" (sidebar de perfil, agora em
-          // /configuracoes/admin), que é operação da API e fica restrita ao
-          // usuário master.
-          label: 'Configurações',
-          icon: `${PrimeIcons.COG} pi-fw`,
-          items: [
-            {
-              label: 'Sistema',
-              icon: `${PrimeIcons.SLIDERS_H} pi-fw`,
-              to: '/configuracoes/sistema',
-              visible: liberado(pode('attendance_settings:manage')),
-            },
-            {
-              label: 'Feriados',
-              icon: `${PrimeIcons.CALENDAR} pi-fw`,
-              to: '/configuracoes/feriados',
-              visible: liberado(pode('holiday:view')),
             },
           ],
         },

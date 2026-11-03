@@ -175,6 +175,7 @@ const Header = () => {
             precisarem de caixa própria. */}
         <div className="chat-header__meta hidden md:flex align-items-center gap-3 flex-none">
           <BadgeProtocolo protocolo={activeChat.protocol} />
+          {activeChat.pos_atendimento_ativo && <span className="text-sm text-blue-400">Pós-atendimento · Chatbot</span>}
 
           {emAndamento && activeChat.answered_at && (
             <>

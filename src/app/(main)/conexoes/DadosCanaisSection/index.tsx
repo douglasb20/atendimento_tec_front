@@ -101,7 +101,11 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   const onSubmitForm = async (
     data: Pick<
       ChannelResponse,
-      | 'name'
+        | 'name'
+        | 'chatbot_habilitado'
+        | 'chatbot_saida_por_padrao'
+        | 'chatbot_entrada_id'
+        | 'chatbot_saida_id'
       | 'id'
       | 'mensagem_saudacao'
       | 'mensagem_despedida'
@@ -131,6 +135,11 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       // canal - nunca coexistem duas integrações ao mesmo tempo.
       const corpo = {
         name: data.name,
+        chatbot_habilitado: Boolean(data.chatbot_habilitado),
+        chatbot_saida_por_padrao: data.chatbot_saida_por_padrao ?? true,
+        // Omitir preserva o vínculo; null é uma remoção explícita no seletor.
+        chatbot_entrada_id: data.chatbot_entrada_id,
+        chatbot_saida_id: data.chatbot_saida_id,
         // Vazio vira nulo: é como o backend entende "não enviar", e guardar
         // string vazia faria a coluna ter dois jeitos de dizer a mesma coisa.
         mensagem_saudacao: data.mensagem_saudacao?.trim() || null,

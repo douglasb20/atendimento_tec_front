@@ -17,6 +17,7 @@ import { Alerta, getFormErrorMessage, msgRequired } from '@/service/Util';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 import AbaConexao from './AbaConexao';
+import AbaChatbot from './AbaChatbot';
 
 /** Teto do campo "Resolver em" - trava só de UI, sem config própria. */
 const LIMITE_MINUTOS_RESOLVER = 90;
@@ -50,6 +51,8 @@ const LIMITE_MB_ANEXO = 16;
 const defaultValues = {
   id: null,
   name: '',
+  chatbot_habilitado: false,
+  chatbot_saida_por_padrao: true,
   mensagem_saudacao: '',
   mensagem_despedida: '',
   inatividade_ativa: false,
@@ -771,6 +774,9 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
                 />
               </div>
             </div>
+          </TabPanel>
+          <TabPanel header="Chatbot" leftIcon="pi pi-comments mr-2">
+            <AbaChatbot control={control} somenteLeitura={somenteLeitura} visivel={visible} />
           </TabPanel>
         </TabView>
 

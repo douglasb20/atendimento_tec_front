@@ -8,6 +8,7 @@ import RemoverNoButton from './RemoverNoButton';
 
 type CloseSupportChatData = {
   enviarDespedida?: boolean;
+  fluxoSaida?: boolean;
   onRemove?: () => void;
   onChange?: (data: CloseSupportChatData) => void;
 };
@@ -50,16 +51,17 @@ function CloseSupportChatNode({ data, selected }: NodeProps) {
       </div>
 
       <div className="p-2 flex flex-column gap-2">
-        <div className="flex align-items-center justify-content-between gap-3">
+        {!nodeData.fluxoSaida && <div className="flex align-items-center justify-content-between gap-3">
           <LabelPlus text="Enviar despedida" textHelp="Usa a mensagem de despedida configurada no canal." />
           <InputSwitch
             className="nodrag"
             checked={enviarDespedida}
             onChange={(e) => nodeData.onChange?.({ enviarDespedida: e.value })}
           />
-        </div>
+        </div>}
         <small className="text-color-secondary">
-          A próxima mensagem do contato abrirá um novo atendimento.
+          {nodeData.fluxoSaida ? 'Conclui o pós-atendimento no mesmo protocolo, sem enviar outra despedida.'
+            : 'A próxima mensagem do contato abrirá um novo atendimento.'}
         </small>
       </div>
     </div>

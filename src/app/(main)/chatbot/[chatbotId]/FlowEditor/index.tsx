@@ -78,7 +78,7 @@ const VIEWPORT_PADRAO = { x: 80, y: 80, zoom: 1 };
 const DATA_PADRAO_POR_TIPO: Record<string, Record<string, unknown>> = {
   message: { messageType: 'text', value: '', continueOn: 'auto' },
   conditional: { compareUsing: 'last_message', conditions: [], defaultOutputHandle: 'default' },
-  menu: { title: '', body: '', options: [], invalidOptionOutputHandle: 'invalid' },
+  menu: { title: '', body: '', options: [], invalidOptionOutputHandle: 'invalid', invalidOptionAction: 'repeat_menu', invalidAttemptLimitEnabled: false, maxInvalidAttempts: 3 },
   holiday: { holidayOutputHandle: 'holiday', notHolidayOutputHandle: 'not_holiday' },
   finish: {},
   close_support_chat: { enviarDespedida: true },
@@ -281,6 +281,7 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
               data: {
                 ...n.data,
                 somenteLeitura,
+                fluxoSaida: chatbot.type === 'saida',
                 onRemove: () => removerNo(n.id),
                 ...(['message', 'menu', 'close_support_chat', 'set_department', 'business_hours'].includes(n.type ?? '') && {
                   onChange: (data: Record<string, unknown>) => atualizarDadosDoNo(n.id, data),
@@ -292,7 +293,7 @@ function FlowEditor({ chatbotId, versao, chatbot }: FlowEditorProps) {
             },
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nodes, somenteLeitura],
+    [nodes, somenteLeitura, chatbot.type],
   );
 
   const montarGraph = () => ({
