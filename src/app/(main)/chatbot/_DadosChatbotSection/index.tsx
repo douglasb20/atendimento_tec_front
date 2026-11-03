@@ -2,7 +2,7 @@
 
 import { PrimeIcons } from 'primereact/api';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
@@ -29,7 +29,39 @@ export default function DadosChatbotSection({ data }: DadosChatbotProps) {
   const { setLoading } = useService();
   const { FetchReq } = useApi();
   const router = useRouter();
-  const { podeAdicionar, podeEditar, podeExcluir, semPermissao } = usePermissoesModulo('chatbot');
+  const { podeAdicionar, podeEditar, podeExcluir, podeAcao, semPermissao } = usePermissoesModulo('chatbot');
+  const podePublicar = podeAcao('publish');
+  const [publicandoId, setPublicandoId] = useState<number | null>(null);
+  const publicacaoEmAndamento = useRef(false);
+
+  const AlternarPublicacao = async (chatbot: ChatbotResponse) => {
+    if (!podePublicar || !ajustes.chatbot_habilitado || publicacaoEmAndamento.current) return;
+    const publicado = chatbot.current_published_version_id != null;
+    try {
+      publicacaoEmAndamento.current = true;
+      setPublicandoId(chatbot.id);
+      const atualizado = await FetchReq<ChatbotResponse>({
+        endpoint: publicado ? 'DespublicarFluxoChatbot' : 'PublicarFluxoChatbot', variables: [chatbot.id],
+      });
+      setChatbots((atuais) => atuais.map((item) => item.id === chatbot.id
+        ? { ...item, current_published_version_id: atualizado.current_published_version_id } : item));
+      AlertaCallback(publicado ? 'Fluxo despublicado.' : 'Fluxo publicado.', () => {}, 'success');
+    } catch (erro) {
+      CatchAlerta(erro, publicado ? 'Não foi possível despublicar o fluxo' : 'Não foi possível publicar o fluxo');
+    } finally {
+      publicacaoEmAndamento.current = false;
+      setPublicandoId(null);
+    }
+  };
+
+  const ConfirmarPublicacao = (chatbot: ChatbotResponse) => {
+    if (!podePublicar || publicacaoEmAndamento.current) return;
+    const publicado = chatbot.current_published_version_id != null;
+    ConfirmaAcao(<span>{publicado
+      ? `O fluxo "${chatbot.name}" deixará de iniciar novas execuções. O status ativo/inativo não será alterado.`
+      : `Publicar o último rascunho salvo de "${chatbot.name}"? Alterações ainda não salvas no editor não serão incluídas.`}</span>,
+    AlternarPublicacao, chatbot, publicado ? 'Despublicar fluxo?' : 'Publicar fluxo?', publicado ? 'Despublicar' : 'Publicar', 'Cancelar');
+  };
 
   const ButtonsHeader: IButtonsOthers[] = [
     {
@@ -102,7 +134,6 @@ export default function DadosChatbotSection({ data }: DadosChatbotProps) {
       const body = {
         name: fields.name,
         type: fields.type,
-        channel_ids: fields.type === 'complementar' ? [] : fields.channel_ids,
       };
 
       if (chatbotAtivo?.id) {
@@ -152,6 +183,9 @@ export default function DadosChatbotSection({ data }: DadosChatbotProps) {
           <DtChatbots
             actions={acoesTable}
             value={chatbots}
+            podePublicar={podePublicar}
+            publicandoId={publicandoId}
+            onPublicacao={ConfirmarPublicacao}
           />
         </div>
 

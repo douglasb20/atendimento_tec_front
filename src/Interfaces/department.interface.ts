@@ -46,6 +46,7 @@ export type DepartmentScheduleExceptionResponse = {
   id: number;
   department_id: number;
   date: string;
+  recurring: boolean;
   description: string;
   mode: 'fechado' | 'normal' | 'especial';
   intervals: { start_time: string; end_time: string }[];

@@ -3,6 +3,8 @@
 import { Button } from 'primereact/button';
 import { Dialog as Modal } from 'primereact/dialog';
 import { InputTextarea } from 'primereact/inputtextarea';
+import { InputSwitch } from 'primereact/inputswitch';
+import { Message } from 'primereact/message';
 import { useEffect, useState } from 'react';
 
 import useApi from '@/service/Api/ApiClient';
@@ -38,6 +40,7 @@ type ModalFinalizarAtendimentoProps = {
 };
 
 const LIMITE_RELATO = 5000;
+type ConfiguracaoSaida = { id: number; name: string; executar_por_padrao: boolean; pode_alterar: boolean };
 
 /**
  * Encerramento do atendimento.
@@ -60,10 +63,26 @@ const ModalFinalizarAtendimento = ({
   const [finalizando, setFinalizando] = useState(false);
   const [modalContatoAberto, setModalContatoAberto] = useState(false);
   const [marcandoSemCliente, setMarcandoSemCliente] = useState(false);
+  const [enviarDespedida, setEnviarDespedida] = useState(true);
+  const [executarSaida, setExecutarSaida] = useState(false);
+  const [fluxoSaida, setFluxoSaida] = useState<ConfiguracaoSaida | null>(null);
+  const [consultandoSaida, setConsultandoSaida] = useState(false);
+  const [erroSaida, setErroSaida] = useState(false);
 
   useEffect(() => {
-    if (visible) setRelato('');
-  }, [visible]);
+    if (!visible) return;
+    setRelato(''); setEnviarDespedida(modo !== 'sem-despedida');
+    setExecutarSaida(false); setFluxoSaida(null); setErroSaida(false);
+    if (modo === 'sem-atendimento') return;
+    let cancelado = false;
+    setConsultandoSaida(true);
+    FetchReq<ConfiguracaoSaida | null>('ConsultarFluxoSaidaAtendimento', [chat.id])
+      .then((fluxo) => { if (!cancelado) { setFluxoSaida(fluxo); setExecutarSaida(fluxo?.executar_por_padrao ?? false); } })
+      .catch(() => { if (!cancelado) setErroSaida(true); })
+      .finally(() => { if (!cancelado) setConsultandoSaida(false); });
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, chat?.id, modo]);
 
   const descarte = modo === 'sem-atendimento';
 
@@ -109,14 +128,15 @@ const ModalFinalizarAtendimento = ({
         body: {
           observation_user: relato.trim() || undefined,
           // Só no fluxo normal: a rota do descarte nunca envia despedida.
-          ...(descarte ? {} : { sem_despedida: modo === 'sem-despedida' }),
+          ...(descarte ? {} : { sem_despedida: !enviarDespedida, executar_fluxo_saida: executarSaida && !!fluxoSaida }),
         },
       });
 
       onFinalizado(atualizado);
       onHide();
       mostrarToast(
-        descarte ? 'Conversa encerrada sem atendimento.' : 'Atendimento finalizado com sucesso!',
+        descarte ? 'Conversa encerrada sem atendimento.' : atualizado.pos_atendimento_ativo
+          ? 'Atendimento humano finalizado. O fluxo de saída continua no mesmo protocolo.' : 'Atendimento finalizado com sucesso!',
       );
     } catch (erro) {
       CatchAlerta(erro, 'Não foi possível finalizar o atendimento');
@@ -139,7 +159,7 @@ const ModalFinalizarAtendimento = ({
         icon="fa-regular fa-check"
         severity="success"
         loading={finalizando}
-        disabled={semCliente}
+        disabled={semCliente || !descarte && (consultandoSaida || erroSaida)}
         tooltip={semCliente ? 'Associe um cliente antes de finalizar' : undefined}
         tooltipOptions={{ position: 'top', showOnDisabled: true }}
         onClick={finalizar}
@@ -158,7 +178,7 @@ const ModalFinalizarAtendimento = ({
         header={
           descarte
             ? 'Encerrar sem atendimento'
-            : modo === 'sem-despedida'
+            : !enviarDespedida
               ? 'Finalizar sem despedida'
               : 'Finalizar atendimento'
         }
@@ -222,6 +242,23 @@ const ModalFinalizarAtendimento = ({
             </div>
           )}
 
+          {!descarte && <div className="flex flex-column gap-3">
+            <div className="flex align-items-center justify-content-between gap-3">
+              <label htmlFor="enviar-despedida">Enviar despedida configurada</label>
+              <InputSwitch inputId="enviar-despedida" checked={enviarDespedida} onChange={(e) => setEnviarDespedida(e.value)} disabled={finalizando} />
+            </div>
+            {consultandoSaida && <small>Consultando o fluxo de saída do canal…</small>}
+            {erroSaida && <div><Message severity="warn" text="Não foi possível consultar o fluxo de saída. Feche e abra novamente este diálogo para tentar de novo." /></div>}
+            {fluxoSaida && <>
+              <div className="flex align-items-center justify-content-between gap-3">
+                <label htmlFor="executar-saida">Executar fluxo de saída</label>
+                <InputSwitch inputId="executar-saida" checked={executarSaida} onChange={(e) => setExecutarSaida(e.value)}
+                  disabled={finalizando || !fluxoSaida.pode_alterar} />
+              </div>
+              <small className="text-color-secondary">{fluxoSaida.name}. Continua no mesmo protocolo, sem aumentar a duração do atendimento humano. O fim do fluxo não envia outra despedida.</small>
+              {!fluxoSaida.pode_alterar && <small className="text-color-secondary">Esta escolha segue o padrão do canal. Você não tem permissão para alterá-la.</small>}
+            </>}
+          </div>}
           <div>
             <label
               htmlFor="relato"

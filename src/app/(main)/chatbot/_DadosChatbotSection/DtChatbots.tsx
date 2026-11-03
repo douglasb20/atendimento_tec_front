@@ -1,6 +1,7 @@
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import { memo } from 'react';
+import { Button } from 'primereact/button';
 
 import AcoesDataTable from '@/components/AcoesDataTable';
 import DataTableCustom from '@/components/DataTableCustom';
@@ -14,7 +15,7 @@ const LABEL_POR_TIPO: Record<ChatbotResponse['type'], string> = {
   complementar: 'Complementar',
 };
 
-const DtChatbots = ({ actions, ...props }) => {
+const DtChatbots = ({ actions, podePublicar, publicandoId, onPublicacao, ...props }) => {
   return (
     <DataTableCustom
       value={props.value}
@@ -95,16 +96,23 @@ const DtChatbots = ({ actions, ...props }) => {
       />
 
       <Column
-        hidden={!actions ? true : false}
+        hidden={!actions && !podePublicar}
         header="Ações"
         align="center"
         headerClassName="w-14rem"
-        body={(rowData) => (
+        body={(rowData: ChatbotResponse) => <div className="flex align-items-center justify-content-center gap-1">
+          {podePublicar && <Button
+            icon={rowData.current_published_version_id != null ? 'pi pi-undo' : 'pi pi-upload'}
+            severity={rowData.current_published_version_id != null ? 'warning' : 'success'}
+            aria-label={rowData.current_published_version_id != null ? 'Despublicar fluxo' : 'Publicar fluxo'}
+            tooltip={rowData.current_published_version_id != null ? 'Despublicar fluxo' : 'Publicar último rascunho salvo'}
+            tooltipOptions={{ position: 'bottom' }} loading={publicandoId === rowData.id}
+            disabled={publicandoId != null} onClick={() => onPublicacao(rowData)} />}
           <AcoesDataTable
             rowData={rowData}
             actions={actions}
           />
-        )}
+        </div>}
       />
     </DataTableCustom>
   );

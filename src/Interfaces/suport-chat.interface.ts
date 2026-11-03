@@ -102,6 +102,7 @@ export interface SupportChatsResponse {
   /** Soma das pausas já encerradas - o cronômetro as desconta. */
   paused_total_seconds?: number;
   finished_at: string | null;
+  pos_atendimento_ativo?: boolean;
   observation_user: string | null;
   updated_at: string | null;
   /** Ausente nos payloads de webhook, que emitem a entidade sem a relação. */

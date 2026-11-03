@@ -136,7 +136,7 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
   updateChat: (chat) => {
     set(({ chats, activeChat }) => {
       const mesmoId = (a: unknown, b: unknown) => String(a) === String(b);
-      const encerrado = ehAtendimentoFinalizado(chat.support_chat_status_id);
+      const encerrado = ehAtendimentoFinalizado(chat.support_chat_status_id) && !chat.pos_atendimento_ativo;
       const existe = chats.some((c) => mesmoId(c.id, chat.id));
 
       // O contador tem evento próprio (`whatsapp:unread_count`) e não deve vir

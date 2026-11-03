@@ -1,3 +1,64 @@
+// A lista diretamente abaixo da raiz é o menu principal; só as listas
+// seguintes recebem os ramos que identificam os filhos de cada grupo.
+@mixin hierarquia-submenus {
+    .layout-sidebar .layout-menu .layout-root-menuitem > ul ul {
+        --linha-submenu: color-mix(in srgb, var(--menuitem-text-color) 30%, transparent);
+        margin-left: 2.5rem;
+        border-radius: 0;
+
+        > li {
+            position: relative;
+
+            &::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                border-left: 1px solid var(--linha-submenu);
+                // O fundo opaco da seleção clara não pode encobrir a linha.
+                z-index: 1;
+                pointer-events: none;
+            }
+
+            &:last-child::before {
+                bottom: auto;
+                height: 1.5rem;
+            }
+
+            > a {
+                padding-left: 1.25rem;
+
+                &::before {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    top: 50%;
+                    width: 0.75rem;
+                    border-top: 1px solid var(--linha-submenu);
+                    pointer-events: none;
+                }
+            }
+        }
+
+        ul {
+            margin-left: 1.5rem;
+        }
+    }
+}
+
+// Menus compactos usam popups no desktop e não devem herdar o recuo da árvore.
+.layout-container:is(.layout-static, .layout-overlay),
+.layout-container:is(.layout-drawer, .layout-reveal).layout-sidebar-active {
+    @include hierarquia-submenus;
+}
+
+@media screen and (max-width: ($breakpoint - 1px)) {
+    .layout-container {
+        @include hierarquia-submenus;
+    }
+}
+
 .layout-sidebar {
     position: fixed;
     height: 100%;
