@@ -7,12 +7,13 @@ import { SupportChatsResponse, SupportChatStatusId } from '@/Interfaces';
 import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 
 /** Grupos da lista lateral, com ícones e contadores sempre visíveis. */
-export type GrupoAtendimento = 'todos' | 'fila' | 'andamento' | 'chatbot';
+export type GrupoAtendimento = 'todos' | 'fila' | 'andamento' | 'pausas' | 'chatbot';
 
 type FiltroAtendimentosProps = {
   chats: SupportChatsResponse[];
   grupoAtivo: GrupoAtendimento;
   onSelecionar: (grupo: GrupoAtendimento) => void;
+  desabilitado?: boolean;
 };
 
 /**
@@ -22,14 +23,19 @@ type FiltroAtendimentosProps = {
  * em todos os payloads (webhooks emitem a entidade crua), e um grupo errado
  * some com a conversa da lista.
  */
-export const grupoDaConversa = (chat: SupportChatsResponse): Exclude<GrupoAtendimento, 'todos'> =>
-  chat.pos_atendimento_ativo ? 'chatbot' : chat.support_chat_status_id === SupportChatStatusId.EM_ANDAMENTO ? 'andamento'
-    : chat.support_chat_status_id === SupportChatStatusId.EM_FILA ? 'chatbot' : 'fila';
+export const grupoDaConversa = (chat: SupportChatsResponse): Exclude<GrupoAtendimento, 'todos'> => {
+  if (chat.pos_atendimento_ativo) return 'chatbot';
+  if (chat.support_chat_status_id === SupportChatStatusId.EM_ANDAMENTO) {
+    // Pausar preserva status e dono no servidor; só muda o grupo visual.
+    return chat.paused_at ? 'pausas' : 'andamento';
+  }
+  return chat.support_chat_status_id === SupportChatStatusId.EM_FILA ? 'chatbot' : 'fila';
+};
 
 export const filtraPorGrupo = (chats: SupportChatsResponse[], grupo: GrupoAtendimento) =>
   grupo === 'todos' ? chats : chats.filter((c) => grupoDaConversa(c) === grupo);
 
-const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar }: FiltroAtendimentosProps) => {
+const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar, desabilitado }: FiltroAtendimentosProps) => {
   const { ajustes } = useAjustesAtendimento();
 
   const abas: { id: GrupoAtendimento; rotulo: string; icone: string; total: number }[] = [
@@ -38,6 +44,12 @@ const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar }: FiltroAtendimen
       rotulo: 'Em atendimento',
       icone: 'fa-solid fa-headset',
       total: chats.filter((c) => grupoDaConversa(c) === 'andamento').length,
+    },
+    {
+      id: 'pausas',
+      rotulo: 'Em pausas',
+      icone: 'pi pi-pause',
+      total: chats.filter((c) => grupoDaConversa(c) === 'pausas').length,
     },
     {
       id: 'fila',
@@ -65,6 +77,7 @@ const FiltroAtendimentos = ({ chats, grupoAtivo, onSelecionar }: FiltroAtendimen
 
         return (
           <Button key={id} type="button" onClick={() => onSelecionar(id)}
+            disabled={desabilitado}
             className={classNames('filtro-atendimento', { 'filtro-atendimento--ativo': ativa })}
             aria-label={`${rotulo}: ${total}`} aria-pressed={ativa}
             tooltip={rotulo} tooltipOptions={{ position: 'top' }}>

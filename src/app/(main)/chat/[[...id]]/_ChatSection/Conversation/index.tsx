@@ -12,9 +12,12 @@ import { useChatStore } from '@/store/useChatStore';
 import { Breadcrumb } from '@/types';
 import { Badge } from 'primereact/badge';
 import { Button } from 'primereact/button';
+import { Checkbox } from 'primereact/checkbox';
 import { classNames } from 'primereact/utils';
 
 import AcoesConversa from './AcoesConversa';
+import AcoesSelecaoAtendimentos from './AcoesSelecaoAtendimentos';
+import { manterSelecaoDisponivel } from '@/service/AcoesAtendimentosEmLote';
 import { CabecalhoConversa, ResponsavelConversa } from './IdentificacaoConversa';
 import { resumoDoContato } from '@/service/Vcard';
 import ModalNovoAtendimento from './ModalNovoAtendimento';
@@ -114,6 +117,21 @@ const ConversationSection = () => {
   const { setBreadcrumbs } = useLayoutStore();
   const { FetchReq } = useApi();
   const [grupoAtivo, setGrupoAtivo] = useState<GrupoAtendimento>('todos');
+  const [selecaoAtiva, setSelecaoAtiva] = useState(false);
+  const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [operandoSelecao, setOperandoSelecao] = useState(false);
+  const cancelarSelecao = () => { if (!operandoSelecao) { setSelecionados([]); setSelecaoAtiva(false); } };
+  const alternarSelecionado = (id: string) => {
+    if (operandoSelecao) return;
+    setSelecionados(atuais => atuais.includes(String(id)) ? atuais.filter(atual => atual !== String(id)) : [...atuais, String(id)]);
+  };
+  const conversasSelecionadas = useMemo(() => chats.filter(conversa => selecionados.includes(String(conversa.id))), [chats, selecionados]);
+  useEffect(() => {
+    setSelecionados(atuais => {
+      const disponiveis = manterSelecaoDisponivel(atuais, chats);
+      return disponiveis.length === atuais.length ? atuais : disponiveis;
+    });
+  }, [chats]);
   // Direção da ordenação da lista, à escolha do atendente - não mexe em qual
   // campo ordena (isso é o ajuste global `ordenar_atendimento_por_ultima_mensagem`,
   // decidido pelo admin), só inverte a direção. Por navegador/dispositivo
@@ -156,7 +174,7 @@ const ConversationSection = () => {
   const { ajustes } = useAjustesAtendimento();
 
   useEffect(() => {
-    if (!ajustes.chatbot_habilitado && grupoAtivo === 'chatbot') setGrupoAtivo('fila');
+    if (!ajustes.chatbot_habilitado && grupoAtivo === 'chatbot') { setSelecionados([]); setGrupoAtivo('fila'); }
   }, [ajustes.chatbot_habilitado, grupoAtivo]);
 
   /**
@@ -204,6 +222,8 @@ const ConversationSection = () => {
       const alvo = evento.target as HTMLElement | null;
       if (alvo?.closest('input, textarea, [contenteditable="true"]')) return;
 
+      if (selecaoAtiva) { cancelarSelecao(); return; }
+
       if (!activeChatRef.current) return;
 
       fecharConversa();
@@ -211,7 +231,7 @@ const ConversationSection = () => {
 
     window.addEventListener('keydown', aoTeclar);
     return () => window.removeEventListener('keydown', aoTeclar);
-  }, []);
+  }, [selecaoAtiva, operandoSelecao]);
 
   const changeWindowFocus = (focused: boolean) => {
     windowFocusedRef.current = focused;
@@ -483,7 +503,7 @@ const ConversationSection = () => {
     <div className="card flex flex-column shadow-1 h-full px-2 pt-2 relative">
       <AbasConversa
         ativa={abaAtiva}
-        onTrocar={setAbaAtiva}
+        onTrocar={(aba) => { if (!operandoSelecao) { cancelarSelecao(); setAbaAtiva(aba); } }}
         naoLidasInternas={naoLidasInternas}
         mostrarInterno={temChatInterno}
       />
@@ -491,11 +511,12 @@ const ConversationSection = () => {
       {/* Flutuante, ancorado no próprio painel (`relative` acima) e não na
           tela toda: `fixed` faria o botão seguir o scroll da página, não da
           lista de conversas. */}
-      {fabAberto && <div className="chat-fab-acoes absolute flex flex-column gap-2 align-items-start" style={{ left: '1rem', bottom: '5rem', zIndex: 1 }}>
+      {fabAberto && !selecaoAtiva && <div className="chat-fab-acoes absolute flex flex-column gap-2 align-items-start" style={{ left: '1rem', bottom: '5rem', zIndex: 1 }}>
         <Button label="Novo atendimento" icon="pi pi-plus" rounded onClick={() => { setFabAberto(false); setModalNovoAberto(true); }} />
         <Button label="Novo compromisso" icon="pi pi-calendar" rounded onClick={() => { setFabAberto(false); setModalCompromissoAberto(true); }} />
       </div>}
       <Button
+        disabled={selecaoAtiva}
         icon={fabAberto ? "pi pi-times text-xl" : "pi pi-plus text-xl"}
         rounded
         title="Ações"
@@ -525,9 +546,15 @@ const ConversationSection = () => {
         <FiltroAtendimentos
           chats={chats}
           grupoAtivo={grupoAtivo}
-          onSelecionar={setGrupoAtivo}
+          desabilitado={operandoSelecao}
+          onSelecionar={(grupo) => { if (!operandoSelecao) { setSelecionados([]); setGrupoAtivo(grupo); } }}
         />
+        <Button icon="pi pi-check-square" text rounded size="small"
+          aria-label={selecaoAtiva ? 'Cancelar seleção múltipla' : 'Selecionar múltiplos atendimentos'} aria-pressed={selecaoAtiva}
+          tooltip={selecaoAtiva ? 'Cancelar seleção múltipla' : 'Selecionar atendimentos'} tooltipOptions={{ position: 'top' }}
+          disabled={operandoSelecao} onClick={() => { if (selecaoAtiva) cancelarSelecao(); else setSelecaoAtiva(true); }} />
               <Button
+                disabled={operandoSelecao}
                 icon={`pi ${ordemAscendente ? 'pi-sort-amount-up' : 'pi-sort-amount-down'}`}
                 onClick={alternarOrdem}
                 style={{width: '1.5rem', height: '1.5rem'}}
@@ -546,6 +573,16 @@ const ConversationSection = () => {
         />
       </div>
 
+      {selecaoAtiva && <AcoesSelecaoAtendimentos key={grupoAtivo} conversas={conversasSelecionadas} ocupado={operandoSelecao}
+        onOcupado={setOperandoSelecao} onCancelar={cancelarSelecao}
+        semConversasVisiveis={!chatsVisiveis.length}
+        todosVisiveisSelecionados={!!chatsVisiveis.length && chatsVisiveis.every(conversa => selecionados.includes(String(conversa.id)))}
+        onSelecionarVisiveis={selecionar => setSelecionados(selecionar ? chatsVisiveis.map(conversa => String(conversa.id)) : [])}
+        onConcluidos={(ids, houveFalhas) => {
+          setSelecionados(atuais => atuais.filter(id => !ids.includes(id)));
+          const restantes = selecionados.filter(id => !ids.includes(id));
+          if (!restantes.length && !houveFalhas) setSelecaoAtiva(false);
+        }} />}
       <ul className="list-none flex-1 m-0 p-0 overflow-auto chat-rolagem-oculta">
         {chatsVisiveis.length === 0 ? (
           // Ternário, não `&&` seguido do map: como irmãos, o React trata os
@@ -557,7 +594,9 @@ const ConversationSection = () => {
                 ? 'Nenhum atendimento aguardando'
                 : grupoAtivo === 'andamento'
                   ? 'Nenhum atendimento em andamento'
-                  : 'Nenhuma conversa por aqui'}
+                  : grupoAtivo === 'pausas'
+                    ? 'Nenhum atendimento pausado'
+                    : 'Nenhuma conversa por aqui'}
             </span>
           </li>
         ) : (
@@ -566,6 +605,8 @@ const ConversationSection = () => {
               key={conversation?.id}
               className={classNames(
                 {
+                  'acoes-hover': !selecaoAtiva,
+                  'conversa-selecionada': selecaoAtiva && selecionados.includes(String(conversation.id)),
                   // `surface-100` e não `surface-50`: nos modos escuros a
                   // `surface-50` tem o mesmo valor do `surface-card` do painel,
                   // e o cartão da conversa desaparecia no fundo. Um tom acima
@@ -585,14 +626,21 @@ const ConversationSection = () => {
                 // liam como texto corrido numa coluna.
                 // O corpo relativo ancora as ações sem cobrir cabeçalho e
                 // rodapé; `acoes-hover` revela o menu ao passar o mouse.
-                'acoes-hover relative flex flex-column cursor-pointer border-1 border-round-lg mb-3 overflow-hidden transition-colors transition-duration-150',
+                'relative flex flex-column cursor-pointer border-1 border-round-lg mb-3 overflow-hidden transition-colors transition-duration-150',
               )}
               onClick={() => {
-                loadConversationMessage(Number(conversation?.id));
+                if (selecaoAtiva) alternarSelecionado(String(conversation.id));
+                else loadConversationMessage(Number(conversation?.id));
               }}
             >
               <CabecalhoConversa conversa={conversation} />
               <div className="relative flex align-items-center gap-3 p-2 min-w-0">
+              {selecaoAtiva && <span onClick={evento => evento.stopPropagation()}>
+                <Checkbox inputId={`selecionar-atendimento-${conversation.id}`}
+                  aria-label={`Selecionar atendimento ${nomeCompleto(conversation.contact) || conversation.protocol}`}
+                  checked={selecionados.includes(String(conversation.id))} disabled={operandoSelecao}
+                  onChange={() => alternarSelecionado(String(conversation.id))} />
+              </span>}
               <div className="relative flex flex-none">
                 {/* `Avatar`, e não um `<img>` cru: a foto vem do
                     `pps.whatsapp.net`, com assinatura que vence. Quando a URL
@@ -743,7 +791,7 @@ const ConversationSection = () => {
                   empurrava a hora e ficava aceso em todos os itens de uma vez.
                   Aqui aparece só no item sob o mouse, e o degradê à esquerda
                   impede que ele caia sobre o texto da prévia. */}
-              <AcoesConversa conversa={conversation} />
+              {!selecaoAtiva && <AcoesConversa conversa={conversation} />}
               </div>
               <ResponsavelConversa conversa={conversation} />
             </li>

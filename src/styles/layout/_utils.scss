@@ -441,6 +441,11 @@
   color: var(--surface-0);
 }
 
+.conversa-selecionada {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
 // Chip de filtro com valor escolhido (`components/ChipFiltro`).
 //
 // Mesma razão da `.conversa-ativa`: a escala `--primary-*` é sempre

@@ -264,6 +264,14 @@ Limite de 512 MB — o teto do protocolo Baileys, não os 16 MB do WhatsApp Web.
 - O filtro de abas decide o grupo pelo **id** do status, não pela relação
   `supportChatStatus`: ela não vem nos payloads de webhook, e um grupo errado
   sumiria com a conversa da lista.
+- “Em pausas” é um grupo visual separado: status 2 com `paused_at` preenchido.
+  “Em atendimento” exclui esses pausados; “Todos” continua incluindo-os. Pausa
+  preserva status e dono no backend. O pós-atendimento tem prioridade como Chatbot.
+- A seleção múltipla da lista usa as rotas individuais de leitura/finalização.
+  Finaliza sem relato, mantendo despedida e padrão/permissão de saída por canal.
+  Trocar de fila ou cancelar limpa a seleção; falhas são informadas por conversa.
+  Pausados podem finalizar diretamente. Espera/Chatbot usam Finalizar sem
+  atendimento, sem despedida ou saída, e são identificados na confirmação.
 
 ## UI
 
