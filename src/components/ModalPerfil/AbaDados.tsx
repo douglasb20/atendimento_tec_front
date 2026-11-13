@@ -93,8 +93,8 @@ const AbaDados = ({ perfil, onSalvo }: Props) => {
     if (!arquivo) return undefined;
 
     const assinatura = await FetchReq<SignatureResponse>({
-      endpoint: 'AssinarAvatarUsuario',
-      body: { user_id: perfil.id, key: 'user/avatar', fileType: arquivo.type },
+      endpoint: 'AssinarMeuAvatar',
+      body: { fileType: arquivo.type },
     });
 
     // PUT com o arquivo cru: o Backblaze não aceita o POST-policy do S3.

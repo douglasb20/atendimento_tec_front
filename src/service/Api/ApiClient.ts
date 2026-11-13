@@ -117,6 +117,7 @@ export const ListUrl = {
   // colegas.
   MeuPerfil: { url: '/users/meu-perfil', method: 'GET' },
   AtualizarMeuPerfil: { url: '/users/meu-perfil', method: 'PATCH' },
+  AssinarMeuAvatar: { url: '/users/meu-perfil/sign-avatar', method: 'POST' },
   AdicionarUsuario: { url: '/users', method: 'POST' },
   AtualizarUsuario: { url: '/users/{{user_id}}', method: 'PATCH' },
   RemoverUsuario: { url: '/users/{{user_id}}', method: 'DELETE' },
