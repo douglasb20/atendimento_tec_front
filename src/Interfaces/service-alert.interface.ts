@@ -1,4 +1,5 @@
 import { ChannelResponse } from './channel.interface';
+import { TipoAnexo } from './quick-reply.interface';
 
 /**
  * Aviso temporário enviado na abertura do atendimento.
@@ -16,6 +17,11 @@ export type ServiceAlertResponse = {
   titulo: string;
   /** O que vai para o WhatsApp. Aceita as variáveis de mensagem. */
   mensagem: string;
+  anexo_key: string | null;
+  anexo_nome: string | null;
+  anexo_mimetype: string | null;
+  anexo_tipo: TipoAnexo | null;
+  anexo_url?: string;
   ativo: boolean;
   /** Nulo: vale até desligarem. */
   expira_em: string | null;
@@ -30,6 +36,10 @@ export type ServiceAlertForm = {
   id?: number;
   titulo: string;
   mensagem: string;
+  anexo_key?: string | null;
+  anexo_nome?: string | null;
+  anexo_mimetype?: string | null;
+  anexo_tipo?: TipoAnexo | null;
   ativo: boolean;
   expira_em: Date | null;
   /** Vazio = todos os canais. */

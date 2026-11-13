@@ -28,7 +28,7 @@ export default function VisualizadorImagem({ src, nome, onFechar, onBaixar }: Pr
         margin: 0, border: 0, borderRadius: 0, boxShadow: 'none', background: 'transparent' }}
       contentStyle={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0,
         padding: 0, borderRadius: 0, background: 'transparent' }}>
-      <div className="visualizador-imagem-controles" onClick={evento => { if (evento.target === evento.currentTarget) onFechar(); }}>
+      <div className="visualizador-imagem-controles" onClick={evento => evento.stopPropagation()}>
         {controle('Baixar imagem', 'pi-download', onBaixar)}
         {controle('Girar para a direita', 'pi-refresh', () => setRotacao(valor => (valor + 90) % 360))}
         {controle('Girar para a esquerda', 'pi-undo', () => setRotacao(valor => (valor + 270) % 360))}

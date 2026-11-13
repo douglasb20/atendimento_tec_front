@@ -239,6 +239,22 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
     });
   },
 
+  atualizarPerfilNasConversas: (perfil) => {
+    if (perfil.id == null) return;
+    set(({ activeChat, chats }) => {
+      const atualizar = (chat: SupportChatsResponse) => {
+        if (!chat.user || String(chat.user_id) !== String(perfil.id)
+          || String(chat.user.id) !== String(perfil.id)) return chat;
+
+        return { ...chat, user: { ...chat.user, name: perfil.name,
+          last_name: perfil.last_name, avatar_url: perfil.avatar_url ?? null } };
+      };
+      // Somente apresentação do responsável. Não reaplica o snapshot do chat,
+      // que poderia desfazer leitura, pausa ou transferência durante o upload.
+      return { chats: chats.map(atualizar), activeChat: activeChat ? atualizar(activeChat) : null };
+    });
+  },
+
   addChats: (newChats: SupportChatsResponse[]) =>
     set(({ chats }) => ({
       chats: [
@@ -277,10 +293,14 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
   },
 
   setUnreadCount: (chatId, unread_count) => {
-    set(({ chats }) => ({
+    set(({ chats, activeChat }) => ({
       chats: chats.map((c) =>
         String(c.id) === String(chatId) ? { ...c, unread_count: unread_count } : c,
       ),
+      // O cabeçalho também decide a ação pelo contador da conversa aberta.
+      activeChat: activeChat && String(activeChat.id) === String(chatId)
+        ? { ...activeChat, unread_count }
+        : activeChat,
     }));
   },
 

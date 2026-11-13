@@ -347,7 +347,6 @@ const EditorMensagem = ({
               <EmojiPicker
                 onEmojiClick={(dados: EmojiClickData) => {
                   escreveNaSelecao(dados.emoji);
-                  setEmojiAberto(false);
                 }}
                 emojiStyle={EmojiStyle.NATIVE}
                 theme={Theme.AUTO}

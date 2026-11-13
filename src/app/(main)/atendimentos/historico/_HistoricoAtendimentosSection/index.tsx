@@ -45,7 +45,7 @@ type RelatorioAtendimentoResponse = {
 
 /**
  * Tela de Histórico de Atendimentos: consulta rápida por protocolo, contato
- * ou cliente, sem exportação nem os filtros de setor/canal/situação do
+ * ou cliente, com filtro de situação e sem exportação ou filtros de setor/canal do
  * relatório completo (`relatorios/atendimentos`) - aqui o objetivo é achar UM
  * atendimento e ver o que aconteceu nele, não auditar um recorte inteiro.
  *
@@ -72,6 +72,8 @@ export default function HistoricoAtendimentosSection({ usuarios }: Props) {
       ['de', dia(f.de)],
       ['ate', dia(f.ate)],
       ['user_id', f.user_id ?? undefined],
+      ['support_chat_status_id', Array.isArray(f.support_chat_status_id)
+        ? f.support_chat_status_id.join(',') : f.support_chat_status_id ?? undefined],
       ['busca', f.busca || undefined],
       ['ordenar_atendimentos_por', f.ordenar_atendimentos_por],
     ];
@@ -121,6 +123,7 @@ export default function HistoricoAtendimentosSection({ usuarios }: Props) {
       <div className="p-card-content">
         <FiltrosHistorico
           usuarios={usuarios}
+          situacoes={SITUACOES.map(({ label, value }) => ({ label, value }))}
           carregando={carregando}
           onFiltrar={buscar}
         />

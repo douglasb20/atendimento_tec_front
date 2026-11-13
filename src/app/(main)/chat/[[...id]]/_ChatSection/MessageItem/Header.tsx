@@ -49,6 +49,8 @@ const Header = () => {
   const { FetchReq } = useApi();
   const activeChat = useChatStore((s) => s.activeChat);
   const patchActiveChat = useChatStore((s) => s.patchActiveChat);
+  const updateChat = useChatStore((s) => s.updateChat);
+  const setUnreadCount = useChatStore((s) => s.setUnreadCount);
   const fecharConversa = useChatStore((s) => s.fecharConversa);
   const { usuarioId } = useUsuarioLogado();
   // Sem argumento: entra no modo com a lista vazia, para o atendente escolher
@@ -85,6 +87,7 @@ const Header = () => {
   // oferecer o botão só para vê-lo falhar é pior do que não mostrá-lo.
   const souODono = ehDonoDoAtendimento(activeChat, usuarioId);
   const pausado = emAndamento && Boolean(activeChat.paused_at);
+  const temNaoLidas = Number(activeChat.unread_count) > 0 || Boolean(activeChat.marked_unread);
 
   /** Abre o diálogo de encerramento no modo pedido. */
   const abrirFinalizacao = (modo: ModoFinalizar) => {
@@ -105,9 +108,27 @@ const Header = () => {
         variables: [activeChat.id],
       });
 
-      patchActiveChat(atualizado);
+      const estado = useChatStore.getState();
+      const atual = estado.chats.find(chat => String(chat.id) === String(activeChat.id))
+        ?? (String(estado.activeChat?.id) === String(activeChat.id) ? estado.activeChat : null);
+      if (atual) updateChat({ ...atual, marked_unread: atualizado.marked_unread });
     } catch (erro) {
       CatchAlerta(erro, 'Não foi possível marcar como não lida');
+    }
+  };
+
+  const marcarComoLida = async () => {
+    try {
+      await FetchReq({ endpoint: 'MarcarConversaLida', variables: [activeChat.id] });
+      // Usa o estado atual para não restaurar dono/status anteriores nem
+      // alterar outra conversa que tenha sido aberta enquanto a API respondia.
+      const estado = useChatStore.getState();
+      const atual = estado.chats.find(chat => String(chat.id) === String(activeChat.id))
+        ?? (String(estado.activeChat?.id) === String(activeChat.id) ? estado.activeChat : null);
+      if (atual) updateChat({ ...atual, marked_unread: false });
+      setUnreadCount(activeChat.id, 0);
+    } catch (erro) {
+      CatchAlerta(erro, 'Não foi possível marcar como lida');
     }
   };
 
@@ -206,6 +227,8 @@ const Header = () => {
             trocava, antes de saber de verdade se o atendente pode agir. */}
         {permissoesCarregadas && (
           <AcoesAtendimento
+            temNaoLidas={temNaoLidas}
+            onMarcarLida={marcarComoLida}
             aguardando={aguardando}
             emAndamento={emAndamento}
             souODono={souODono}

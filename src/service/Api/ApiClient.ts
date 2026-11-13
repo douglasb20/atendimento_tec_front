@@ -220,6 +220,7 @@ export const ListUrl = {
 
   // Avisos temporários enviados na abertura do atendimento.
   ListarAvisos: { url: '/service-alerts', method: 'GET' },
+  AssinarAnexoAviso: { url: '/service-alerts/assinar-anexo', method: 'POST' },
   AdicionarAviso: { url: '/service-alerts', method: 'POST' },
   AtualizarAviso: { url: '/service-alerts/{{alert_id}}', method: 'PATCH' },
   // Separado do update: desligar o aviso quando o problema passa é a ação do

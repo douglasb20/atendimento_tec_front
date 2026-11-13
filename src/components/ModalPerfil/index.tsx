@@ -12,6 +12,8 @@ import { useTema } from '@/hooks/useTema';
 import { IUsuariosResponse } from '@/Interfaces';
 import { getUserInfo } from '@/actions/userInfo';
 import useApi from '@/service/Api/ApiClient';
+import { useChatStore } from '@/store/useChatStore';
+import { useUsuarioLogadoStore } from '@/store/useUsuarioLogadoStore';
 import { Alerta, CatchAlerta } from '@/service/Util';
 import AbaDados from './AbaDados';
 import AbaNotificacoes from './AbaNotificacoes';
@@ -126,8 +128,11 @@ const ModalPerfil = ({ visible, onHide }: Props) => {
             <AbaDados
               perfil={perfil}
               onSalvo={async () => {
+                const atualizado = await FetchReq<IUsuariosResponse>('MeuPerfil');
+                setPerfil(atualizado);
+                useChatStore.getState().atualizarPerfilNasConversas(atualizado);
                 await getUserInfo();
-                carregarPerfil();
+                await useUsuarioLogadoStore.getState().carregar();
               }}
             />
           )}

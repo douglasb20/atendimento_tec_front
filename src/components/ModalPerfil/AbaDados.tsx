@@ -133,7 +133,7 @@ const AbaDados = ({ perfil, onSalvo }: Props) => {
       await FetchReq({ endpoint: 'AtualizarMeuPerfil', body: corpo });
 
       Alerta('Dados atualizados', '', 'success');
-      onSalvo();
+      await onSalvo();
     } catch (erro) {
       CatchAlerta(erro, 'Não foi possível salvar');
     } finally {

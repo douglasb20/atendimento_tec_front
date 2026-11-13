@@ -2,8 +2,10 @@
 
 import { Button } from 'primereact/button';
 import { Menu } from 'primereact/menu';
+import { ContextMenu } from 'primereact/contextmenu';
 import { MenuItem } from 'primereact/menuitem';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { SyntheticEvent } from 'react';
 
 import {
   ContactResponse,
@@ -17,6 +19,7 @@ import { CatchAlerta } from '@/service/Util';
 import { useChatStore } from '@/store/useChatStore';
 import { marcarContatoAtualizadoLocalmente } from '@/store/chatSlice';
 import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
+import { registrarToqueLongoConversa } from '@/service/ToqueLongoConversa';
 
 import ModalContatoChat from '../_components/ModalContatoChat';
 import ModalFinalizarAtendimento, {
@@ -45,6 +48,17 @@ type AcoesConversaProps = {
  */
 const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
   const menuRef = useRef<Menu>(null);
+  const contextoRef = useRef<ContextMenu>(null);
+  const acoesRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const cartao = acoesRef.current?.closest('li');
+    if (!cartao) return;
+    // O componente desmonta na seleção múltipla, liberando também o gesto.
+    return registrarToqueLongoConversa(cartao, evento => {
+      contextoRef.current?.show(evento as unknown as SyntheticEvent);
+    });
+  }, []);
   const { FetchReq } = useApi();
   const { usuarioId } = useUsuarioLogado();
   const updateChat = useChatStore((s) => s.updateChat);
@@ -252,9 +266,17 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
     // visibilidade do `.acoes-conversa` tornava difícil prever quem vencia. O
     // posicionamento inteiro vive no SCSS, num lugar só.
     <span
+      ref={acoesRef}
       onClick={(e) => e.stopPropagation()}
       className={`acoes-conversa${menuAberto ? ' acoes-conversa--fixa' : ''}`}
     >
+      <ContextMenu
+        ref={contextoRef}
+        model={itens}
+        breakpoint="0px"
+        className="menu-acoes-conversa"
+        style={{ width: 'max-content', maxWidth: 'calc(100vw - 1rem)' }}
+      />
       <Menu
         ref={menuRef}
         model={itens}
@@ -262,8 +284,8 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
         popup
         onShow={() => setMenuAberto(true)}
         onHide={() => setMenuAberto(false)}
-        style={{ width: 'auto' }}
-        pt={{ label: { className: 'white-space-nowrap' } }}
+        className="menu-acoes-conversa"
+        style={{ width: 'max-content', maxWidth: 'calc(100vw - 1rem)' }}
       />
 
       <Button

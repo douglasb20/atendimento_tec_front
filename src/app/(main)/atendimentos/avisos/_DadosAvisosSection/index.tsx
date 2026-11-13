@@ -7,7 +7,7 @@ import { IActionTable } from '@/components/AcoesDataTable';
 import TitleCards, { IButtonsOthers } from '@/components/TitleCards';
 import { useService } from '@/contexts/ServicesContext';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
-import { ServiceAlertForm, ServiceAlertResponse } from '@/Interfaces';
+import { ServiceAlertForm, ServiceAlertResponse, tipoDoArquivo } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
 import { AlertaCallback, CatchAlerta, ConfirmaAcao, sleep } from '@/service/Util';
 
@@ -87,11 +87,28 @@ export default function DadosAvisosSection({ data }: DadosAvisosProps) {
     }
   };
 
-  const SalvarAviso = async (fields: ServiceAlertForm) => {
+  const SalvarAviso = async (fields: ServiceAlertForm, arquivoNovo: File | null, removeuAnexo: boolean) => {
     try {
       setLoading(true);
 
+      let anexo: Pick<ServiceAlertForm, 'anexo_key' | 'anexo_nome' | 'anexo_mimetype' | 'anexo_tipo'> = {};
+      if (arquivoNovo) {
+        const mimetype = arquivoNovo.type || 'application/octet-stream';
+        const assinatura = await FetchReq<{ url: string; key: string; headers: Record<string, string> }>({
+          endpoint: 'AssinarAnexoAviso', body: { fileType: mimetype, fileName: arquivoNovo.name },
+        });
+        const resposta = await fetch(assinatura.url, {
+          method: 'PUT', headers: assinatura.headers, body: arquivoNovo,
+        });
+        if (!resposta.ok) throw new Error('Não foi possível enviar o anexo do aviso');
+        anexo = { anexo_key: assinatura.key, anexo_nome: arquivoNovo.name,
+          anexo_mimetype: mimetype, anexo_tipo: tipoDoArquivo(mimetype) };
+      } else if (removeuAnexo) {
+        anexo = { anexo_key: null, anexo_nome: null, anexo_mimetype: null, anexo_tipo: null };
+      }
+
       const body = {
+        ...anexo,
         titulo: fields.titulo.trim(),
         mensagem: fields.mensagem,
         ativo: fields.ativo,

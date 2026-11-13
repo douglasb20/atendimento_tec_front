@@ -186,6 +186,63 @@
   }
 }
 
+.resposta-selecionada {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  padding: 0.75rem 2.75rem 0.75rem 0.75rem;
+  overflow: hidden;
+  border-left: 3px solid var(--primary-color);
+  border-radius: var(--border-radius);
+  background: var(--surface-100);
+  color: var(--text-color);
+}
+
+.resposta-selecionada-corpo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.resposta-selecionada-autor {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.resposta-selecionada-conteudo {
+  color: var(--text-color);
+}
+
+.resposta-selecionada-fechar {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
+  }
+}
+
 .no-scroll {
   pointer-events: none;
   touch-action: none;
@@ -582,6 +639,28 @@
 .acoes-conversa--fixa {
   opacity: 1;
   visibility: visible;
+}
+
+@media (pointer: coarse) {
+  // Evita seleção de texto e o menu de imagem do navegador ao segurar o card.
+  .acoes-hover {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+.menu-acoes-conversa {
+  .p-menuitem-text {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+  }
+
+  .p-menuitem-icon {
+    flex-shrink: 0;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

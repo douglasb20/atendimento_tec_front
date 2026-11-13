@@ -18,6 +18,8 @@ type AcoesAtendimentoProps = {
   /** Encerra de Aguardando, sem que tenha havido atendimento. */
   onFinalizarSemAtendimento: () => void;
   onMarcarNaoLida: () => void;
+  onMarcarLida: () => void;
+  temNaoLidas: boolean;
   onSelecionarMensagens: () => void;
   onEditarContato: () => void;
   onTransferir: () => void;
@@ -52,6 +54,8 @@ const AcoesAtendimento = ({
   onFinalizarSemDespedida,
   onFinalizarSemAtendimento,
   onMarcarNaoLida,
+  onMarcarLida,
+  temNaoLidas,
   onSelecionarMensagens,
   onEditarContato,
   onTransferir,
@@ -97,9 +101,9 @@ const AcoesAtendimento = ({
         ]
       : []),
     {
-      label: 'Marcar como não lida',
-      icon: 'fa-regular fa-envelope',
-      command: onMarcarNaoLida,
+      label: temNaoLidas ? 'Marcar como lida' : 'Marcar como não lida',
+      icon: temNaoLidas ? 'fa-regular fa-envelope-open' : 'fa-regular fa-envelope',
+      command: temNaoLidas ? onMarcarLida : onMarcarNaoLida,
     },
     // Pausado não escreve nem apaga nada, então selecionar mensagens (que serve
     // a apagá-las) fica de fora.

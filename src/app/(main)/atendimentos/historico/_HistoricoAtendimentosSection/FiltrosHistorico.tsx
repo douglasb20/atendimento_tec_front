@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useRef, useState } from 'react';
 import { Calendar } from 'primereact/calendar';
+import { Checkbox } from 'primereact/checkbox';
 import { ListBox } from 'primereact/listbox';
 import { PrimeIcons } from 'primereact/api';
 
@@ -59,20 +60,21 @@ const dataCurta = (data?: Date | null) =>
 
 type Props = {
   usuarios: IUsuariosResponse[];
+  situacoes: { label: string; value: number }[];
   carregando: boolean;
   onFiltrar: (filtro: FiltroRelatorio) => void;
 };
 
 /**
  * Filtros da tela de Histórico - mesmo padrão visual do relatório de
- * Atendimentos (`relatorios/atendimentos/FiltrosRelatorio.tsx`), mas sem
- * Setor/Canal/Situação: aqui é consulta rápida por protocolo, não auditoria
- * segmentada, e menos chips deixa a busca em evidência.
+ * Atendimentos, incluindo seleção múltipla de situações para localizar
+ * atendimentos abertos ou tipos específicos de encerramento.
  */
-const FiltrosHistorico = ({ usuarios, carregando, onFiltrar }: Props) => {
+const FiltrosHistorico = ({ usuarios, situacoes, carregando, onFiltrar }: Props) => {
   const [atalho, setAtalho] = useState<number>(ATALHO_PADRAO);
   const [periodo, setPeriodo] = useState(() => periodoDoAtalho(ATALHO_PADRAO));
   const [userId, setUserId] = useState<number | null>(null);
+  const [statusIds, setStatusIds] = useState<number[]>([]);
   const [busca, setBusca] = useState('');
   const [ordenarPor, setOrdenarPor] =
     useState<FiltroRelatorio['ordenar_atendimentos_por']>(ORDENACAO_PADRAO);
@@ -126,6 +128,7 @@ const FiltrosHistorico = ({ usuarios, carregando, onFiltrar }: Props) => {
       de: periodo.de,
       ate: periodo.ate,
       user_id: userId,
+      support_chat_status_id: statusIds,
       busca: busca.trim() || undefined,
       ordenar_atendimentos_por: ordenarPor,
       ...mudanca,
@@ -257,6 +260,37 @@ const FiltrosHistorico = ({ usuarios, carregando, onFiltrar }: Props) => {
           ativo={userId !== null}
         >
           {(fechar) => lista(opcoesDeUsuario, userId, setUserId, fechar, 'user_id')}
+        </ChipFiltro>
+
+        <ChipFiltro
+          rotulo="Situação"
+          valor={statusIds.length === 0 ? 'Todas' : statusIds.length <= 2
+            ? situacoes.filter(situacao => statusIds.includes(situacao.value)).map(situacao => situacao.label).join(', ')
+            : `${statusIds.length} selecionados`}
+          icone={PrimeIcons.CHECK_CIRCLE}
+          ativo={statusIds.length > 0}
+          larguraDoPainel="16rem"
+        >
+          {() => (
+            <ListBox
+              value={statusIds}
+              options={situacoes}
+              multiple
+              onChange={evento => {
+                const escolhidos: number[] = evento.value ?? [];
+                setStatusIds(escolhidos);
+                filtrar({ support_chat_status_id: escolhidos });
+              }}
+              itemTemplate={(situacao: { label: string; value: number }) => (
+                <div className="flex align-items-center gap-2">
+                  <Checkbox checked={statusIds.includes(situacao.value)} readOnly />
+                  <span>{situacao.label}</span>
+                </div>
+              )}
+              className="w-full border-none"
+              listStyle={{ maxHeight: '15rem' }}
+            />
+          )}
         </ChipFiltro>
 
         <ChipFiltro

@@ -9,12 +9,14 @@ import ChipFiltro from '@/components/ChipFiltro';
 import { ChannelResponse, DepartmentResponse, FiltroRelatorio } from '@/Interfaces';
 
 /**
- * Os atalhos de período, em dias. `0` é "Personalizar", que libera as datas.
+ * Dias corridos, com `-1` para "Ontem" e `0` para "Personalizar".
  *
  * Mesma escolha do relatório de atendimentos (`relatorios/atendimentos`): o
  * cliente escolhe o recorte, sem um padrão fixo imposto.
  */
 const ATALHOS = [
+  { label: 'Hoje', value: 1 },
+  { label: 'Ontem', value: -1 },
   { label: 'Últimos 7 dias', value: 7 },
   { label: 'Últimos 15 dias', value: 15 },
   { label: 'Últimos 30 dias', value: 30 },
@@ -23,10 +25,18 @@ const ATALHOS = [
 
 export const ATALHO_PADRAO = 7;
 
-/** `de`/`ate` a partir de um atalho: hoje para trás, incluindo hoje. */
+/** Intervalo local do atalho. "Ontem" inclui somente o dia anterior. */
 export const periodoDoAtalho = (dias: number): { de: Date; ate: Date } => {
   const ate = new Date();
-  const de = new Date();
+  const de = new Date(ate);
+
+  if (dias === -1) {
+    de.setDate(de.getDate() - 1);
+    de.setHours(0, 0, 0, 0);
+    ate.setTime(de.getTime());
+    ate.setHours(23, 59, 59, 999);
+    return { de, ate };
+  }
 
   de.setDate(de.getDate() - (dias - 1));
   de.setHours(0, 0, 0, 0);

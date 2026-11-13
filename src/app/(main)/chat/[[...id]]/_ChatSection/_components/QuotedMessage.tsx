@@ -25,9 +25,9 @@ export default function QuotedMessage() {
   return (
     <>
       {mensagem && quoted.mode === ModeQuoted.REPLY && (
-        <div className="fadeindown border-left-3 relative bg-gray-200 border-round-lg border-gray-500 p-2 overflow-hidden my-2 flex align-items-center gap-2">
-          <div className="flex-1 overflow-hidden">
-            <p className={`font-bold ${mensagem.from_me ? 'text-blue-600' : 'text-green-600'}`}>
+        <div className="resposta-selecionada fadeindown">
+          <div className="resposta-selecionada-corpo">
+            <p className="resposta-selecionada-autor">
               {mensagem.from_me ? 'Você' : nomeCompleto(activeChat?.contact)}
             </p>
 
@@ -35,7 +35,7 @@ export default function QuotedMessage() {
                 aparecia em branco e não dizia a que se responde. Com legenda,
                 ela é o texto, e o rótulo fica ao lado - como no WhatsApp. */}
             {midia ? (
-              <span className="flex align-items-center gap-2 text-clamp text-700">
+              <span className="resposta-selecionada-conteudo flex align-items-center gap-2 text-clamp">
                 <i className={`${midia.icone} text-sm`} />
                 {mensagem.content ? (
                   <Interweave content={fixHeartEmoji(mensagem.content)} />
@@ -44,12 +44,12 @@ export default function QuotedMessage() {
                 )}
               </span>
             ) : resumoDoContato(mensagem.type, mensagem.content) ? (
-              <span className="flex align-items-center gap-2 text-clamp text-700">
+              <span className="resposta-selecionada-conteudo flex align-items-center gap-2 text-clamp">
                 <i className="fa-regular fa-address-card text-sm" />
                 {resumoDoContato(mensagem.type, mensagem.content)}
               </span>
             ) : (
-              <span className="text-clamp">
+              <span className="resposta-selecionada-conteudo text-clamp">
                 <Interweave content={fixHeartEmoji(mensagem.content)} />
               </span>
             )}
@@ -68,8 +68,9 @@ export default function QuotedMessage() {
           <button
             onClick={() => setQuotedMessage(null, null)}
             type="button"
-            className="absolute hover:border-gray-400 border-transparent hover:bg-gray-300 p-1 bg-transparent border-1 border-round-lg text-gray-700 cursor-pointer"
-            style={{ right: '0.5rem', top: '.25rem' }}
+            className="resposta-selecionada-fechar"
+            aria-label="Cancelar resposta"
+            title="Cancelar resposta"
           >
             <i className="fa-solid fa-xmark"></i>
           </button>

@@ -49,6 +49,12 @@ const { carregar } = require('./selecao-atendimentos.cjs');
   assert.equal(elementos().find(no => no.type === 'img').props.style.width, 238);
   for (let i = 0; i < 12; i++) { botao('Aumentar zoom').props.onClick(); renderizar(); }
   assert.equal(elementos().find(no => no.type === 'img').props.style.width, 952);
+  assert.equal(botao('Aumentar zoom').props.disabled, true);
+  const barra = elementos().find(no => no.props.className === 'visualizador-imagem-controles');
+  let propagou = true;
+  barra.props.onClick({ target: barra, currentTarget: barra, stopPropagation: () => { propagou = false; } });
+  assert.equal(propagou, false);
+  assert.equal(fechou, 0, 'Barra e botão desabilitado não fecham a imagem no zoom máximo');
   assert.equal(arvore.props.showHeader, false);
   assert.equal(arvore.props.style.background, 'transparent');
   botao('Girar para a direita').props.onClick(); renderizar();

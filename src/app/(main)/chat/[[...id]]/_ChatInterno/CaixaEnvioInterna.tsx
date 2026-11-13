@@ -288,7 +288,6 @@ const CaixaEnvioInterna = ({
               <EmojiPicker
                 onEmojiClick={(dados: EmojiClickData) => {
                   inserirEmoji(dados.emoji);
-                  setEmojiAberto(false);
                 }}
                 emojiStyle={EmojiStyle.NATIVE}
                 theme={Theme.AUTO}

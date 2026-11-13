@@ -6,7 +6,7 @@ import { Dialog as Modal } from 'primereact/dialog';
 import { InputSwitch } from 'primereact/inputswitch';
 import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import EditorMensagem from '@/components/EditorMensagem';
@@ -20,7 +20,7 @@ type ModalFormAvisoProps = {
   visible: boolean;
   onHide: () => void;
   data: ServiceAlertResponse | null;
-  onConfirm: (fields: ServiceAlertForm) => void;
+  onConfirm: (fields: ServiceAlertForm, arquivoNovo: File | null, removeuAnexo: boolean) => void;
 };
 
 const defaultForm: ServiceAlertForm = {
@@ -43,8 +43,16 @@ const ModalFormAviso = ({ visible, onHide, data, onConfirm }: ModalFormAvisoProp
 
   const { FetchReq } = useApi();
   const [canais, setCanais] = useState<ChannelResponse[]>([]);
+  const [arquivoNovo, setArquivoNovo] = useState<File | null>(null);
+  const [removeuAnexo, setRemoveuAnexo] = useState(false);
+  const [erroArquivo, setErroArquivo] = useState<string | null>(null);
+  const urlLocal = useMemo(() => arquivoNovo ? URL.createObjectURL(arquivoNovo) : null, [arquivoNovo]);
+  useEffect(() => () => { if (urlLocal) URL.revokeObjectURL(urlLocal); }, [urlLocal]);
 
   useEffect(() => {
+    setArquivoNovo(null);
+    setRemoveuAnexo(false);
+    setErroArquivo(null);
     if (!visible) return;
 
     reset({
@@ -88,7 +96,7 @@ const ModalFormAviso = ({ visible, onHide, data, onConfirm }: ModalFormAvisoProp
         icon="fa-regular fa-check"
         disabled={somenteLeitura}
         title={somenteLeitura ? semPermissao : undefined}
-        onClick={() => handleSubmit((fields) => onConfirm(fields))()}
+        onClick={() => handleSubmit((fields) => onConfirm(fields, arquivoNovo, removeuAnexo))()}
         style={{ width: 'auto' }}
       />
     </div>
@@ -174,7 +182,25 @@ const ModalFormAviso = ({ visible, onHide, data, onConfirm }: ModalFormAvisoProp
                   rows={4}
                   comPreVisualizacao
                   disabled={somenteLeitura}
+                  comAnexo
+                  nomeAnexo={removeuAnexo ? null : arquivoNovo?.name ?? data?.anexo_nome}
+                  urlAnexo={removeuAnexo ? null : urlLocal ?? data?.anexo_url}
+                  onEscolherAnexo={arquivo => {
+                    if (arquivo.size > 16 * 1024 * 1024) {
+                      setErroArquivo('O arquivo deve ter no máximo 16 MB');
+                      return;
+                    }
+                    setErroArquivo(null);
+                    setArquivoNovo(arquivo);
+                    setRemoveuAnexo(false);
+                  }}
+                  onRemoverAnexo={() => {
+                    setArquivoNovo(null);
+                    setRemoveuAnexo(true);
+                    setErroArquivo(null);
+                  }}
                 />
+                {erroArquivo && <small className="p-error">{erroArquivo}</small>}
                 {getFormErrorMessage(fieldState)}
               </>
             )}

@@ -1,12 +1,13 @@
 'use client';
 
 import { classNames } from 'primereact/utils';
-import { Image } from 'primereact/image';
 
 import { SupportChatMessageResponse } from '@/Interfaces';
 import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import { DateToBR } from '@/service/Util';
 import PlayerAudio from '@/app/(main)/chat/[[...id]]/_ChatSection/_components/PlayerAudio';
+import MidiaVisual from '@/app/(main)/chat/[[...id]]/_ChatSection/_components/MidiaVisual';
+import { baixarMidia } from '@/service/BaixarMidia';
 import Interweave from '@/components/Interweave';
 
 type Props = {
@@ -89,13 +90,8 @@ const BolhaMensagemHistorico = ({ message }: Props) => {
           )}
 
           {exibeMidia && type === 'image' && (
-            <Image
-              src={media_url}
-              alt="Imagem"
-              className="mb-2 border-round shadow-2"
-              imageStyle={{ maxWidth: '250px', maxHeight: '250px', objectFit: 'cover' }}
-              preview
-            />
+            <MidiaVisual key={media_url} src={media_url} tipo="image" nome={message.file_name}
+              onAbrirVideo={() => {}} onBaixar={() => { void baixarMidia(message); }} />
           )}
 
           {temAudio && (

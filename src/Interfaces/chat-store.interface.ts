@@ -1,4 +1,4 @@
-import { SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
+import { IUsuariosResponse, SupportChatMessageResponse, SupportChatsResponse } from '@/Interfaces';
 import { Socket } from 'socket.io-client';
 
 export type SocketSlice = {
@@ -92,6 +92,7 @@ export type ChatSlice = {
   setActiveChat: (chat: SupportChatsResponse | null) => void;
   /** Aplica um patch na conversa aberta, sem esperar o eco do socket. */
   patchActiveChat: (patch: Partial<SupportChatsResponse>) => void;
+  atualizarPerfilNasConversas: (perfil: IUsuariosResponse) => void;
   /** Volta à tela sem conversa selecionada, limpando mensagens e URL. */
   fecharConversa: () => void;
   resetChatStore: () => void;

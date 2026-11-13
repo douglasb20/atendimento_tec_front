@@ -1003,7 +1003,6 @@ export default function SendMessageBox() {
               <EmojiPicker
                 onEmojiClick={(dados: EmojiClickData) => {
                   inserirEmoji(dados.emoji);
-                  setEmojiAberto(false);
                 }}
                 emojiStyle={EmojiStyle.NATIVE}
                 theme={Theme.AUTO}
