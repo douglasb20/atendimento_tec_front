@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { parseCookies } from 'nookies';
 import { ILoginResp } from '@/Interfaces';
+import { renovaSessao } from './sessaoViva';
 
 const url = process.env.URL_ENDPOINT;
 
@@ -202,6 +203,7 @@ export const ListUrl = {
   SendReply: { url: '/support-chats/{{support_chat_id}}/send-reply', method: 'POST' },
   AssinarMediaUpload: { url: '/support-chats/sign-media-post', method: 'POST' },
   SendMedia: { url: '/support-chats/{{support_chat_id}}/send-media', method: 'POST' },
+  BaixarMidiaAtendimento: { url: '/support-chats/{{support_chat_id}}/messages/{{message_id}}/download', method: 'GET' },
   OcultarMensagens: {
     url: '/support-chats/{{support_chat_id}}/ocultar-mensagens',
     method: 'POST',
@@ -377,7 +379,7 @@ export default function ApiClient() {
     if (!precisaRenovar) return;
 
     try {
-      await apiRefreshToken();
+      await renovaSessao();
     } catch (err) {
       // Refresh recusado ou expirado: não há como recuperar a sessão daqui.
       console.error('Falha ao renovar a sessão:', err);

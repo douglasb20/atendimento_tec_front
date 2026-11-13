@@ -9,8 +9,6 @@ import { Menu } from 'primereact/menu';
 import { MenuItem } from 'primereact/menuitem';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 
-import { parseCookies } from 'nookies';
-
 import useApi from '@/service/Api/ApiClient';
 import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 import { useChatStore } from '@/store/useChatStore';
@@ -22,9 +20,9 @@ import {
   ModeQuoted,
   ehDonoDoAtendimento,
   podeAgirNoAtendimento,
-  UserInfo,
 } from '@/Interfaces';
 import { Alerta, CatchAlerta, nomeCompleto } from '@/service/Util';
+import { useUsuarioLogadoStore } from '@/store/useUsuarioLogadoStore';
 import { useUsuarioLogado } from '@/hooks/useUsuarioLogado';
 import { useRespostasRapidas } from '@/hooks/useRespostasRapidas';
 import { useSalvarRespostaRapida } from '@/hooks/useSalvarRespostaRapida';
@@ -68,10 +66,9 @@ import { classNames } from 'primereact/utils';
 import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
 
 /**
- * Nome do atendente para a bolha provisória, lido do cookie `userInfo`.
+ * Nome do atendente para a bolha provisória, obtido da identidade compartilhada.
  *
- * Devolve string vazia quando o cookie não existe, está expirado ou veio sem o
- * campo - casos reais, já que ele é re-hidratado pelo proxy. Quem usa não
+ * Devolve string vazia quando a identidade ainda não foi recuperada. Quem usa não
  * pode montar o prefixo `*Nome:*` sem checar, sob pena de exibir um ":" solto.
  *
  * `nomeCompleto`: replica o ajuste `assinatura_nome_completo` (o backend é
@@ -81,10 +78,8 @@ import { usePermissoesModulo } from '@/hooks/usePermissoesModulo';
  */
 const nomeDoAtendente = (nomeCompletoLigado: boolean): string => {
   try {
-    const cru = parseCookies()['userInfo'];
-    if (!cru) return '';
-
-    const usuario = JSON.parse(cru) as UserInfo;
+    const usuario = useUsuarioLogadoStore.getState().usuario;
+    if (!usuario) return '';
     return nomeCompletoLigado ? nomeCompleto(usuario) : (usuario.name ?? '');
   } catch {
     return '';

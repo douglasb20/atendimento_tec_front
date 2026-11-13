@@ -31,7 +31,6 @@ export default function ChatSection(props: ChatSectionProps) {
       const data = await FetchReq<SupportChatsResponse>('ListarMensagensPorAtendimentoId', [
         chatId,
       ]);
-      addMessages(data.supportChatMessages);
       return data;
     } catch (error) {
       throw error;
@@ -50,11 +49,17 @@ export default function ChatSection(props: ChatSectionProps) {
   }, []);
 
   const loadConversationMessage = async () => {
+    const revisaoPainel = useChatInternoStore.getState().revisaoPainel;
     try {
       setLoadMessages(true);
       const chatData = await getChatMessages(Number(params?.id?.[0]));
+      const interno = useChatInternoStore.getState();
+      if (interno.revisaoPainel !== revisaoPainel) return;
+      if (interno.aba === 'interno' && interno.modo === 'painel') return;
+      addMessages(chatData.supportChatMessages);
       setActiveChat(chatData);
     } catch (err) {
+      if (useChatInternoStore.getState().revisaoPainel !== revisaoPainel) return;
       if (err.response && err.response.status === 404) {
         setActiveChat(null);
         setChatNotFound(true);
@@ -73,7 +78,8 @@ export default function ChatSection(props: ChatSectionProps) {
 
   const conversaInterna = useChatInternoStore((s) => s.ativo);
   const modoInterno = useChatInternoStore((s) => s.modo);
-  const conversaInternaNoPainel = Boolean(conversaInterna) && modoInterno === 'painel';
+  const abaAtiva = useChatInternoStore((s) => s.aba);
+  const conversaInternaNoPainel = abaAtiva === 'interno' && Boolean(conversaInterna) && modoInterno === 'painel';
 
   const activeChat = useChatStore((s) => s.activeChat);
   const chatNotFound = useChatStore((s) => s.chatNotFound);
@@ -100,7 +106,7 @@ export default function ChatSection(props: ChatSectionProps) {
               normal de uso. O popup existe para quem quiser falar com o colega
               sem largar o cliente, e só aparece quando a pessoa destaca. */}
           {conversaInternaNoPainel ? (
-            <div className="card flex flex-column shadow-1 h-full p-0 overflow-hidden">
+            <div className="card flex flex-column shadow-1 h-full p-0 overflow-hidden" style={{ minHeight: 0 }}>
               <CabecalhoInterno />
               <JanelaInterna semCabecalho />
             </div>

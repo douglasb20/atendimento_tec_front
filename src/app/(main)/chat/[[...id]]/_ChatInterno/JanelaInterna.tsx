@@ -55,14 +55,17 @@ const JanelaInterna = ({ semCabecalho = false }: Props) => {
   const { usuarioId } = useUsuarioLogado();
   const { enviarTexto, enviarArquivo, enviarAudio } = useEnvioInterno();
 
-  const fimRef = useRef<HTMLDivElement>(null);
+  const historicoRef = useRef<HTMLDivElement>(null);
 
   // Mensagem nova rola para o fim. O backend devolve da mais recente para a
   // mais antiga; a tela inverte para ler de cima para baixo.
   const emOrdem = useMemo(() => [...mensagens].reverse(), [mensagens]);
 
   useEffect(() => {
-    fimRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // scrollIntoView também move os ancestrais e pode tirar o cabeçalho da
+    // tela. Só o histórico deve rolar, mantendo Fechar e a caixa de envio.
+    const historico = historicoRef.current;
+    historico?.scrollTo({ top: historico.scrollHeight, behavior: 'smooth' });
   }, [emOrdem.length]);
 
   if (!ativo) {
@@ -74,9 +77,9 @@ const JanelaInterna = ({ semCabecalho = false }: Props) => {
   }
 
   return (
-    <div className="flex flex-column h-full">
+    <div className="chat-interno-janela">
       {!semCabecalho && (
-        <div className="flex align-items-center gap-2 p-2 border-bottom-1 surface-border surface-50">
+        <div className="flex flex-shrink-0 align-items-center gap-2 p-2 border-bottom-1 surface-border surface-50">
           <div className="relative flex-shrink-0">
             <Avatar
               src={ativo.avatar_url}
@@ -102,7 +105,8 @@ const JanelaInterna = ({ semCabecalho = false }: Props) => {
       )}
 
       <div
-        className="flex-1 overflow-y-auto p-2"
+        ref={historicoRef}
+        className="chat-interno-historico flex-1 overflow-y-auto p-2"
         style={{ minHeight: 0 }}
       >
         {carregando && (
@@ -143,7 +147,6 @@ const JanelaInterna = ({ semCabecalho = false }: Props) => {
           );
         })}
 
-        <div ref={fimRef} />
       </div>
 
       <CaixaEnvioInterna

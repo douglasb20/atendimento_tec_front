@@ -32,7 +32,7 @@ const CabecalhoInterno = () => {
   const estado = presencas[ativo.id] ?? 'offline';
 
   return (
-    <div className="flex align-items-center gap-2 surface-100 border-bottom-1 surface-border px-3 py-2">
+    <div className="flex flex-shrink-0 align-items-center gap-2 surface-100 border-bottom-1 surface-border px-3 py-2">
       <button
         type="button"
         title="Voltar para a lista"

@@ -3,16 +3,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { classNames } from 'primereact/utils';
 
 import Avatar from '@/components/Avatar';
+import { schemaPerfil } from './schemaPerfil';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { IUsuariosResponse, SignatureResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
-import { Alerta, CatchAlerta, getFormErrorMessage, msgRequired, ValidaEmail } from '@/service/Util';
+import { Alerta, CatchAlerta, getFormErrorMessage } from '@/service/Util';
 
 type PerfilForm = {
   name: string;
@@ -22,22 +22,6 @@ type PerfilForm = {
   confirma_senha?: string;
 };
 
-const schema = yup.object({
-  name: yup.string().required(msgRequired),
-  last_name: yup.string().nullable(),
-  email: yup
-    .string()
-    .required(msgRequired)
-    .test('email-validation', 'Email com formato inválido', (val) => ValidaEmail(val)),
-  // Em branco significa "não trocar": exigir a senha a cada edição do nome
-  // faria a pessoa digitá-la para mudar o sobrenome. Sem exigir a atual: a
-  // sessão já autenticada é a confirmação de que é a própria pessoa.
-  senha: yup.string().nullable().min(6, 'A senha precisa ter ao menos 6 caracteres'),
-  confirma_senha: yup
-    .string()
-    .nullable()
-    .oneOf([yup.ref('senha'), null, ''], 'As senhas não conferem'),
-});
 
 type Props = {
   perfil: IUsuariosResponse;
@@ -76,7 +60,7 @@ const AbaDados = ({ perfil, onSalvo }: Props) => {
       senha: '',
       confirma_senha: '',
     },
-    resolver: yupResolver(schema) as never,
+    resolver: yupResolver(schemaPerfil) as never,
   });
 
   useEffect(() => {

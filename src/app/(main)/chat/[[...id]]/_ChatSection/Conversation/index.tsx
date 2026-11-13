@@ -258,9 +258,13 @@ const ConversationSection = () => {
   };
 
   const loadConversationMessage = async (supportChatId: number) => {
+    // Um atendimento escolhido deve recuperar o painel mesmo que o id seja
+    // o da última conversa. O retorno antecipado não pode manter o interno aberto.
+    useChatInternoStore.getState().setAba('atendimentos');
     if (String(activeChatRef.current?.id) === String(supportChatId)) return;
 
     pendingChatIdRef.current = supportChatId;
+    const revisaoPainel = useChatInternoStore.getState().revisaoPainel;
 
     try {
       setLoadMessages(true);
@@ -271,6 +275,9 @@ const ConversationSection = () => {
       // mais este resultado, e aplicá-lo sobrescreveria o `activeChat` certo
       // (e as mensagens) com dado de uma conversa que não é mais a aberta.
       if (pendingChatIdRef.current !== supportChatId) return;
+      const interno = useChatInternoStore.getState();
+      if (interno.revisaoPainel !== revisaoPainel) return;
+      if (interno.aba === 'interno' && interno.modo === 'painel') return;
 
       addMessages(chatData.supportChatMessages);
       setActiveChat(chatData);
@@ -278,6 +285,7 @@ const ConversationSection = () => {
       onChangeBreadcrumbs(supportChatId);
     } catch (err) {
       if (pendingChatIdRef.current !== supportChatId) return;
+      if (useChatInternoStore.getState().revisaoPainel !== revisaoPainel) return;
 
       if (err.response && err.response.status === 404) {
         setActiveChat(null);
@@ -313,8 +321,7 @@ const ConversationSection = () => {
   const notificarEstado = (chat: SupportChatsResponse, anterior?: SupportChatsResponse) => {
     const nome = nomeCompleto(chat?.contact) || 'Contato';
     const abrirConversa = () => {
-      setActiveChat(chat);
-      window.history.replaceState(null, '', `/chat/${chat.id}`);
+      void loadConversationMessage(Number(chat.id));
     };
 
     // ⚠️ **Mensagem nova não é detectada aqui.** O `chat_state` chega com o
@@ -402,9 +409,7 @@ const ConversationSection = () => {
           url: `/chat/${msg.support_chat_id}`,
           conversaAberta: String(activeChatRef.current?.id) === String(msg.support_chat_id),
           aoClicar: () => {
-            const alvo = conversa ?? (chat as SupportChatsResponse);
-            setActiveChat(alvo);
-            window.history.replaceState(null, '', `/chat/${alvo.id}`);
+            void loadConversationMessage(Number(msg.support_chat_id));
           },
         });
     };

@@ -1,6 +1,5 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { isEqual, parseISO, startOfDay } from 'date-fns';
-import { Image } from 'primereact/image';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { classNames } from 'primereact/utils';
 
@@ -11,8 +10,10 @@ import { lerContatosCompartilhados } from '@/service/Vcard';
 import { useChatStore } from '@/store/useChatStore';
 import { jaAnimou, marcaComoAnimada } from '@/service/Outbox/jaAnimadas';
 import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
+import { baixarMidia } from '@/service/BaixarMidia';
+import { lerEmojiUnico } from '@/service/EmojiUnico';
 import QuotedMessageItem from './QuotedMessageItem';
-import VideoGif from './VideoGif';
+import MidiaVisual from './MidiaVisual';
 import PlayerAudio from './PlayerAudio';
 import ModalContatoCompartilhado from './ModalContatoCompartilhado';
 
@@ -136,6 +137,8 @@ const SingleMessageComponent = ({
   const apagadaSemConteudo = message.is_deleted && !ajustes.mostrar_conteudo_mensagem_apagada;
 
   const InterpretedContent = useMemo(() => fixHeartEmoji(content), [content]);
+  const emojiUnico = useMemo(() => lerEmojiUnico(message), [content, from_me, message.has_media, message.type]);
+  const textoSemMidia = !message.has_media && ['chat', 'text'].includes(message.type);
 
   // Contato compartilhado: o conteúdo é o JSON cru dos vCards, ilegível como
   // texto. Lista vazia (formato desconhecido) cai de volta no texto da bolha.
@@ -249,8 +252,11 @@ const SingleMessageComponent = ({
    * deixava um segundo seletor invisível grudado no emoji (`❤️️`).
    */
   const DivWithEmoji = () => (
-    <div>
-      <Interweave content={InterpretedContent} />
+    <div className={textoSemMidia ? 'mensagem-conteudo-texto' : undefined}>
+      {emojiUnico ? <>
+        {emojiUnico.assinatura && <Interweave content={emojiUnico.assinatura} />}
+        <span className="mensagem-emoji-unico">{fixHeartEmoji(emojiUnico.emoji)}</span>
+      </> : <Interweave content={InterpretedContent} />}
     </div>
   );
 
@@ -277,8 +283,8 @@ const SingleMessageComponent = ({
   return (
     <div
       className={classNames(
-        `relative w-auto border-1 p-2 mb-1 border-round-lg message-item-${from_me ? 'from-me' : 'from-them'} ${messageClass}`,
-        { 'mensagem-entrando': animar },
+        `relative w-auto border-1 mb-1 border-round-lg message-item-${from_me ? 'from-me' : 'from-them'} ${messageClass}`,
+        { 'mensagem-entrando': animar, 'mensagem-balao-texto': textoSemMidia, 'p-2': !textoSemMidia },
       )}
       // Figurinha sem balão, como no WhatsApp: a imagem (webp, animada ou não)
       // flutua sobre o fundo, só com o horário embaixo.
@@ -356,6 +362,7 @@ const SingleMessageComponent = ({
                   target="_blank"
                   rel="noreferrer"
                   download={message.file_name ?? undefined}
+                  onClick={evento => { evento.preventDefault(); void baixarMidia(message); }}
                   className={classNames(
                     from_me ? 'bg-primary-600 text-primary-contrast' : 'surface-200 text-color',
                     'flex align-items-center gap-3 border-round p-3 mb-2 no-underline',
@@ -380,20 +387,9 @@ const SingleMessageComponent = ({
             {exibeMidia && message.type === 'document' && DivWithEmoji()}
             {exibeMidia && message.type === 'image' && (
               <ComProgresso progresso={message.progresso}>
-                <Image
-                  // A `key` amarrada à URL é necessária: o `Image` guarda o src
-                  // em estado interno para o modo `preview`, e ao trocar a
-                  // prévia local (`blob:`) pela URL do storage o React
-                  // reaproveita a instância - que segue apontando para um blob
-                  // já revogado, exibindo o ícone de imagem quebrada.
-                  key={message.media_url}
-                  src={message.media_url}
-                  alt={message.file_name ?? 'Imagem'}
-                  className="mb-2 border-round shadow-2"
-                  imageStyle={{ maxWidth: '250px', height: '250px', objectFit: 'cover' }}
-                  preview
-                  downloadable
-                />
+                <MidiaVisual key={message.media_url} src={message.media_url} tipo="image"
+                  nome={message.file_name} enviando={enviandoMidia}
+                  onAbrirVideo={() => {}} onBaixar={() => { void baixarMidia(message); }} />
               </ComProgresso>
             )}
             {exibeMidia && message.type === 'image' && DivWithEmoji()}
@@ -446,62 +442,10 @@ const SingleMessageComponent = ({
             {exibeMidia && message.type === 'audio' && DivWithEmoji()}
             {exibeMidia && message.type === 'video' && (
               <ComProgresso progresso={message.progresso}>
-                <div
-                  className="mb-2 relative "
-                  // GIF (vídeo em loop do WhatsApp) maior que o vídeo comum: é o conteúdo
-                  // da mensagem, e em 250px ficava pequeno demais.
-                  style={{
-                    // Largura fixa no GIF: só o teto não bastava, porque a
-                    // caixa encolhia ao tamanho intrínseco do vídeo (pequeno).
-                    ...(message.is_gif && { width: 380 }),
-                    maxWidth: message.is_gif ? '100%' : 250,
-                    maxHeight: message.is_gif ? 640 : 370,
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                  }}
-                >
-                  {message.is_gif ? (
-                    <VideoGif
-                      src={message.media_url}
-                      type={message.media_type}
-                    />
-                  ) : (
-                  <video
-                    // Mesmo motivo do `Image`: trocar o src de um <source> não
-                    // recarrega o vídeo (exigiria `load()`), então a instância
-                    // seguiria presa ao blob revogado da prévia local.
-                    key={message.media_url}
-                    controls={false}
-                    className="w-full h-full pointer-events-none "
-                    autoPlay={false}
-                    loop={false}
-                    muted={false}
-                    playsInline
-                    style={{
-                      objectFit: 'fill',
-                    }}
-                  >
-                    <source
-                      src={message.media_url}
-                      type={message.media_type}
-                    />
-                    Seu navegador não suporta o elemento de vídeo.
-                  </video>
-                  )}
-                  {!message.is_gif && !enviandoMidia && (
-                    <div
-                      className="button-play absolute top-0 left-0 w-full h-full flex align-items-center justify-content-center "
-                      onClick={() => setVideoPreview(message.media_url, message.media_type)}
-                    >
-                      <button
-                        className="border-none bg-transparent border-circle h-5rem w-5rem flex align-items-center justify-content-center"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <i className="fa-light fa-circle-play text-6xl text-white"></i>
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <MidiaVisual key={message.media_url} src={message.media_url} tipo="video"
+                  mimetype={message.media_type} gif={message.is_gif} enviando={enviandoMidia}
+                  onAbrirVideo={() => setVideoPreview(message.media_url, message.media_type)}
+                  onBaixar={() => { void baixarMidia(message); }} />
               </ComProgresso>
             )}
             {exibeMidia && message.type === 'video' && DivWithEmoji()}

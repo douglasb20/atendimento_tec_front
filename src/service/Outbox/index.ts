@@ -1,6 +1,8 @@
 import { ItemFila, useOutboxStore } from '@/store/useOutboxStore';
 import { marcaComoAnimada } from './jaAnimadas';
 import { SignatureResponse } from '@/Interfaces';
+import { useChatStore } from '@/store/useChatStore';
+import { mensagemDaFila, registrarConfirmacao } from './conciliacao';
 
 /**
  * Processa a fila de envio fora da árvore de componentes.
@@ -146,11 +148,10 @@ async function executar(item: ItemFila, fetchReq: Requisicao): Promise<void> {
 
   atualizar(item.id, { status: 'enviando', erro: undefined });
 
+  let enviada: EnvioResponse | undefined;
   try {
     // O upload já correu em paralelo, antes da vez na corrente.
     const mediaKey = item.mediaKey;
-
-    let enviada: EnvioResponse | undefined;
 
     if (item.tipo === 'texto') {
       enviada = await fetchReq<EnvioResponse>({
@@ -178,17 +179,6 @@ async function executar(item: ItemFila, fetchReq: Requisicao): Promise<void> {
         variables: [item.supportChatId],
       });
     }
-
-    arquivos.delete(item.id);
-
-    // A bolha otimista já apareceu com o id da fila; marcar o id definitivo
-    // evita que a mensagem anime de novo ao ser substituída pela do webhook.
-    marcaComoAnimada(enviada?.message_id);
-
-    // Sai da fila assim que o backend confirma: a mensagem já está gravada lá e
-    // chega à tela pelo webhook. Manter o item aqui exibiria duas bolhas - a
-    // real e a pendente, esta sem mídia utilizável.
-    remover(item.id);
   } catch (erro) {
     // Cancelamento não é falha: o item já saiu da fila e não deve ser retentado.
     if (erro?.name === 'AbortError') return;
@@ -212,7 +202,32 @@ async function executar(item: ItemFila, fetchReq: Requisicao): Promise<void> {
     // Esgotadas as tentativas, o item permanece visível com opção de repetir -
     // sumir com ele faria o atendente perder o que escreveu.
     atualizar(item.id, { tentativas, status: 'falhou', erro: mensagem });
+    return;
   }
+
+  // Confirmado pelo servidor: falha de apresentação não pode reenviar ao WhatsApp.
+  arquivos.delete(item.id);
+
+  // A bolha otimista já apareceu com o id da fila; marcar o id definitivo
+  // evita que a mensagem anime de novo ao ser substituída pela do webhook.
+  marcaComoAnimada(enviada?.message_id);
+
+  if (!enviada?.message_id) return;
+  const atual = useOutboxStore.getState().itens.find(i => i.id === item.id) ?? item;
+  const chat = useChatStore.getState();
+  if (String(chat.activeChat?.id) === String(item.supportChatId)) {
+    registrarConfirmacao(atual, enviada.message_id);
+    // O socket pode vir antes ou depois do HTTP. Nunca sobrescreve o ack ou
+    // conteúdo definitivo que já chegou, e nunca deixa a lista sem a bolha.
+    const existente = chat.messages.find(m => m.message_id === enviada.message_id);
+    chat.updateMessage(existente ?? {
+      ...mensagemDaFila(atual), message_id: enviada.message_id, channel_id: chat.activeChat.channel_id,
+      pending: false, progresso: undefined,
+    });
+  }
+  // A mensagem já está na lista antes de tirar a provisória. A conciliação
+  // reúne ambas pela confirmação, mantendo a mesma chave e a prévia de mídia.
+  remover(item.id);
 }
 
 /** Recoloca na fila um item que falhou, acionado pelo botão de repetir. */

@@ -308,7 +308,9 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (set)
       quoted: { message: null, mode: null },
     }));
 
-    if (typeof window !== 'undefined') {
+    // O interno também pode liberar o painel a partir do popup em outra página.
+    // Nesse caso limpa o estado, mas não troca a URL de Clientes pela do chat.
+    if (typeof window !== 'undefined' && /^\/chat(?:\/|$)/.test(window.location.pathname)) {
       window.history.replaceState(null, '', '/chat');
     }
   },

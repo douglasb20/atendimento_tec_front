@@ -5,7 +5,6 @@ import { MenuItem } from 'primereact/menuitem';
 import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
 import { classNames } from 'primereact/utils';
-import { v4 as uuidV4 } from 'uuid';
 
 import { ModeQuoted, podeAgirNoAtendimento, SupportChatMessageResponse } from '@/Interfaces';
 import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
@@ -19,6 +18,9 @@ import { useOutboxStore } from '@/store/useOutboxStore';
 import { useSelecaoMensagens } from '@/store/useSelecaoMensagens';
 import { cancelarItem, podeReenviar, reenviar } from '@/service/Outbox';
 import useApi from '@/service/Api/ApiClient';
+import { baixarMidia } from '@/service/BaixarMidia';
+import { observarFimDaConversa } from '@/service/RolagemConversa';
+import { conciliarMensagens, liberarPreviasConfirmadas } from '@/service/Outbox/conciliacao';
 import {
   MenuMessageComponent,
   ReactionPickerComponent,
@@ -52,6 +54,7 @@ const Messages = () => {
   const { ajustes } = useAjustesAtendimento();
   const { FetchReq } = useApi();
   const bottomEl = useRef<HTMLDivElement>(null);
+  const conteudoRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(0);
   const divRef = useRef<HTMLDivElement>(null);
 
@@ -207,46 +210,15 @@ const Messages = () => {
    * confirmação - é o que impede um vídeo grande de pular para o fim da
    * conversa quando o webhook dele finalmente chega.
    */
-  const mensagensNaTela = useMemo(() => {
-    const pendentes: SupportChatMessageResponse[] = itensFila
-      .filter((i) => String(i.supportChatId) === String(activeChat?.id))
-      .map(
-        (i) =>
-          ({
-            id: i.id,
-            message_id: i.id,
-            support_chat_id: i.supportChatId,
-            datetime: i.enviadoEm,
-            created_at: i.enviadoEm,
-            ack: 0,
-            from_me: true,
-            type:
-              i.tipo === 'voz' ? 'ptt' : i.tipo === 'texto' ? 'chat' : (i.mediaType ?? 'document'),
-            // Sem autor não se monta o prefixo: `*:*` renderizaria como um
-            // ":" solto acima do texto, que foi o que apareceu na bolha.
-            content: i.conteudo ? (i.autor ? `*${i.autor}:*\n${i.conteudo}` : i.conteudo) : '',
-            has_media: i.tipo !== 'texto',
-            media_url: i.previewUrl ?? '',
-            // O player precisa do mimetype (`video/mp4`), não do tipo do menu.
-            media_type: i.mimetype ?? i.mediaType ?? '',
-            file_name: i.fileName,
-            // O upload corre em paralelo, antes da vez na corrente: prender o
-            // indicador ao status 'enviando' o faria surgir só no fim.
-            progresso: i.status === 'falhou' ? undefined : i.progresso,
-            has_quoted: Boolean(i.quotedMessageId),
-            quoted_msg_id: i.quotedMessageId,
-            is_deleted: false,
-            is_edited: false,
-            pending: true,
-            falhou: i.status === 'falhou',
-            erro: i.erro,
-          }) as SupportChatMessageResponse & { falhou?: boolean; erro?: string },
-      );
+  const mensagensNaTela = useMemo(
+    () => conciliarMensagens(messages ?? [], itensFila, String(activeChat?.id)),
+    [messages, itensFila, activeChat?.id],
+  );
 
-    return [...(messages ?? []), ...pendentes].sort(
-      (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
-    );
-  }, [messages, itensFila, activeChat?.id]);
+  useEffect(() => {
+    const chatId = String(activeChat?.id);
+    return () => liberarPreviasConfirmadas(chatId);
+  }, [activeChat?.id]);
 
   /**
    * Transferências desta conversa, em ordem.
@@ -369,11 +341,7 @@ const Messages = () => {
       visible: true,
       command: ({ item: { data } }) => {
         const message = data as SupportChatMessageResponse;
-        onDownload({
-          source: message.media_url,
-          mime_type: message.media_type,
-          file_name: message.file_name,
-        });
+        void baixarMidia(message);
       },
     },
     {
@@ -425,40 +393,6 @@ const Messages = () => {
       // que o WhatsApp aceitou a revogação.
     } catch (error) {
       CatchAlerta(error, 'Não foi possível apagar a mensagem');
-    }
-  };
-
-  /**
-   * Baixa o arquivo em vez de navegar até ele.
-   *
-   * O atributo `download` de um link só vale na mesma origem: apontando para o
-   * storage, o navegador o ignora e abre a mídia na aba. Buscar os bytes e
-   * gerar um `blob:` local devolve a origem para nós, e aí o atributo passa a
-   * valer - inclusive o nome do arquivo.
-   */
-  const onDownload = async ({ source, mime_type, file_name }) => {
-    // Declarada fora do try para o `finally` alcançá-la: com a revogação no
-    // fim do bloco, uma falha entre a criação e ela deixava o blob retido na
-    // memória da aba - num vídeo grande, centenas de MB até o reload.
-    let url: string | null = null;
-
-    try {
-      const resposta = await fetch(source);
-      if (!resposta.ok) throw new Error(`Falha ao baixar (HTTP ${resposta.status})`);
-
-      const blob = await resposta.blob();
-      url = URL.createObjectURL(blob);
-
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = file_name || `${uuidV4()}.${mime_type?.split('/')[1] || 'bin'}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      CatchAlerta(error, 'Não foi possível baixar o arquivo');
-    } finally {
-      if (url) URL.revokeObjectURL(url);
     }
   };
 
@@ -519,15 +453,20 @@ const Messages = () => {
     // precisa trazer a conversa para o fim do mesmo jeito.
   }, [mensagensNaTela]);
 
+  useLayoutEffect(() => {
+    const area = bottomEl.current;
+    const conteudo = conteudoRef.current;
+    if (!area || !conteudo) return;
+    // Abrir a conversa posiciona no fim, mas imagem, vídeo, fonte e caixa de
+    // envio ainda podem mudar de tamanho depois da primeira pintura.
+    return observarFimDaConversa(area, conteudo, () => estavaNoFim.current && !estadoAnteriorRef.current.carregandoAnterior);
+  }, [activeChat?.id]);
+
   useEffect(() => {
     const el = bottomEl.current;
 
     const handleScroll = debounce(() => {
       const distanciaDoFim = el.scrollHeight - (el.scrollTop + el.clientHeight);
-
-      // Margem de 80px: com o teclado virtual ou meia linha visível, o usuário
-      // se considera "no fim" sem estar exatamente em scrollTop máximo.
-      estavaNoFim.current = distanciaDoFim < 80;
 
       const isFarFromBottom = distanciaDoFim > 250;
 
@@ -555,10 +494,16 @@ const Messages = () => {
       }
     }, 50); // só executa 50ms depois do último scroll
 
-    el.addEventListener('scroll', handleScroll);
+    const aoRolar = () => {
+      // Atualiza antes do debounce: uma mídia pode carregar nesses 50 ms,
+      // e não deve puxar de volta quem acabou de subir no histórico.
+      estavaNoFim.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+      handleScroll();
+    };
+    el.addEventListener('scroll', aoRolar);
 
     return () => {
-      el.removeEventListener('scroll', handleScroll);
+      el.removeEventListener('scroll', aoRolar);
     };
   }, []);
 
@@ -568,7 +513,7 @@ const Messages = () => {
         ref={bottomEl}
         className="message-box chat-caixa-mensagens relative border-right-1 border-left-1 border-noround-top border-bottom-1 border-primary-700 flex flex-1 flex-column bg-gray-50 border-round p-3 overflow-y-auto overflow-x-hidden"
       >
-        <div className="flex flex-column z-0 w-full">
+        <div ref={conteudoRef} className="flex flex-column flex-shrink-0 z-0 w-full">
           <BotaoAnterior
             total={totalAnteriores}
             carregando={carregandoAnterior}
@@ -645,7 +590,7 @@ const Messages = () => {
               return quando > anterior && quando <= new Date(msg.datetime).getTime();
             });
 
-            const naFila = itensFila.find((i) => i.id === msg.id);
+            const naFila = msg.pending ? itensFila.find((i) => i.id === msg.id) : undefined;
 
             // Qualquer mensagem visível pode ser selecionada: as que não cabem
             // na revogação do WhatsApp são ocultadas só do nosso lado. Pendente

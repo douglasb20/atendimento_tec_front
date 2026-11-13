@@ -127,8 +127,57 @@
  * Em tela por toque não há hover: fica sempre visível, senão não haveria como
  * abrir o menu no celular.
  */
+// O conteúdo já nasce fora da área do menu, inclusive com uma única letra.
+// A reserva permanece sem hover para a bolha não mudar de largura ao passar o mouse.
+.mensagem-balao-texto {
+  padding: 0.5rem;
+}
+
+.mensagem-conteudo-texto {
+  padding-right: 2rem;
+  min-height: 1.5rem;
+}
+
+.mensagem-emoji-unico {
+  display: block;
+  font-size: 3rem;
+  line-height: 1.2;
+}
+
 .message-balloon:hover .message-chevron {
   display: block !important;
+}
+
+.message-chevron .mensagem-menu-botao.p-button {
+  --cor-menu-mensagem: var(--text-color);
+  padding: 0;
+  color: var(--cor-menu-mensagem);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+
+  &.mensagem-menu-botao--propria {
+    --cor-menu-mensagem: var(--primary-color-text);
+  }
+
+  &:enabled:hover {
+    color: var(--cor-menu-mensagem);
+    background: var(--surface-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cor-menu-mensagem);
+    outline-offset: 2px;
+  }
+
+  &.mensagem-menu-botao--sobre-midia {
+    --cor-menu-mensagem: #fff;
+    background: rgba(0, 0, 0, 0.6);
+
+    &:enabled:hover {
+      background: rgba(0, 0, 0, 0.8);
+    }
+  }
 }
 
 @media (hover: none) {
@@ -543,6 +592,57 @@
 // combinar as duas fontes num elemento posicionado torna imprevisível quem
 // vence - o mesmo motivo de `.acoes-conversa` acima.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Controles do overlay de imagem, sem a moldura visual do Dialog.
+.visualizador-imagem-mascara.p-dialog-mask {
+  // A animação do tema sobrescreve background-color no fim. Desativada só
+  // nesta máscara, para manter a opacidade solicitada.
+  animation: none;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.visualizador-imagem-controles {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  padding: 0.5rem;
+}
+
+.visualizador-imagem-controle.p-button {
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  color: #fff;
+  background: transparent;
+  border: 0;
+
+  .p-button-icon {
+    font-size: 1.65rem;
+  }
+
+  &:enabled:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.14);
+  }
+}
+
+@media (max-width: 400px) {
+  .visualizador-imagem-controles { gap: 0.125rem; padding: 0.25rem; }
+  .visualizador-imagem-controle.p-button { width: 2.75rem; height: 2.75rem; }
+}
+
+// Ocupa apenas o espaço restante abaixo do cabeçalho. `height: 100%` aqui
+// somava a altura do cabeçalho e deixava o histórico comprimir seus controles.
+.chat-interno-janela {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
 
 .chat-interno-popup {
   position: fixed;

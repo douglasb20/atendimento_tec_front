@@ -156,6 +156,25 @@ ainda era válido. Havia três fórmulas de `maxAge` divergentes entre login,
 
 ## Estado do chat
 
+`useUsuarioLogado` e `usePermissoes` compartilham `useUsuarioLogadoStore`, somente
+em memória. O cookie `userInfo` vence em 30 minutos e não pode ser a única fonte
+da identidade ao remontar componentes. Sem dados válidos no cache/cookie, a store
+consulta `UserInfo` pela API autenticada, reunindo consultas concorrentes. O layout
+verifica a validade a cada minuto e ao recuperar foco; os dados são revalidados
+após 30 minutos. Login/logout limpam o estado e invalidam respostas pendentes.
+`FetchReq` e o timer de sessão usam `renovaSessao` para não disputar o refresh.
+
+No modo painel, entrar no chat interno libera a conversa de atendimento e sua
+URL. Voltar à aba Atendimentos libera a conversa interna do painel; clicar no
+mesmo cliente pode reabri-lo. Popup preserva o atendimento. `revisaoPainel` em
+`useChatInternoStore` invalida cargas de atendimento anteriores à troca para o
+interno, inclusive a carga inicial pela URL. O painel da direita respeita a aba.
+
+O histórico interno rola pelo próprio contêiner (`scrollTo`), sem
+`scrollIntoView`, que pode rolar a página e esconder o cabeçalho. A janela usa
+flex com `min-height: 0`; cabeçalho e caixa de envio não encolhem. Preserve isso
+ao alterar painel/popup para que Fechar permaneça acessível com histórico longo.
+
 Store Zustand composta por três slices (`src/store/useChatStore.ts`), tipados
 sobre a interseção — qualquer slice consegue ler os outros via `get()`, embora na
 prática só o `fecharConversa` atravesse.
@@ -230,8 +249,11 @@ Upload assinado direto ao storage, em três camadas:
    corrente; só o envio ao provider é serializado por conversa — senão três
    vídeos fariam o terceiro esperar os dois primeiros subirem inteiros. Usa
    **XMLHttpRequest**, não fetch, porque o fetch não expõe progresso de *upload*.
-   Ao confirmar, o item **sai da fila**: a mensagem real chega pelo webhook, e
-   mantê-lo exibiria duas bolhas.
+   Ao confirmar, a mensagem entra na store antes de sair da fila, sem depender
+   da chegada do webhook. `Outbox/conciliacao.ts` reúne as duas versões pelo
+   id confirmado, preservando chave visual, posição e prévia local da mídia.
+   O webhook atualiza os dados definitivos; as prévias confirmadas são liberadas
+   ao sair da conversa. Nenhuma associação é feita por igualdade de texto.
 3. **Renderização** (`Messages.tsx`): funde as mensagens da store com os itens da
    fila, mapeando estes para o formato de `SupportChatMessageResponse` para
    reaproveitar toda a renderização. Ordena por `datetime`, não pela confirmação
@@ -241,6 +263,12 @@ O upload é **PUT**, não POST: o Backblaze não implementa o POST-policy do S3.
 as colunas do banco guardam a **key**, não a URL.
 
 Limite de 512 MB — o teto do protocolo Baileys, não os 16 MB do WhatsApp Web.
+
+Download do atendimento usa `BaixarMidia.ts` e a rota autenticada
+`BaixarMidiaAtendimento`, que retorna URL assinada com attachment. Não fazer
+fetch direto no bucket, que depende de CORS. O zoom da imagem fica em
+`VisualizadorImagem.tsx`, com dimensões reais, rolagem e arraste, sem depender
+do transform do preview do Image. O loading da miniatura fica em `MidiaVisual`.
 
 ## Regras de negócio que vivem no front
 

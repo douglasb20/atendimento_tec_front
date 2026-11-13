@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useChatStore } from './useChatStore';
 
 import {
   ColegaResponse,
@@ -50,6 +51,8 @@ type ChatInternoStore = {
    * `fechar` tem de alcançar esta escolha.
    */
   aba: 'atendimentos' | 'interno';
+  /** Invalida cargas de atendimento iniciadas antes de entrar no painel interno. */
+  revisaoPainel: number;
 
   setAba: (aba: 'atendimentos' | 'interno') => void;
   setColegas: (colegas: ColegaResponse[]) => void;
@@ -92,8 +95,21 @@ export const useChatInternoStore = create<ChatInternoStore>()((set, get) => ({
   modo: 'painel',
   minimizado: false,
   aba: 'atendimentos',
+  revisaoPainel: 0,
 
-  setAba: (aba) => set({ aba }),
+  setAba: (aba) => {
+    if (get().modo === 'painel') {
+      if (aba === 'interno') {
+        // O painel pertence a uma conversa por vez. Libera também a URL e
+        // mensagens do atendimento para permitir reabrir o mesmo cliente.
+        useChatStore.getState().fecharConversa();
+        set({ revisaoPainel: get().revisaoPainel + 1 });
+      } else {
+        set({ ativo: null, mensagens: [], carregandoMensagens: false });
+      }
+    }
+    set({ aba });
+  },
 
   setColegas: (colegas) => set({ colegas }),
 
@@ -129,13 +145,19 @@ export const useChatInternoStore = create<ChatInternoStore>()((set, get) => ({
    * colega na lista espera que ela troque de conversa, não que volte para o
    * painel.
    */
-  abrirCom: (colega) =>
+  abrirCom: (colega) => {
+    if (get().modo === 'painel') {
+      useChatStore.getState().fecharConversa();
+      set({ revisaoPainel: get().revisaoPainel + 1 });
+    }
     set((estado) => ({
       ativo: colega,
       mensagens: [],
       minimizado: false,
       modo: estado.modo,
-    })),
+      ...(estado.modo === 'painel' && { aba: 'interno' }),
+    }));
+  },
 
   /** Destaca em janela flutuante - opcionalmente já num colega. */
   destacar: (colega) =>
@@ -145,7 +167,10 @@ export const useChatInternoStore = create<ChatInternoStore>()((set, get) => ({
       ...(colega && colega.id !== estado.ativo?.id && { ativo: colega, mensagens: [] }),
     })),
 
-  encaixar: () => set({ modo: 'painel', minimizado: false }),
+  encaixar: () => {
+    useChatStore.getState().fecharConversa();
+    set({ modo: 'painel', minimizado: false, aba: 'interno', revisaoPainel: get().revisaoPainel + 1 });
+  },
 
   /**
    * Fecha o chat interno e devolve a tela ao atendimento.

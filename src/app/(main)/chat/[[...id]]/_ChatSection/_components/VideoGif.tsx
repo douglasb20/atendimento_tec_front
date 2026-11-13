@@ -5,6 +5,9 @@ import { useRef, useState } from 'react';
 type VideoGifProps = {
   src: string;
   type?: string;
+  onLoadedData?: () => void;
+  onLoadedMetadata?: (evento: React.SyntheticEvent<HTMLVideoElement>) => void;
+  onError?: () => void;
 };
 
 /** Quantas vezes o GIF repete antes de parar e mostrar o botão. */
@@ -17,7 +20,7 @@ const REPETICOES = 2;
  *
  * Sem o atributo `loop`: as voltas são contadas no `ended`.
  */
-const VideoGif = ({ src, type }: VideoGifProps) => {
+const VideoGif = ({ src, type, onLoadedData, onLoadedMetadata, onError }: VideoGifProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const voltas = useRef(0);
   const [parado, setParado] = useState(false);
@@ -54,6 +57,9 @@ const VideoGif = ({ src, type }: VideoGifProps) => {
         muted
         playsInline
         onEnded={aoTerminar}
+        onLoadedData={onLoadedData}
+        onLoadedMetadata={onLoadedMetadata}
+        onError={onError}
         style={{ objectFit: 'fill' }}
       >
         <source

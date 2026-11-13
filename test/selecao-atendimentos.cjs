@@ -43,11 +43,16 @@ function preparar(conversas, opcoes = {}) {
   react.default = react;
   const chamadas = [], avisos = [], concluidos = [];
   const { createChatSlice } = carregar('src/store/chatSlice.ts', { '@/Interfaces': interfaces });
+  const { createMessageSlice } = carregar('src/store/messageSlice.ts');
   let estado;
-  const acoes = createChatSlice(acao => { estado = { ...estado, ...(typeof acao === 'function' ? acao(estado) : acao) }; });
+  const set = acao => { estado = { ...estado, ...(typeof acao === 'function' ? acao(estado) : acao) }; alterou = true; };
+  const acoes = { ...createChatSlice(set), ...createMessageSlice(set) };
   estado = { ...acoes, chats: conversas.slice(), activeChat: conversas[0] ?? null, socket: null };
   const useChatStore = selecionar => selecionar(estado);
   useChatStore.getState = () => estado;
+  const interno = opcoes.criarStoreInterno?.(useChatStore);
+  interno?.subscribe(() => { alterou = true; });
+  const useInterno = interno ? Object.assign(selecionar => selecionar(interno.getState()), { getState: interno.getState }) : null;
   const props = {
     conversas, ocupado: false, todosVisiveisSelecionados: false, semConversasVisiveis: false,
     onOcupado(valor) { props.ocupado = valor; alterou = true; },
@@ -59,6 +64,9 @@ function preparar(conversas, opcoes = {}) {
     const endpoint = typeof entrada === 'string' ? entrada : entrada.endpoint;
     const id = String((variaveis ?? entrada.variables)[0]);
     chamadas.push({ endpoint, id, body: entrada.body });
+    if (endpoint === 'ListarMensagensPorAtendimentoId') {
+      return opcoes.carregarConversa ? opcoes.carregarConversa(id) : { ...estado.chats.find(c => c.id === id), supportChatMessages: [] };
+    }
     if (endpoint === 'ConsultarFluxoSaidaAtendimento') {
       if (opcoes.falhaConsulta === id) throw new Error('Falha simulada de consulta');
       return opcoes.fluxos?.[id] ?? null;
@@ -91,7 +99,7 @@ function preparar(conversas, opcoes = {}) {
       '@/hooks/useChatInterno': { useChatInterno: () => ({ carregarMensagens() {} }) },
       '@/hooks/useUsuarioLogado': { useUsuarioLogado: () => ({ usuarioId: 7 }) },
       '@/hooks/usePermissoesModulo': { usePermissoesModulo: () => ({ podeVisualizar: false }) },
-      '@/store/useChatInternoStore': { useChatInternoStore: selecionar => selecionar({ aba: 'atendimentos', setAba() {}, conversas: [] }) },
+      '@/store/useChatInternoStore': { useChatInternoStore: useInterno ?? (selecionar => selecionar({ aba: 'atendimentos', setAba() {}, conversas: [] })) },
       '@/store/chatSlice': carregar('src/store/chatSlice.ts', { '@/Interfaces': interfaces }),
       './IdentificacaoConversa': { CabecalhoConversa: 'CabecalhoConversa', ResponsavelConversa: 'ResponsavelConversa' },
       'primereact/badge': { Badge: 'Badge' },
@@ -125,7 +133,7 @@ function preparar(conversas, opcoes = {}) {
   }
   const botao = rotulo => elementos().find(no => no.type === 'Button' && no.props.label === rotulo);
   async function abrir() { botao('Finalizar').props.onClick(); await estabilizar(); }
-  return { props, chamadas, avisos, concluidos, estabilizar, elementos, botao, abrir, estado: () => estado };
+  return { props, chamadas, avisos, concluidos, estabilizar, elementos, botao, abrir, interno, estado: () => estado };
 }
 
 async function testar() {
@@ -231,7 +239,7 @@ async function testar() {
   assert.ok(somenteLeitura.botao('Marcar como lida'));
 
   const listeners = new Map();
-  global.window = { localStorage: { getItem: () => null },
+  global.window = { location: { pathname: '/chat' }, history: { replaceState() {} }, localStorage: { getItem: () => null },
     addEventListener: (nome, acao) => listeners.set(nome, acao), removeEventListener: nome => listeners.delete(nome) };
   global.document = { querySelector: () => null };
   try {
@@ -261,4 +269,5 @@ async function testar() {
   } finally { delete global.window; delete global.document; }
   console.log('Seleção múltipla validada: regras, padrões por canal, bloqueios, cancelamento sem ações, leitura, falhas parciais, clique duplo e atualização da store. Nenhum envio real.');
 }
-testar().catch(erro => { console.error(erro); process.exitCode = 1; });
+module.exports = { preparar, carregar };
+if (require.main === module) testar().catch(erro => { console.error(erro); process.exitCode = 1; });

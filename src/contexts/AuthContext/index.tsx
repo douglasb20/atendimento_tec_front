@@ -3,6 +3,7 @@ import { createContext, useContext, useReducer } from 'react';
 import { parseCookies, destroyCookie } from 'nookies';
 import useApi from '@/service/Api/ApiClient';
 import { COOKIE_TEMA } from '@/service/Tema';
+import { useUsuarioLogadoStore } from '@/store/useUsuarioLogadoStore';
 
 export const AuthContext = createContext({});
 
@@ -21,12 +22,14 @@ export function AuthProvider({ children }) {
       // `token` e `expires_at` ali eram resíduo - ninguém as lia, e deixavam o
       // access token num lugar a mais ao alcance de qualquer script da página.
       await apiLogin(email, password);
+      useUsuarioLogadoStore.getState().limpar();
     } catch (error) {
       throw error;
     }
   };
 
   const logout = async () => {
+    useUsuarioLogadoStore.getState().limpar();
     // Os cookies de sessão são httpOnly: `destroyCookie` não os alcança, só o
     // servidor consegue apagá-los. A chamada vem primeiro - se ela falhar, a
     // limpeza local ainda acontece e o usuário sai da aplicação de todo modo.
@@ -48,7 +51,10 @@ export function AuthProvider({ children }) {
         .forEach((cookie) => {
           destroyCookie({}, cookie, { path: '/' });
         });
-    } catch (error) {}
+    } catch (error) {} finally {
+      // Invalida também uma consulta disparada enquanto o logout aguardava a API.
+      useUsuarioLogadoStore.getState().limpar();
+    }
   };
 
   const [contexts] = useReducer(

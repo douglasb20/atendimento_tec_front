@@ -116,7 +116,7 @@ const PopupInterno = () => {
           />
         </div>
 
-        <span className="flex-1 font-medium text-sm white-space-nowrap overflow-hidden text-overflow-ellipsis">
+        <span className="flex-1 min-w-0 font-medium text-sm white-space-nowrap overflow-hidden text-overflow-ellipsis">
           {nomeDe(ativo)}
         </span>
 

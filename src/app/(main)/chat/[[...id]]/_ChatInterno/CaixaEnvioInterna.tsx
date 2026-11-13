@@ -185,7 +185,7 @@ const CaixaEnvioInterna = ({
   // Gravando, a barra inteira dá lugar ao controle de áudio.
   if (gravacao.gravando || gravacao.status === 'sending') {
     return (
-      <div className="border-top-1 surface-border px-2">
+      <div className="flex-shrink-0 border-top-1 surface-border px-2">
         <AudioComponent
           duration={gravacao.duracao}
           statusRecording={gravacao.status}
@@ -200,7 +200,7 @@ const CaixaEnvioInterna = ({
   }
 
   return (
-    <div className="border-top-1 surface-border p-2">
+    <div className="flex-shrink-0 border-top-1 surface-border p-2">
       <input
         ref={inputArquivoRef}
         type="file"

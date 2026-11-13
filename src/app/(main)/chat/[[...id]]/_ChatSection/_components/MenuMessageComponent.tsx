@@ -138,11 +138,11 @@ const MenuMessageComponent = ({ menuModel, message, bottomEl }: MenuMessageProps
         popup
       />
       <Button
-        className={`bg-gray-300 border-${message.from_me ? 'gray' : 'primary'}-500 outline-none shadow-none p-0`}
+        className={`mensagem-menu-botao${message.from_me ? ' mensagem-menu-botao--propria' : ''}${message.has_media && ['image', 'video', 'sticker'].includes(message.type) ? ' mensagem-menu-botao--sobre-midia' : ''}`}
         style={{ width: '1.5rem', height: '1.5rem' }}
         text
         rounded
-        outlined
+        aria-label="Ações da mensagem"
         onClick={(event) => menuRef.current[message.id]?.toggle(event)}
         icon="fa-regular fa-chevron-down"
         pt={{

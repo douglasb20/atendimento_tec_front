@@ -7,6 +7,7 @@ import ToastGlobal from '@/components/ToastGlobal';
 import Layout from '@/layout/layout';
 import { iniciarRenovacaoDeSessao, pararRenovacaoDeSessao } from '@/service/Api/sessaoViva';
 import { useChatStore } from '@/store/useChatStore';
+import { useUsuarioLogadoStore } from '@/store/useUsuarioLogadoStore';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,19 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const connect = useChatStore((s) => s.connect);
   const disconnect = useChatStore((s) => s.disconnect);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const atualizar = () => { void useUsuarioLogadoStore.getState().carregar(); };
+    atualizar();
+    // Revalida permissões mesmo sem trocar de página. A store reaproveita os
+    // dados por até 30 minutos e reúne consultas concorrentes numa só.
+    const timer = window.setInterval(atualizar, 60_000);
+    window.addEventListener('focus', atualizar);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', atualizar);
+    };
+  }, []);
 
   // Renovação proativa da sessão, para todo o portal - não só o chat. Sem ela a
   // renovação dependia de haver uma chamada HTTP acontecendo, e uma aba parada

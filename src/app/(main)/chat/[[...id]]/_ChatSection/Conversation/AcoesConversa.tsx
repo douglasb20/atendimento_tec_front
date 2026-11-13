@@ -48,6 +48,7 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
   const { FetchReq } = useApi();
   const { usuarioId } = useUsuarioLogado();
   const updateChat = useChatStore((s) => s.updateChat);
+  const setUnreadCount = useChatStore((s) => s.setUnreadCount);
 
   // As mesmas permissões que o backend exige em cada rota. Oferecer a ação e
   // deixar o 403 aparecer depois é pior do que não mostrá-la.
@@ -75,6 +76,7 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
   const emAndamento = status === SupportChatStatusId.EM_ANDAMENTO;
   const souODono = ehDonoDoAtendimento(conversa, usuarioId);
   const pausado = emAndamento && Boolean(conversa.paused_at);
+  const temNaoLidas = Number(conversa.unread_count) > 0 || Boolean(conversa.marked_unread);
 
   const iniciar = async () => {
     try {
@@ -121,6 +123,19 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
       updateChat(atualizado);
     } catch (erro) {
       CatchAlerta(erro, 'Não foi possível marcar como não lida');
+    }
+  };
+
+  const marcarLida = async () => {
+    try {
+      await FetchReq({ endpoint: 'MarcarConversaLida', variables: [conversa.id] });
+      // Não reaplica o snapshot do menu: pode ter chegado uma atualização de
+      // dono, setor ou status enquanto a requisição estava em andamento.
+      const atual = useChatStore.getState().chats.find(chat => String(chat.id) === String(conversa.id));
+      if (atual) updateChat({ ...atual, marked_unread: false });
+      setUnreadCount(conversa.id, 0);
+    } catch (erro) {
+      CatchAlerta(erro, 'Não foi possível marcar como lida');
     }
   };
 
@@ -193,9 +208,9 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
     // Sempre disponível, inclusive em conversa de outro atendente: é
     // sinalização de leitura, não ação sobre o atendimento.
     {
-      label: 'Marcar como não lida',
-      icon: 'fa-regular fa-envelope',
-      command: marcarNaoLida,
+      label: temNaoLidas ? 'Marcar como lida' : 'Marcar como não lida',
+      icon: temNaoLidas ? 'fa-regular fa-envelope-open' : 'fa-regular fa-envelope',
+      command: temNaoLidas ? marcarLida : marcarNaoLida,
     },
 
     // Abre o painel de detalhes, e não direto o formulário: é de lá que se
