@@ -48,6 +48,9 @@ const ProccessAck = (ack: number) => {
     case 2:
       return 'fa-check-double';
     case 3:
+    // 4 = reproduzido: nota de voz ouvida pelo contato. Caía no `default`, e o
+    // áudio já ouvido voltava a mostrar o relógio de "enviando".
+    case 4:
       return 'fa-check-double text-blue-500';
     default:
       return 'fa-clock';
@@ -599,6 +602,11 @@ const SingleMessageComponent = ({
               title="Mensagem apagada"
             />
           </span>
+        )}
+        {message.is_edited && (
+          // O back já marcava a edição (dos dois lados), mas a bolha não
+          // mostrava: o texto mudava sem aviso, ao contrário do WhatsApp.
+          <span className="text-xs white-space-nowrap opacity-70">Editada</span>
         )}
         <span className="text-xs white-space-nowrap">{ArrumaData(message.datetime)}</span>
         {message.from_me && (

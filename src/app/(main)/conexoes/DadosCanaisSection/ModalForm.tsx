@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog as Modal } from 'primereact/dialog';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputSwitch } from 'primereact/inputswitch';
@@ -43,6 +43,8 @@ interface IProps<T> {
   sincronizando?: boolean;
   /** Abre o modal já na aba "Conexão" (vem do badge de status do topbar). */
   abrirNaConexao?: boolean;
+  /** Motivo de o WhatsApp ter recusado o código de pareamento, quando recusou. */
+  erroPareamento?: string | null;
 }
 
 /** 16 MB: o teto do WhatsApp para documento, que é o mais restritivo. */
@@ -84,6 +86,7 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
     onSincronizarStatus,
     sincronizando,
     abrirNaConexao,
+    erroPareamento,
   } = props;
 
   const { podeAdicionar, podeEditar, podeAcao, semPermissao } = usePermissoesModulo('channel');
@@ -109,6 +112,8 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
   const { FetchReq } = useApi();
   const [setores, setSetores] = useState<DepartmentResponse[]>([]);
   const [abaAtiva, setAbaAtiva] = useState(0);
+  // Canal para o qual a aba já foi escolhida nesta abertura do modal.
+  const abaEscolhidaPara = useRef<string | null>(null);
 
   const inatividadeAtiva = watch('inatividade_ativa');
   const setoresSelecionados = watch('department_ids') ?? [];
@@ -264,7 +269,15 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
     setAnexoDespedida(anexoVazio);
     setErroAnexoSaudacao(null);
     setErroAnexoDespedida(null);
-    setAbaAtiva(abrirNaConexao && mostraAbaConexao ? ABA_CONEXAO : ABA_GERAL);
+    // A aba é escolhida só ao abrir o modal (ou trocar de canal). O `value`
+    // muda a cada `whatsapp:channel_status` - QR, conectando, conectado -, e
+    // escolher de novo a cada um jogava o atendente de volta para "Geral" no
+    // meio da conexão.
+    const chave = visible ? String(value?.id ?? 'novo') : null;
+    if (chave !== abaEscolhidaPara.current) {
+      abaEscolhidaPara.current = chave;
+      if (visible) setAbaAtiva(abrirNaConexao && mostraAbaConexao ? ABA_CONEXAO : ABA_GERAL);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, value]);
 
@@ -467,6 +480,7 @@ const ModalForm = (props: IProps<ChannelResponse>) => {
                 onDisconnectSession={onDisconnectSession}
                 onSincronizarStatus={onSincronizarStatus}
                 sincronizando={sincronizando}
+                erroPareamento={erroPareamento}
               />
             </TabPanel>
           )}

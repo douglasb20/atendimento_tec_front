@@ -2,6 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import QRCode from 'qrcode.react';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
+import { Message } from 'primereact/message';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Timeline } from 'primereact/timeline';
 import { classNames } from 'primereact/utils';
@@ -18,6 +19,8 @@ interface IProps<T> {
   onDisconnectSession: () => void;
   onSincronizarStatus: () => void;
   sincronizando?: boolean;
+  /** `limite` (excesso de tentativas) ou `erro`, quando o WhatsApp recusou o código. */
+  erroPareamento?: string | null;
 }
 
 const stepValuesQrCode = [
@@ -136,6 +139,7 @@ const AbaConexao = (props: IProps<ChannelResponse>) => {
     onDisconnectSession,
     onSincronizarStatus,
     sincronizando = false,
+    erroPareamento = null,
   } = props;
 
   const [modo, setModo] = useState<ModoConexao>('qr');
@@ -160,8 +164,17 @@ const AbaConexao = (props: IProps<ChannelResponse>) => {
   // Conectou: sai da tela de código/QR sozinho. Sem isto o modal ficava preso
   // em "aguardando_codigo" mesmo com o status já em "Conectado" no topo, porque
   // nenhum efeito reagia à mudança de status - só à reabertura da aba.
+  //
+  // Desconectou (ex.: "Fechar sessão") durante a espera do código: o código não
+  // vem mais, e o spinner de "Aguardando código" ficava girando para sempre.
+  // Volta à tela padrão (QR), que é a que oferece "Iniciar sessão"; o número
+  // digitado continua guardado para o próximo pedido.
+  // O próprio pedido de código passa por "desconectado" (o backend derruba o QR
+  // em andamento antes de pedir) - nesse intervalo a tela fica onde está.
   useEffect(() => {
     if (value?.channel_status_id === 3) setModo('qr');
+    if (value?.channel_status_id === 1 && !pedindoCodigo) setModo('qr');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value?.channel_status_id]);
 
   const pedirPareamento = async () => {
@@ -356,7 +369,19 @@ const AbaConexao = (props: IProps<ChannelResponse>) => {
               </span>
             </span>
 
-            {!value?.pairing_code ? (
+            {!value?.pairing_code && erroPareamento ? (
+              // O WhatsApp recusou o pedido: o código não vem. Dizer o motivo
+              // evita o atendente insistir, o que só renova o bloqueio.
+              <Message
+                severity={erroPareamento === 'limite' ? 'warn' : 'error'}
+                className="text-left"
+                text={
+                  erroPareamento === 'limite'
+                    ? 'O WhatsApp bloqueou temporariamente novos códigos para este número por excesso de tentativas. Aguarde alguns minutos antes de pedir outro, ou conecte pelo QR code.'
+                    : 'O WhatsApp recusou o pedido de código. Tente novamente em instantes ou conecte pelo QR code.'
+                }
+              />
+            ) : !value?.pairing_code ? (
               <div className="flex align-items-center gap-2">
                 <ProgressSpinner
                   className="w-2rem h-2rem"

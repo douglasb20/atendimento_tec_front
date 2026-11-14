@@ -28,6 +28,10 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
   const invalidarCanais = useCanaisRevalidacao((s) => s.invalidarCanais);
   const [canais, setCanais] = useState(data || []);
   const [sincronizando, setSincronizando] = useState(false);
+  // Motivo de o WhatsApp ter recusado o pedido de código de pareamento (ex.:
+  // limite de tentativas). Sem isso a tela ficava em "Aguardando código" para
+  // sempre, e o atendente insistia - o que só renova o bloqueio.
+  const [erroPareamento, setErroPareamento] = useState<string | null>(null);
   const [activeChannel, setActiveChannel] = useState<ChannelResponse | null>(null);
   const [modalVisible, setModalVisible] = useState({ formChannel: false });
   // A conexão virou uma aba do próprio cadastro; esta flag diz ao modal para
@@ -207,6 +211,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
 
   const FecharModalForm = async () => {
     setModalVisible((prev) => ({ ...prev, formChannel: false }));
+    setErroPareamento(null);
     await sleep(1 / 2);
     setActiveChannel(null);
     setAbrirNaConexao(false);
@@ -252,6 +257,12 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
       CatchAlerta(err, 'Erro ao remover conexão.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onMessagePairingError = (data: { channel_id: number; motivo: string }) => {
+    if (activeChannelRef.current && String(data.channel_id) === String(activeChannelRef.current.id)) {
+      setErroPareamento(data.motivo);
     }
   };
 
@@ -313,6 +324,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
    * telefone) em vez do QR - as duas modalidades coexistem no modal.
    */
   const onStartSession = async (numero?: string) => {
+    setErroPareamento(null);
     try {
       if (activeChannel) {
         await FetchReq('IniciarSessao', [activeChannel.id, numero ?? '']);
@@ -379,12 +391,15 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
     // Remove listener antigo antes de adicionar
     socket.off('whatsapp:channel_status');
     socket.on('whatsapp:channel_status', onMessageChannelStatus);
+    socket.off('whatsapp:pairing_error');
+    socket.on('whatsapp:pairing_error', onMessagePairingError);
 
     setRendered(true);
     return () => {
       // Remove os listeners para evitar memory leaks
       socket.off('connect', onConnect);
       socket.off('whatsapp:channel_status', onMessageChannelStatus);
+      socket.off('whatsapp:pairing_error', onMessagePairingError);
       // Desconecta o socket
       socket.disconnect();
     };
@@ -417,6 +432,7 @@ export default function DadosCanaisSection({ data }: DadosCanaisProps) {
           onSincronizarStatus={onSincronizarStatus}
           sincronizando={sincronizando}
           abrirNaConexao={abrirNaConexao}
+          erroPareamento={erroPareamento}
         />
       </>
     )
