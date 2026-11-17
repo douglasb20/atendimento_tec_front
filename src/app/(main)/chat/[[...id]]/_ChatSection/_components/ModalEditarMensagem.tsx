@@ -4,7 +4,7 @@ import { addMinutes, differenceInMinutes, parseISO } from 'date-fns';
 import { Button } from 'primereact/button';
 import { Dialog as Modal } from 'primereact/dialog';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { SupportChatMessageResponse } from '@/Interfaces';
 import useApi from '@/service/Api/ApiClient';
@@ -98,6 +98,7 @@ const ModalEditarMensagem = ({
   const { FetchReq } = useApi();
   const [texto, setTexto] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const campoRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (visible) setTexto(semPrefixo(mensagem?.content));
@@ -132,6 +133,16 @@ const ModalEditarMensagem = ({
     }
   };
 
+  // O `autoFocus` não basta: o Dialog do PrimeReact move o foco para o próprio
+  // diálogo ao terminar a animação de abertura. O `onShow` roda depois disso,
+  // e o cursor vai para o fim do texto, que é onde a edição costuma começar.
+  const focarCampo = () => {
+    const campo = campoRef.current;
+    if (!campo || campo.disabled) return;
+    campo.focus();
+    campo.setSelectionRange(campo.value.length, campo.value.length);
+  };
+
   const rodape = () => (
     <div className="flex justify-content-between">
       <Button
@@ -162,6 +173,7 @@ const ModalEditarMensagem = ({
       visible={visible}
       header="Editar mensagem"
       onHide={onHide}
+      onShow={focarCampo}
       footer={rodape}
     >
       <div className="flex flex-column gap-2">
@@ -169,8 +181,8 @@ const ModalEditarMensagem = ({
 
         <InputTextarea
           rows={4}
+          ref={campoRef}
           autoResize
-          autoFocus
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           placeholder={mensagem.has_media ? 'Escreva a legenda' : 'Escreva a mensagem'}

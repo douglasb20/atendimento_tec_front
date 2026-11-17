@@ -8,10 +8,12 @@ import useApi from '@/service/Api/ApiClient';
 import { CatchAlerta } from '@/service/Util';
 
 type PontoDiaSemana = { diaSemana: number; total: number };
-type Periodo = 'esta_semana' | 'este_mes' | 'ultimos_seis_meses';
+type Periodo = 'esta_semana' | 'semana_passada' | 'este_mes' | 'ultimo_mes' | 'ultimos_seis_meses';
 const PERIODOS: { label: string; value: Periodo }[] = [
   { label: 'Esta semana', value: 'esta_semana' },
+  { label: 'Semana passada', value: 'semana_passada' },
   { label: 'Este mês', value: 'este_mes' },
+  { label: 'Último mês', value: 'ultimo_mes' },
   { label: 'Últimos 6 meses', value: 'ultimos_seis_meses' },
 ];
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
