@@ -70,7 +70,7 @@ const statusRespeitandoPatchLocal = (
   chatId: string | number,
   candidato: SupportChatsResponse,
   atual: SupportChatsResponse,
-): Pick<SupportChatsResponse, 'user_id' | 'support_chat_status_id' | 'paused_at'>
+): Pick<SupportChatsResponse, 'user_id' | 'support_chat_status_id' | 'paused_at' | 'grupo'>
   & Partial<Pick<SupportChatsResponse, 'user' | 'department_id' | 'department'>> => {
   const marcadoEm = patchStatusLocalEm.get(String(chatId));
   const dentroDaJanela = marcadoEm != null && Date.now() - marcadoEm < JANELA_PATCH_LOCAL_MS;
@@ -80,6 +80,7 @@ const statusRespeitandoPatchLocal = (
       user_id: candidato.user_id,
       support_chat_status_id: candidato.support_chat_status_id,
       paused_at: candidato.paused_at,
+      grupo: candidato.grupo,
     };
   }
 
@@ -87,6 +88,9 @@ const statusRespeitandoPatchLocal = (
     user_id: atual.user_id,
     support_chat_status_id: atual.support_chat_status_id,
     paused_at: atual.paused_at,
+    // O grupo é calculado pelo back a partir dos três campos acima: vem junto
+    // deles, senão o eco atrasado põe a conversa na aba errada.
+    grupo: atual.grupo,
     // Nome do responsável e setor devem acompanhar os ids preservados:
     // um evento antigo não pode trocar o cabeçalho/rodapé após transferir.
     user: atual.user,

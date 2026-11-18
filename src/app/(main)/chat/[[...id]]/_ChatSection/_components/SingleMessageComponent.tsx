@@ -438,6 +438,7 @@ const SingleMessageComponent = ({
                     url={message.media_url}
                     mimetype={message.media_type}
                     proprio={message.from_me}
+                    ondaPronta={message.waveform}
                   />
                 </div>
               </ComProgresso>

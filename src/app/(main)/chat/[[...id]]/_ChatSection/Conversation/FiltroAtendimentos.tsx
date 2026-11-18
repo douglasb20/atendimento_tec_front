@@ -9,6 +9,13 @@ import { useAjustesAtendimento } from '@/hooks/useAjustesAtendimento';
 /** Grupos da lista lateral, com ícones e contadores sempre visíveis. */
 export type GrupoAtendimento = 'todos' | 'fila' | 'andamento' | 'pausas' | 'chatbot';
 
+const GRUPOS_DO_PORTAL: Record<NonNullable<SupportChatsResponse['grupo']>, Exclude<GrupoAtendimento, 'todos'>> = {
+  espera: 'fila',
+  em_atendimento: 'andamento',
+  pausa: 'pausas',
+  chatbot: 'chatbot',
+};
+
 type FiltroAtendimentosProps = {
   chats: SupportChatsResponse[];
   grupoAtivo: GrupoAtendimento;
@@ -16,14 +23,12 @@ type FiltroAtendimentosProps = {
   desabilitado?: boolean;
 };
 
-/**
- * A que grupo uma conversa pertence.
- *
- * Decide pelo id do status, não pela relação `supportChatStatus`: ela não vem
- * em todos os payloads (webhooks emitem a entidade crua), e um grupo errado
- * some com a conversa da lista.
- */
+/** Mapeia o grupo decidido pelo back para a aba correspondente do portal. */
 export const grupoDaConversa = (chat: SupportChatsResponse): Exclude<GrupoAtendimento, 'todos'> => {
+  if (chat.grupo !== undefined) return GRUPOS_DO_PORTAL[chat.grupo];
+
+  // Regra local provisória durante a transição, apenas para payloads antigos sem grupo.
+  // Usa o id do status porque a relação supportChatStatus pode não vir nos webhooks.
   if (chat.pos_atendimento_ativo) return 'chatbot';
   if (chat.support_chat_status_id === SupportChatStatusId.EM_ANDAMENTO) {
     // Pausar preserva status e dono no servidor; só muda o grupo visual.

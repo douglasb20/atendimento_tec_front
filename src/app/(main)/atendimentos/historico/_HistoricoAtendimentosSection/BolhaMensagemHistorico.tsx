@@ -100,6 +100,7 @@ const BolhaMensagemHistorico = ({ message }: Props) => {
                 url={media_url}
                 mimetype={message.media_type}
                 proprio={from_me}
+                ondaPronta={message.waveform}
               />
             </div>
           )}

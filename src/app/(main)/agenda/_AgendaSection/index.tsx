@@ -68,9 +68,13 @@ const tituloDoPeriodo = (inicio: Date, fim: Date) => {
   return titulo.charAt(0).toUpperCase() + titulo.slice(1);
 };
 
-const cabecalhoDia = (data: Date, visaoAtual: string) => {
+const cabecalhoDia = (data: Date, visaoAtual: string, textoDoCalendario: string) => {
+  // Na visão mensal o FullCalendar entrega aqui a meia-noite UTC do dia da
+  // semana; formatada no fuso local (-03) ela cai no dia anterior, e o
+  // cabeçalho saía "dom" sobre a coluna de segunda. O texto que ele mesmo
+  // calcula já vem certo.
+  if (visaoAtual === 'dayGridMonth') return `<span class="agenda-dia-semana">${textoDoCalendario.replace('.', '')}</span>`;
   const semana = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' }).format(data).replace('.', '');
-  if (visaoAtual === 'dayGridMonth') return `<span class="agenda-dia-semana">${semana}</span>`;
 
   const numero = new Intl.DateTimeFormat('pt-BR', { day: '2-digit' }).format(data);
   const hoje = new Date();
@@ -221,7 +225,8 @@ export default function AgendaSection() {
         height={visao === 'dayGridMonth' ? undefined : 'auto'}
         aspectRatio={visao === 'dayGridMonth' ? 1.65 : undefined}
         locale="pt-br"
-        firstDay={1}
+        // Semana do calendário brasileiro: domingo primeiro.
+        firstDay={0}
         allDaySlot
         allDayText="Dia inteiro"
         slotMinTime="00:00:00"
@@ -237,7 +242,7 @@ export default function AgendaSection() {
             <span className={`agenda-programacao-numero${arg.isToday ? ' agenda-dia-hoje' : ''}`}>{arg.date.getDate()}</span>
             <span className="agenda-programacao-mes">{new Intl.DateTimeFormat('pt-BR', { month: 'short', weekday: 'short' }).format(arg.date)}</span>
           </span>
-        ) : ({ html: cabecalhoDia(arg.date, arg.view.type) })}
+        ) : ({ html: cabecalhoDia(arg.date, arg.view.type, arg.text) })}
         dayHeaderClassNames={(arg) => arg.view.type !== 'dayGridMonth' && diasFeriados.has(dataLocalAgenda(arg.date)) ? ['agenda-dia-feriado'] : []}
         dayCellClassNames={(arg) => diasFeriados.has(dataLocalAgenda(arg.date)) ? ['agenda-dia-feriado'] : []}
         displayEventTime={visao !== 'timeGridWeek'}

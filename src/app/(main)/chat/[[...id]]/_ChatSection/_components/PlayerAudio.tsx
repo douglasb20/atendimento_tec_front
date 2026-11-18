@@ -21,6 +21,11 @@ type PlayerAudioProps = {
   mimetype?: string;
   /** Muda a cor das barras para contrastar com a bolha de quem enviou. */
   proprio?: boolean;
+  /**
+   * Onda já calculada (alturas de 0 a 100, do WhatsApp ou do gateway). Com
+   * ela, não baixa nem decodifica o áudio só para desenhar as barras.
+   */
+  ondaPronta?: number[] | null;
 };
 
 /** Quantas barras a onda tem. Fixo: a largura do player não varia. */
@@ -68,6 +73,18 @@ const extraiOnda = (buffer: AudioBuffer): number[] => {
   return barras.map((b) => b / maior);
 };
 
+/** A onda pronta (64 alturas de 0 a 100) reduzida a `TOTAL_BARRAS`, normalizada como a decodificada. */
+const reduzOnda = (alturas: number[]): number[] => {
+  const barras = Array.from({ length: TOTAL_BARRAS }, (_, i) => {
+    const inicio = Math.floor((i * alturas.length) / TOTAL_BARRAS);
+    const fim = Math.max(inicio + 1, Math.floor(((i + 1) * alturas.length) / TOTAL_BARRAS));
+    const trecho = alturas.slice(inicio, fim);
+    return trecho.reduce((soma, a) => soma + a, 0) / trecho.length;
+  });
+  const maior = Math.max(...barras, 0.0001);
+  return barras.map((b) => b / maior);
+};
+
 /**
  * Uma cópia da onda. Renderizada duas vezes pelo player - apagada e opaca -,
  * com a de cima recortada para marcar o progresso.
@@ -91,7 +108,7 @@ const Onda = ({ barras, cor, opacidade }: { barras: number[]; cor: string; opaci
   </div>
 );
 
-const PlayerAudio = ({ url, mimetype, proprio = false }: PlayerAudioProps) => {
+const PlayerAudio = ({ url, mimetype, proprio = false, ondaPronta }: PlayerAudioProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [tocando, setTocando] = useState(false);
   const [duracao, setDuracao] = useState(0);
@@ -131,6 +148,12 @@ const PlayerAudio = ({ url, mimetype, proprio = false }: PlayerAudioProps) => {
   // escrever estado depois que a conversa trocou - o áudio de um chat antigo
   // ainda estaria baixando quando outro abre.
   useEffect(() => {
+    if (ondaPronta?.length) {
+      setOnda(reduzOnda(ondaPronta));
+      setCarregandoOnda(false);
+      return;
+    }
+
     let cancelado = false;
     setCarregandoOnda(true);
     setOnda(null);
@@ -161,7 +184,8 @@ const PlayerAudio = ({ url, mimetype, proprio = false }: PlayerAudioProps) => {
     return () => {
       cancelado = true;
     };
-  }, [url]);
+    // Só a presença da onda importa: o array chega novo a cada atualização da mensagem.
+  }, [url, Boolean(ondaPronta?.length)]);
 
   const alternar = () => {
     const el = audioRef.current;

@@ -82,6 +82,7 @@ export interface SupportChatsResponse {
   department_id?: number | null;
   contact_id: number;
   support_chat_status_id: number;
+  grupo?: 'espera' | 'em_atendimento' | 'pausa' | 'chatbot';
   protocol: string;
   unread_count: number;
   /** "Marcar como não lida" (ação manual do atendente) - distinto de
@@ -182,6 +183,9 @@ export interface SupportChatMessageResponse {
    * revogação pelo autor. A mensagem permanece; só o arquivo deixou de existir.
    */
   media_expired?: boolean;
+
+  /** Onda da nota de voz (alturas de 0 a 100), vinda do WhatsApp ou do gateway. */
+  waveform?: number[] | null;
 
   /** Nome do arquivo, exibido quando não há prévia para mostrar. */
   file_name?: string;
