@@ -305,7 +305,9 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
         // Sem `fecharConversa`: a conversa nem estava aberta. O `updateChat`
         // tira-a da lista, que é o efeito visível aqui.
         onFinalizado={updateChat}
-        onContatoAtualizado={() => {}}
+        // Sem isto o contato era salvo, mas a conversa da lista não mudava e o
+        // modal seguia pedindo cliente depois de "Contato sem cliente".
+        onContatoAtualizado={(contato) => updateChat({ ...conversa, contact: contato })}
       />
 
       <ModalTransferirAtendimento
