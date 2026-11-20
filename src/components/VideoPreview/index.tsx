@@ -32,11 +32,14 @@ export default function VideoPreview() {
         </button>
       </div>
       <div className="flex justify-content-center align-items-center w-full h-full overflow-hidden rounded-lg">
+        {/* Sem limite, o vídeo saía no tamanho original e um vídeo largo
+            passava da tela. Encaixa inteiro, sem cortar. */}
         <video
           controls
           autoPlay
           playsInline
           onClick={(e) => e.stopPropagation()}
+          style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain' }}
         >
           <source
             src={videoPreview?.source}
