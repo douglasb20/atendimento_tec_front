@@ -314,7 +314,13 @@ const AcoesConversa = ({ conversa }: AcoesConversaProps) => {
         visible={transferirAberto}
         onHide={() => setTransferirAberto(false)}
         chat={conversa}
-        onTransferido={updateChat}
+        // Só atualiza se ainda estiver na lista: quem não vê atendimento de
+        // terceiros já recebeu `chat_removed` pelo socket, e o `updateChat`
+        // (que inclui a conversa ausente) a trazia de volta - presa na lista
+        // até o F5, e abrindo com 403.
+        onTransferido={(atualizado) => {
+          if (useChatStore.getState().chats.some((c) => String(c.id) === String(atualizado.id))) updateChat(atualizado);
+        }}
       />
 
       <SidebarDetalhesContato

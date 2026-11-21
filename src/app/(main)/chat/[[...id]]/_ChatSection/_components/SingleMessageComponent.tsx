@@ -117,6 +117,10 @@ const ComProgresso = ({
   );
 };
 
+/** Nome do tipo da chave Pix como o WhatsApp mostra; desconhecido vira "Chave". */
+const nomeDoTipoPix = (tipo: string | null) =>
+  ({ EVP: 'Chave aleatória', CPF: 'CPF', CNPJ: 'CNPJ', EMAIL: 'E-mail', PHONE: 'Telefone' } as Record<string, string>)[tipo ?? ''] ?? 'Chave';
+
 const SingleMessageComponent = ({
   message,
   doAnimation,
@@ -184,6 +188,8 @@ const SingleMessageComponent = ({
             key: string;
             key_type: string | null;
             valor: number | null;
+            observacao?: string | null;
+            cobranca?: boolean;
           })
         : null;
     } catch {
@@ -492,6 +498,28 @@ const SingleMessageComponent = ({
                 )}
                 style={{ width: '21rem', maxWidth: '100%' }}
               >
+                {pix.cobranca ? (
+                  // Cobrança como o WhatsApp mostra: valor grande, a caixa
+                  // "Pagar com" dizendo quem pediu e a observação como texto.
+                  <div className="flex flex-column gap-2 p-3">
+                    {pix.valor != null && (
+                      <span className="font-bold text-center py-2" style={{ fontSize: '2rem' }}>
+                        {pix.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    )}
+                    <div className="flex gap-2 p-2 border-round" style={{ background: 'rgba(127, 127, 127, 0.15)' }}>
+                      <span className="flex flex-column flex-1 min-w-0">
+                        <span className="font-medium">Pagar com Pix</span>
+                        <span className="opacity-80">{`${pix.merchant_name ?? 'O contato'} solicitou um pagamento.`}</span>
+                        <span className="text-sm opacity-60 white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                          {nomeDoTipoPix(pix.key_type)}: {pix.key}
+                        </span>
+                      </span>
+                      <i className="fa-brands fa-pix text-xl" style={{ color: '#25d366' }} />
+                    </div>
+                    {pix.observacao && <span className="text-base">{pix.observacao}</span>}
+                  </div>
+                ) : (
                 <div className="flex align-items-center gap-3 p-3">
                   <span
                     className="flex align-items-center justify-content-center border-circle flex-none"
@@ -511,22 +539,18 @@ const SingleMessageComponent = ({
                       {pix.merchant_name ?? 'Chave Pix'}
                     </span>
                     <span className="text-base opacity-80 white-space-nowrap overflow-hidden text-overflow-ellipsis">
-                      {{
-                        EVP: 'Chave aleatória',
-                        CPF: 'CPF',
-                        CNPJ: 'CNPJ',
-                        EMAIL: 'E-mail',
-                        PHONE: 'Telefone',
-                      }[pix.key_type ?? ''] ?? 'Chave'}
-                      : {pix.key}
+                      {nomeDoTipoPix(pix.key_type)}: {pix.key}
                     </span>
                     {pix.valor && (
                       <span className="text-base font-medium">
                         {pix.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </span>
                     )}
+                    {/* Cobrança gravada antes da marca `cobranca` cai aqui: a observação não some. */}
+                    {pix.observacao && <span className="text-base mt-1">{pix.observacao}</span>}
                   </span>
                 </div>
+                )}
                 <button
                   type="button"
                   onClick={copiarPix}

@@ -61,7 +61,10 @@ const ReactionPickerComponent = ({ activeChat, bottomEl }: ReactionPickerProps) 
       // Clicar no emoji que já está na mensagem desfaz a reação. O mapa é
       // indexado pelo jid de quem reagiu, e o front não conhece o do canal -
       // comparar com os emojis presentes cobre o caso de uso.
-      const jaReagiu = Object.values(reactionState.message.reaction ?? {}).includes(emoji.emoji);
+      // Só a nossa reação (chave `nos`, gravada pelo back) desfaz. Comparar
+      // com todas tratava o 👍 do cliente como nosso: tocar mandava "desfazer"
+      // e a nossa nunca somava.
+      const jaReagiu = reactionState.message.reaction?.nos === emoji.emoji;
       const reaction = jaReagiu ? '' : emoji.emoji;
       const resp = await sendReactionMessage(
         activeChat.id,
